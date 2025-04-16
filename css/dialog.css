@@ -422,4 +422,68 @@
 
 .api-option:hover:not(.selected) {
   background-color: var(--surface-color);
+}
+
+/* Build Dialog */
+.build-status {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.status-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: #BBDEFB;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.status-icon i {
+  font-size: 24px;
+  color: #1976D2;
+}
+
+.status-message {
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.progress-container {
+  margin: 20px 0;
+}
+
+.progress-bar {
+  height: 6px;
+  background: #eee;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--primary-color);
+  transition: width 0.3s ease-out;
+}
+
+.info-box {
+  padding: 12px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  margin-top: 16px;
+}
+
+.info-title {
+  font-weight: 500;
+  margin-bottom: 4px;
+  color: var(--text-primary);
+}
+
+.info-content {
+  color: var(--text-secondary);
+  line-height: 1.5;
 } 

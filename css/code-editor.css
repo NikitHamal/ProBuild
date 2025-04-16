@@ -1,0 +1,156 @@
+/* Code Editor Layout */
+.code-editor {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.code-toolbar {
+  display: flex;
+  justify-content: space-between;
+  padding: 0;
+  background-color: var(--surface-color);
+  border-bottom: 1px solid #ddd;
+}
+
+.code-file-tabs {
+  display: flex;
+  overflow-x: auto;
+  flex: 1;
+}
+
+.code-file-tab {
+  padding: 8px 16px;
+  cursor: pointer;
+  border-right: 1px solid #ddd;
+  background-color: var(--surface-color);
+  white-space: nowrap;
+  user-select: none;
+  transition: background-color 0.2s;
+}
+
+.code-file-tab:hover {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+.code-file-tab.active {
+  background-color: var(--background-color);
+  border-bottom: 2px solid var(--primary-color);
+  font-weight: 500;
+}
+
+.code-toolbar-actions {
+  display: flex;
+  gap: 4px;
+  padding: 4px 8px;
+  align-items: center;
+}
+
+.code-toolbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  background-color: transparent;
+  color: var(--text-primary);
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.code-toolbar-btn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.code-toolbar-btn i {
+  font-size: 18px;
+}
+
+.code-editor-container {
+  flex: 1;
+  overflow: auto;
+  background-color: var(--background-color);
+  position: relative;
+}
+
+.code-editor-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-secondary);
+}
+
+/* Code editor textarea (placeholder) */
+.code-editor-textarea {
+  width: 100%;
+  height: 100%;
+  border: none;
+  outline: none;
+  resize: none;
+  padding: 12px;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  tab-size: 4;
+  background-color: var(--background-color);
+  color: var(--text-primary);
+}
+
+/* Code syntax highlighting - basic highlighting for demonstration */
+.keyword {
+  color: #0000ff;
+}
+
+.string {
+  color: #008000;
+}
+
+.comment {
+  color: #808080;
+  font-style: italic;
+}
+
+.number {
+  color: #ff8000;
+}
+
+.type {
+  color: #800080;
+}
+
+/* Line numbers */
+.line-numbers {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 40px;
+  background-color: var(--surface-color);
+  border-right: 1px solid #ddd;
+  text-align: right;
+  padding: 12px 5px;
+  color: var(--text-secondary);
+  font-family: 'Roboto Mono', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  user-select: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .code-toolbar {
+    flex-direction: column;
+  }
+  
+  .code-toolbar-actions {
+    border-top: 1px solid #ddd;
+    justify-content: flex-end;
+  }
+  
+  .code-toolbar-btn span {
+    display: none;
+  }
+} 
