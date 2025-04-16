@@ -1,0 +1,88 @@
+.preview-component {
+  position: relative;
+  margin-bottom: var(--spacing-xs);
+  min-height: 20px;
+  cursor: pointer;
+  transition: outline 0.2s;
+  box-sizing: border-box;
+}
+
+.preview-component.selected {
+  outline: 2px solid var(--primary-color);
+  z-index: 2;
+}
+
+.preview-component:hover {
+  outline: 1px dashed #aaa;
+}
+
+.empty-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100px;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: var(--spacing-md);
+  border: 2px dashed #ddd;
+  border-radius: var(--border-radius);
+}
+
+/* Component specific styles */
+.preview-button {
+  cursor: pointer;
+  margin-bottom: var(--spacing-sm);
+  transition: background-color 0.1s;
+}
+
+.preview-button:active {
+  opacity: 0.8;
+}
+
+.preview-textview {
+  margin-bottom: var(--spacing-sm);
+}
+
+.preview-edittext {
+  margin-bottom: var(--spacing-sm);
+  cursor: text;
+}
+
+.preview-imageview {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f5f5f5;
+  min-height: 100px;
+  margin-bottom: var(--spacing-sm);
+}
+
+.preview-checkbox,
+.preview-radiobutton,
+.preview-switch {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+.preview-listview {
+  border: 1px solid #ddd;
+  border-radius: var(--border-radius);
+  margin-bottom: var(--spacing-sm);
+}
+
+.preview-progressbar {
+  height: 4px;
+  background-color: #eee;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: var(--spacing-sm);
+}
+
+.preview-progressbar::before {
+  content: '';
+  display: block;
+  height: 100%;
+  width: 50%;
+  background-color: var(--primary-color);
+} 
