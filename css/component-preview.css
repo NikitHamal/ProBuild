@@ -1,10 +1,13 @@
 .preview-component {
-  position: relative;
-  margin-bottom: var(--spacing-xs);
+  position: absolute;
   min-height: 20px;
   cursor: pointer;
   transition: outline 0.2s;
   box-sizing: border-box;
+  overflow: hidden;
+  word-wrap: break-word;
+  top: 0;
+  left: 0;
 }
 
 .preview-component.selected {
