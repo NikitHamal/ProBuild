@@ -4,12 +4,21 @@ class AppService {
   }
 
   loadApps() {
-    const storedApps = localStorage.getItem('apps');
-    return storedApps ? JSON.parse(storedApps) : [];
+    try {
+      const storedApps = localStorage.getItem('apps');
+      return storedApps ? JSON.parse(storedApps) : [];
+    } catch (error) {
+      console.error("Error loading apps from localStorage:", error);
+      return [];
+    }
   }
 
   saveApps() {
-    localStorage.setItem('apps', JSON.stringify(this.apps));
+    try {
+      localStorage.setItem('apps', JSON.stringify(this.apps));
+    } catch (error) {
+      console.error("Error saving apps to localStorage:", error);
+    }
   }
 
   getApps() {
@@ -39,7 +48,7 @@ class AppService {
     } = options;
 
     const newApp = {
-      id: `app_${Date.now()}`,
+      id: crypto.randomUUID(),
       name: name,
       packageName: packageName,
       projectName: projectName,
@@ -51,7 +60,7 @@ class AppService {
       icon: icon,
       customIconUrl: customIconUrl,
       screens: [{
-        id: 'screen_1',
+        id: crypto.randomUUID(),
         name: 'MainActivity',
         components: []
       }],
@@ -93,7 +102,7 @@ class AppService {
     if (!app) return false;
 
     const newScreen = {
-      id: `screen_${Date.now()}`,
+      id: crypto.randomUUID(),
       name: screenName,
       components: []
     };
@@ -145,7 +154,7 @@ class AppService {
     if (!screen) return false;
 
     const newComponent = {
-      id: `component_${Date.now()}`,
+      id: crypto.randomUUID(),
       ...component
     };
 

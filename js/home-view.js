@@ -2,22 +2,49 @@ import AppService from './app-service.js';
 import AppCard from '../components/app-card.js';
 import Navbar from '../components/navbar.js';
 
+// Placeholder for navigation - replace with actual router/navigation logic
+function navigateToEditor(appId) {
+  console.log(`Navigating to editor for app: ${appId}`);
+  // Example using hash routing:
+  // window.location.hash = `#/editor/${appId}`;
+  // Example using full page load (current behavior):
+  window.location.href = `editor.html?id=${appId}`;
+}
+
 class HomeView {
   constructor() {
     this.appService = AppService;
+    this.appRoot = document.getElementById('app-root'); // Render into #app-root
+    if (!this.appRoot) {
+      console.error('#app-root element not found!');
+      this.appRoot = document.body; // Fallback to body if not found
+    }
+    this.handleNewAppClick = this.handleNewAppClick.bind(this);
     this.init();
   }
 
   init() {
     // Add navbar
     const navbar = new Navbar();
-    document.body.insertBefore(navbar.element, document.body.firstChild);
+    // Prepend navbar to the app root
+    this.appRoot.insertBefore(navbar.element, this.appRoot.firstChild);
 
     this.renderAppList();
     this.setupEventListeners();
   }
 
+  // Optional: Add a destroy method to clean up listeners if the view can be removed
+  destroy() {
+    document.removeEventListener('click', this.handleNewAppClick);
+    // Remove other view-specific listeners if added elsewhere
+  }
+
   renderAppList() {
+    this.appListContainer = this.appRoot.querySelector('.app-list-container');
+    if (this.appListContainer) {
+      this.appListContainer.remove(); // Clear previous list if re-rendering
+    }
+
     const apps = this.appService.getApps();
     const container = document.createElement('div');
     container.className = 'container app-list-container';
@@ -51,22 +78,25 @@ class HomeView {
       });
     }
 
-    document.body.appendChild(container);
+    // Append the app list container to the app root
+    this.appRoot.appendChild(container);
+  }
+
+  // Renamed for clarity and bound in constructor
+  handleNewAppClick(e) {
+    if (e.target.closest('.new-app-btn')) {
+      this.showCreateAppDialog();
+    }
   }
 
   setupEventListeners() {
-    // Create new app button
-    document.addEventListener('click', (e) => {
-      if (e.target.closest('.new-app-btn')) {
-        this.showCreateAppDialog();
-      }
-    });
+    // Use the bound method for adding/removing the listener
+    document.addEventListener('click', this.handleNewAppClick);
   }
 
-  showCreateAppDialog() {
-    const dialog = document.createElement('div');
-    dialog.className = 'dialog-overlay';
-    dialog.innerHTML = `
+  _buildCreateDialogHTML() {
+    // Extracted HTML generation
+    return `
       <div class="dialog fullscreen new-project">
         <div class="dialog-header">
           <button class="back-btn">
@@ -84,11 +114,13 @@ class HomeView {
           </div>
           
           <div class="form-group">
-            <input type="text" id="app-name" placeholder="App Name">
+            <input type="text" id="app-name" placeholder="App Name" required>
+            <div class="input-error-message"></div>
           </div>
           
           <div class="form-group">
-            <input type="text" id="package-name" placeholder="Package Name">
+            <input type="text" id="package-name" placeholder="Package Name" required>
+            <div class="input-error-message"></div>
           </div>
           
           <div class="form-group">
@@ -157,14 +189,14 @@ class HomeView {
         
         <div class="dialog-actions">
           <button class="dialog-btn cancel">Cancel</button>
-          <button class="dialog-btn primary">New Project</button>
+          <button class="dialog-btn primary" type="submit">New Project</button>
         </div>
       </div>
     `;
+  }
 
-    document.body.appendChild(dialog);
-
-    // Handle dialog actions
+  _setupDialogInteractions(dialog) {
+    // Extracted event listener setup and logic
     const cancelBtn = dialog.querySelector('.cancel');
     const createBtn = dialog.querySelector('.primary');
     const backBtn = dialog.querySelector('.back-btn');
@@ -181,20 +213,8 @@ class HomeView {
     const applyCustomColorBtn = dialog.querySelector('#apply-custom-color');
     const customColorInput = dialog.querySelector('#custom-color');
     const colorTypeSelect = dialog.querySelector('#color-type');
-    
-    // Set packageName based on app name
-    nameInput.addEventListener('input', () => {
-      const appName = nameInput.value.trim();
-      if (appName && !packageInput.value.trim()) {
-        packageInput.value = `com.example.${appName.toLowerCase().replace(/\s+/g, '')}`;
-      }
-      
-      if (appName && !projectNameInput.value.trim()) {
-        projectNameInput.value = appName;
-      }
-    });
-    
-    // Handle color selection
+
+    // State variables for the dialog
     let selectedColor = 'colorAccent';
     let customColors = {
       colorAccent: '#2196F3',
@@ -202,7 +222,41 @@ class HomeView {
       colorPrimaryDark: '#303F9F',
       colorControlHighlight: '#E0E0E0'
     };
-    
+    let selectedApi = '21';
+    let selectedIcon = 'android';
+    let customIconUrl = null;
+
+    // Helper to show/hide input error
+    const setInputError = (inputElement, message) => {
+        inputElement.classList.add('error');
+        const errorMsgElement = inputElement.nextElementSibling;
+        if (errorMsgElement && errorMsgElement.classList.contains('input-error-message')) {
+            errorMsgElement.textContent = message;
+        }
+    };
+    const clearInputError = (inputElement) => {
+        inputElement.classList.remove('error');
+         const errorMsgElement = inputElement.nextElementSibling;
+        if (errorMsgElement && errorMsgElement.classList.contains('input-error-message')) {
+            errorMsgElement.textContent = '';
+        }
+    };
+
+    // Auto-fill package/project name
+    nameInput.addEventListener('input', () => {
+      clearInputError(nameInput);
+      const appName = nameInput.value.trim();
+      if (appName && !packageInput.value.trim()) {
+        packageInput.value = `com.example.${appName.toLowerCase().replace(/\s+/g, '')}`;
+        clearInputError(packageInput); 
+      }
+      if (appName && !projectNameInput.value.trim()) {
+        projectNameInput.value = appName;
+      }
+    });
+    packageInput.addEventListener('input', () => clearInputError(packageInput));
+
+    // Color selection logic
     colorOptions.forEach(option => {
       option.addEventListener('click', () => {
         // Remove selected class from all options
@@ -242,8 +296,7 @@ class HomeView {
       customColorPicker.classList.remove('active');
     });
     
-    // Handle API selection
-    let selectedApi = '21';
+    // API selection logic
     apiOptions.forEach(option => {
       option.addEventListener('click', () => {
         apiOptions.forEach(opt => opt.classList.remove('selected'));
@@ -251,11 +304,8 @@ class HomeView {
         selectedApi = option.dataset.api;
       });
     });
-    
-    // Icon selection
-    let selectedIcon = 'android';
-    let customIconUrl = null;
-    
+
+    // Icon selection logic
     iconPreview.addEventListener('click', () => {
       this.showIconPicker(iconSelected => {
         if (iconSelected.type === 'material') {
@@ -270,15 +320,12 @@ class HomeView {
       });
     });
 
-    // Handle close buttons
-    const closeDialog = () => {
-      dialog.remove();
-    };
-    
+    // Handle close
+    const closeDialog = () => dialog.remove();
     cancelBtn.addEventListener('click', closeDialog);
     backBtn.addEventListener('click', closeDialog);
 
-    // Handle create button
+    // Handle create
     createBtn.addEventListener('click', () => {
       const appName = nameInput.value.trim();
       const packageName = packageInput.value.trim();
@@ -286,7 +333,18 @@ class HomeView {
       const versionCode = versionCodeInput.value.trim() || "1";
       const versionName = versionNameInput.value.trim() || "1.0";
       
-      if (appName && packageName) {
+      // Basic Validation
+      let isValid = true;
+      if (!appName) {
+        setInputError(nameInput, 'App name is required');
+        isValid = false;
+      }
+      if (!packageName) {
+        setInputError(packageInput, 'Package name is required');
+        isValid = false;
+      } // Add more validation (e.g., package name format) if needed
+      
+      if (isValid) {
         const newApp = this.appService.createApp(appName, {
           packageName,
           projectName,
@@ -298,25 +356,25 @@ class HomeView {
           icon: selectedIcon,
           customIconUrl
         });
-        
-        // Redirect to editor with new app ID
-        window.location.href = `editor.html?id=${newApp.id}`;
-      } else {
-        if (!appName) {
-          nameInput.classList.add('error');
-          nameInput.placeholder = 'App name is required';
-        }
-        if (!packageName) {
-          packageInput.classList.add('error');
-          packageInput.placeholder = 'Package name is required';
-        }
+
+        closeDialog(); // Close dialog on success
+        navigateToEditor(newApp.id); // Use navigation function
       }
     });
 
-    // Focus input
     nameInput.focus();
   }
-  
+
+  showCreateAppDialog() {
+    const dialogOverlay = document.createElement('div');
+    dialogOverlay.className = 'dialog-overlay';
+    dialogOverlay.innerHTML = this._buildCreateDialogHTML();
+
+    document.body.appendChild(dialogOverlay); // Append overlay to body for fullscreen effect
+
+    this._setupDialogInteractions(dialogOverlay);
+  }
+
   showIconPicker(callback) {
     const materialIcons = [
       'android', 'adb', 'brush', 'bug_report', 'build', 'camera',
