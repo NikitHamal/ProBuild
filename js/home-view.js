@@ -4,7 +4,7 @@ import Navbar from '../components/navbar.js';
 
 // Placeholder for navigation - replace with actual router/navigation logic
 function navigateToEditor(appId) {
-  console.log(`Navigating to editor for app: ${appId}`);
+  // console.log(`Navigating to editor for app: ${appId}`);
   // Example using hash routing:
   // window.location.hash = `#/editor/${appId}`;
   // Example using full page load (current behavior):

@@ -926,6 +926,52 @@ class CodeManager {
       console.log(`Updated component references in code from ${oldId} to ${newId}`);
     }
   }
+
+  // --- Helper to ensure file exists ---
+  _ensureFileExists(screenId) {
+    if (!this.fileContents[screenId]) {
+      this.fileContents[screenId] = this.generateCodeForScreen(screenId);
+      this.dirtyFiles[screenId] = false;
+    }
+  }
+
+  // --- Method to update code from BlocksManager ---
+  updateCodeFromBlocks(generatedCode) {
+      // For simplicity, let's assume the blocks code corresponds to the 'main' logic file
+      // In a more complex setup, this would need more sophisticated mapping
+      const targetFileId = 'main'; // Or determine based on screen/context
+      
+      // Update the stored content
+      this.fileContents[targetFileId] = generatedCode;
+      
+      // If the updated file is the currently active one, refresh the editor view
+      if (this.activeFile === targetFileId && this.editorInstance) {
+          // Preserve cursor/scroll position if possible (CodeMirror/Monaco specific)
+          const currentCursor = this.editorInstance.getCursor ? this.editorInstance.getCursor() : null;
+          const scrollInfo = this.editorInstance.getScrollInfo ? this.editorInstance.getScrollInfo() : null;
+          
+          // Update the editor's content
+          this.editorInstance.setValue(generatedCode);
+          
+          // Restore cursor/scroll position
+          if (currentCursor && this.editorInstance.setCursor) {
+              this.editorInstance.setCursor(currentCursor);
+          }
+          if (scrollInfo && this.editorInstance.scrollTo) {
+              this.editorInstance.scrollTo(scrollInfo.left, scrollInfo.top);
+          }
+          
+          // Optionally format the code after update
+          this.formatCode(); 
+      } else {
+          // Mark the file tab as potentially changed (e.g., add an indicator)
+          this.markFileAsDirty(targetFileId); 
+      }
+      
+      // Save the changes (optional, could rely on manual save)
+      // this.saveCode(); 
+  }
+  // --- End added method ---
 }
 
-export default CodeManager; 
+export default CodeManager;

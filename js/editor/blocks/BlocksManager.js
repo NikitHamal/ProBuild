@@ -192,124 +192,21 @@ const toolboxXml = `
 // Need to define these using Blockly.Blocks['block_name'] = { init: function() { ... } };
 // and the corresponding generators Blockly.JavaScript['block_name'] = function(block) { ... };
 
-Blockly.Blocks['event_app_starts'] = {
-  init: function() {
-    this.appendDummyInput()
-        .appendField("When App Starts");
-    this.appendStatementInput("DO")
-        .setCheck(null);
-    this.setColour("%{BKY_LOGIC_HUE}");
-    this.setTooltip("Triggered when the app is opened");
-    this.setHelpUrl("");
-    this.setDeletable(false); // Usually you can't delete the main event handlers
-  }
-};
+// REMOVE ALL BLOCK DEFINITIONS FROM HERE ...
+/*
+Blockly.Blocks['event_app_starts'] = { ... };
 
-Blockly.Blocks['event_screen_created'] = {
-  init: function() {
-    this.appendDummyInput()
-        .appendField("When Screen Created");
-    this.appendStatementInput("DO")
-        .setCheck(null);
-    this.setColour("%{BKY_LOGIC_HUE}");
-    this.setTooltip("Triggered when the screen is created");
-    this.setHelpUrl("");
-    this.setDeletable(false);
-  }
-};
+Blockly.Blocks['event_screen_created'] = { ... };
 
-Blockly.Blocks['event_button_clicked'] = {
-  init: function() {
-    // TODO: Add dropdown for selecting button ID
-    this.appendDummyInput()
-        .appendField("When Button")
-        .appendField(new Blockly.FieldDropdown(() => self.getButtonOptions()), "BUTTON_ID")
-        .appendField("Clicked");
-    this.appendStatementInput("DO")
-        .setCheck(null);
-    this.setPreviousStatement(true, null); // Allow stacking events? Maybe not.
-    this.setNextStatement(true, null); // Allow stacking events? Maybe not.
-    this.setColour("%{BKY_LOGIC_HUE}");
-    this.setTooltip("Triggered when a button is clicked");
-    this.setHelpUrl("");
-  }
-};
+Blockly.Blocks['event_button_clicked'] = { ... };
 
-Blockly.Blocks['component_set_property'] = {
-    init: function() {
-        // TODO: Add dropdowns for component ID and property name, and value input
-        this.appendValueInput("VALUE")
-            .setCheck(null)
-            .appendField("set")
-            .appendField(new Blockly.FieldDropdown(() => self.getComponentOptions()), "COMPONENT_ID")
-            .appendField(".")
-            .appendField(new Blockly.FieldDropdown(function() { 
-                // Check if the source block exists before getting field value
-                const sourceBlock = this.getSourceBlock();
-                if (!sourceBlock) return [['(N/A)', 'NONE']]; 
-                const compId = sourceBlock.getFieldValue('COMPONENT_ID');
-                return self.getPropertyOptions(compId);
-            }), "PROPERTY")
-            .appendField("to");
-        this.setPreviousStatement(true, null);
-        this.setNextStatement(true, null);
-        this.setColour("#4a6cd4");
-        this.setTooltip("Set a property of a component");
-        this.setHelpUrl("");
-        // Ensure property dropdown updates if component is changed
-        this.getField('COMPONENT_ID').setValidator(function(newValue) {
-            const propField = this.getSourceBlock().getField('PROPERTY');
-            // Re-initialize options - this might reset selection, needs refinement
-            // A better approach might involve storing/restoring selection if possible
-            propField.getOptions(false); // Force refresh of options
-            return newValue; // Accept the change
-        });
-    }
-};
+Blockly.Blocks['component_set_property'] = { ... };
 
-Blockly.Blocks['component_get_property'] = {
-  init: function() {
-    // TODO: Add dropdowns for component ID and property name
-    this.appendDummyInput()
-        .appendField("get")
-        .appendField(new Blockly.FieldDropdown(() => self.getComponentOptions()), "COMPONENT_ID")
-        .appendField(".")
-        .appendField(new Blockly.FieldDropdown(function() { 
-            // Check if the source block exists before getting field value
-            const sourceBlock = this.getSourceBlock();
-            if (!sourceBlock) return [['(N/A)', 'NONE']]; 
-            const compId = sourceBlock.getFieldValue('COMPONENT_ID');
-            return self.getPropertyOptions(compId);
-         }), "PROPERTY");
-    this.setOutput(true, null); // This block returns a value
-    this.setColour("#4a6cd4");
-    this.setTooltip("Get a property of a component");
-    this.setHelpUrl("");
-    // Ensure property dropdown updates if component is changed
-    this.getField('COMPONENT_ID').setValidator(function(newValue) {
-         // Check if the source block exists before getting field value
-         const sourceBlock = this.getSourceBlock();
-         if (!sourceBlock) return newValue; // Allow change if block not ready
-         const propField = sourceBlock.getField('PROPERTY');
-         if(propField) propField.getOptions(false); // Force refresh of options
-         return newValue; 
-    });
-  }
-};
+Blockly.Blocks['component_get_property'] = { ... };
 
-Blockly.Blocks['advanced_custom_code'] = {
-  init: function() {
-    this.appendDummyInput()
-        .appendField("Custom JS Code:");
-    // Input field for code - Use FieldMultilineInput
-    this.appendDummyInput().appendField(new Blockly.FieldMultilineInput("// Your code here"), "CUSTOM_CODE");
-    this.setPreviousStatement(true, null);
-    this.setNextStatement(true, null);
-    this.setColour("#757575");
-    this.setTooltip("Add custom JavaScript code (Use with caution!)");
-    this.setHelpUrl("");
-  }
-};
+Blockly.Blocks['advanced_custom_code'] = { ... };
+*/
+// ... TO HERE.
 
 // --- End Custom Block Definitions ---
 
@@ -380,12 +277,14 @@ class BlocksManager {
       // Event Blocks
       Blockly.Blocks['event_app_starts'] = {
         init: function() {
-          this.appendDummyInput().appendField("When App Starts");
-          this.appendStatementInput("DO").setCheck(null);
+          this.appendDummyInput()
+              .appendField("When App Starts");
+          this.appendStatementInput("DO")
+              .setCheck(null);
           this.setColour("%{BKY_LOGIC_HUE}");
           this.setTooltip("Triggered when the app is opened");
           this.setHelpUrl("");
-          this.setDeletable(false);
+          this.setDeletable(false); // Usually you can't delete the main event handlers
         }
       };
       Blockly.JavaScript['event_app_starts'] = function(block) {
@@ -397,8 +296,10 @@ class BlocksManager {
 
       Blockly.Blocks['event_screen_created'] = {
         init: function() {
-          this.appendDummyInput().appendField("When Screen Created");
-          this.appendStatementInput("DO").setCheck(null);
+          this.appendDummyInput()
+              .appendField("When Screen Created");
+          this.appendStatementInput("DO")
+              .setCheck(null);
           this.setColour("%{BKY_LOGIC_HUE}");
           this.setTooltip("Triggered when the screen is created");
           this.setHelpUrl("");
@@ -413,11 +314,15 @@ class BlocksManager {
 
       Blockly.Blocks['event_button_clicked'] = {
         init: function() {
+          // TODO: Add dropdown for selecting button ID
           this.appendDummyInput()
               .appendField("When Button")
               .appendField(new Blockly.FieldDropdown(() => self.getButtonOptions()), "BUTTON_ID")
               .appendField("Clicked");
-          this.appendStatementInput("DO").setCheck(null);
+          this.appendStatementInput("DO")
+              .setCheck(null);
+          this.setPreviousStatement(true, null); // Allow stacking events? Maybe not.
+          this.setNextStatement(true, null); // Allow stacking events? Maybe not.
           this.setColour("%{BKY_LOGIC_HUE}");
           this.setTooltip("Triggered when a button is clicked");
           this.setHelpUrl("");
@@ -434,6 +339,7 @@ class BlocksManager {
       // Component Blocks
       Blockly.Blocks['component_set_property'] = {
           init: function() {
+              // TODO: Add dropdowns for component ID and property name, and value input
               this.appendValueInput("VALUE")
                   .setCheck(null)
                   .appendField("set")
@@ -474,6 +380,7 @@ class BlocksManager {
 
       Blockly.Blocks['component_get_property'] = {
         init: function() {
+          // TODO: Add dropdowns for component ID and property name
           this.appendDummyInput()
               .appendField("get")
               .appendField(new Blockly.FieldDropdown(() => self.getComponentOptions()), "COMPONENT_ID")
@@ -489,7 +396,7 @@ class BlocksManager {
           this.setColour("#4a6cd4");
           this.setTooltip("Get a property of a component");
           this.setHelpUrl("");
-           // Ensure property dropdown updates if component is changed
+          // Ensure property dropdown updates if component is changed
           this.getField('COMPONENT_ID').setValidator(function(newValue) {
                // Check if the source block exists before getting field value
                const sourceBlock = this.getSourceBlock();
@@ -532,7 +439,8 @@ class BlocksManager {
       // Advanced Blocks
       Blockly.Blocks['advanced_custom_code'] = {
         init: function() {
-          this.appendDummyInput().appendField("Custom JS Code:");
+          this.appendDummyInput()
+              .appendField("Custom JS Code:");
           // Input field for code - Use FieldMultilineInput
           this.appendDummyInput().appendField(new Blockly.FieldMultilineInput("// Your code here"), "CUSTOM_CODE");
           this.setPreviousStatement(true, null);
@@ -575,6 +483,21 @@ class BlocksManager {
 
     // Inject Blockly
     try {
+      // --- Force initialization of JavaScript generators ---
+      if (typeof Blockly !== 'undefined' && typeof Blockly.JavaScript !== 'undefined') {
+        // Force register all event handlers
+        Object.keys(Blockly.Blocks).forEach(blockType => {
+          if (!Blockly.JavaScript[blockType]) {
+            console.warn(`Missing JavaScript generator for block type: ${blockType}`);
+            // Create a simple placeholder generator for missing types
+            Blockly.JavaScript[blockType] = function(block) {
+              return `// Missing generator for ${blockType}\n`;
+            };
+          }
+        });
+      }
+      // --- End Force initialization ---
+
       // --- Override default Blockly dialogs ---
       const dialogManager = this.editorView.dialogManager;
       Blockly.dialog.setPrompt((title, defaultValue, callback) => {
@@ -611,6 +534,10 @@ class BlocksManager {
         trashcan: true // Use Blockly's built-in trashcan
       });
       
+      // --- Initialize JavaScript Generator for this Workspace ---
+      Blockly.JavaScript.init(this.blocklyWorkspace);
+      // --- End Initialization ---
+
       // Load initial state (if any)
       this.loadBlocks();
 
@@ -627,10 +554,18 @@ class BlocksManager {
               event.type == Blockly.Events.BLOCK_DELETE ||
               event.type == Blockly.Events.BLOCK_CHANGE) {
              this.saveBlocks(); // Example: Autosave
+             
+             // --- Add code generation and update trigger ---
+             const generatedCode = this.getGeneratedCode();
+             if (generatedCode !== null && this.editorView.codeManager) {
+                 // We need a method in CodeManager to accept this update
+                 this.editorView.codeManager.updateCodeFromBlocks(generatedCode); 
+             }
+             // --- End added code ---
           }
       });
 
-      console.log("Blockly workspace initialized.");
+      // console.log("Blockly workspace initialized.");
 
     } catch (e) {
         console.error("Error initializing Blockly:", e);
@@ -678,7 +613,7 @@ class BlocksManager {
           try {
               const workspaceState = JSON.parse(savedState);
               Blockly.serialization.workspaces.load(workspaceState, this.blocklyWorkspace);
-              console.log(`Blocks loaded for screen ${screenId}`);
+              // console.log(`Blocks loaded for screen ${screenId}`);
           } catch (e) {
               console.error("Error loading Blockly workspace:", e);
               this.notificationManager.showNotification('Could not load saved blocks.', 'error');
@@ -690,7 +625,7 @@ class BlocksManager {
           // Optional: Load default blocks if no saved state exists
           // For example, add the 'When App Starts' block automatically
           this.loadDefaultBlocks();
-          console.log(`No saved blocks found for screen ${screenId}. Loaded defaults.`);
+          // console.log(`No saved blocks found for screen ${screenId}. Loaded defaults.`);
       }
   }
 
@@ -722,7 +657,7 @@ class BlocksManager {
         window.LoopTrap = 1000; // Basic infinite loop protection
         Blockly.JavaScript.INFINITE_LOOP_TRAP = 'if (--window.LoopTrap == 0) throw "Infinite loop.";\n';
         const code = Blockly.JavaScript.workspaceToCode(this.blocklyWorkspace);
-        console.log("--- Generated JavaScript Code ---\n", code); // Keep logging for debugging
+        // console.log("--- Generated JavaScript Code ---\n", code); // Keep logging for debugging
         return code;
     } catch (e) {
         console.error("Error generating code from Blockly workspace:", e);
@@ -732,67 +667,58 @@ class BlocksManager {
   }
   
   changeScreen(screenId) {
-    // Save current workspace state before switching
+    if (this.currentScreen && this.currentScreen.id === screenId) {
+      return; // No change
+    }
+    
+    // Save current workspace before switching
     this.saveBlocks();
-
-    // Update current screen reference
-    const newScreen = this.currentApp.screens.find(s => s.id === screenId);
+    
+    // Update current screen
+    const newScreen = this.editorView.currentApp.screens.find(s => s.id === screenId);
     if (newScreen) {
-        this.currentScreen = newScreen;
-        console.log(`Switched to screen: ${this.currentScreen.name}`);
-
-        // Clear and load the workspace for the new screen
-        if (this.blocklyWorkspace) {
-            this.blocklyWorkspace.clear(); // Clear the visual workspace
-            this.loadBlocks(); // Load the state for the new screen
-        } else {
-            // If workspace isn't initialized yet, it will be loaded when initialized
-            console.warn("Blockly workspace not ready during screen change.");
-        }
+      this.currentScreen = newScreen;
+      
+      if (this.blocklyWorkspace) {
+        this.blocklyWorkspace.clear(); // Clear the visual workspace
+        this.loadBlocks(); // Load the state for the new screen
+      } else {
+        // If workspace isn't ready yet (e.g., during initial load)
+        // console.warn("Blockly workspace not ready during screen change.");
+      }
     } else {
-        console.error(`Screen with ID ${screenId} not found.`);
+      console.error(`Screen with ID ${screenId} not found.`);
     }
   }
 
   // Method to update screen references when a screen is renamed
   updateScreenReferences(screenId, oldName, newName) {
-    // This method would need to be implemented based on how blocks reference other screens
-    // For example, it might update Intent blocks that reference screen names
-    // For now, we'll just log the fact that this method was called
-    console.log(`BlocksManager: Updating references for screen ${screenId} from ${oldName} to ${newName}`);
+    // This method needs to find blocks that reference the old screen name and update them
+    // e.g., blocks that navigate to a screen or get data from a screen
+    // console.log(`BlocksManager: Updating references for screen ${screenId} from ${oldName} to ${newName}`);
     
-    // Update any blocks that reference the old screen name
-    // The implementation would depend on how blocks are stored
-    // This might involve:
-    // 1. Finding all blocks that reference screen names (e.g., Intent blocks)
-    // 2. Updating the references in those blocks
-    // 3. Re-saving the blocks data
+    // Get XML of the workspace
+    const xml = Blockly.Xml.workspaceToDom(this.blocklyWorkspace);
     
-    // Example implementation (commented out since we don't know the exact structure):
-    /*
-    const blockData = this.getBlocksForScreen(screenId);
-    if (blockData) {
-      // Find all blocks that reference screen names (e.g., Intent blocks)
-      // Update references from oldName to newName
-      // Save the updated blocks data
-    }
-    
-    // Also update references in other screens' blocks
-    this.editorView.currentApp.screens.forEach(screen => {
-      if (screen.id !== screenId) {
-        const otherBlockData = this.getBlocksForScreen(screen.id);
-        if (otherBlockData) {
-          // Similar update logic for blocks in other screens
-        }
+    // Update references in the workspace
+    const blocks = this.blocklyWorkspace.getAllBlocks();
+    blocks.forEach(block => {
+      if (block.type === 'intent_goto' && block.getFieldValue('SCREEN') === oldName) {
+        block.setFieldValue('SCREEN', newName);
       }
     });
-    */
+    
+    // Save the updated workspace
+    Blockly.Xml.domToWorkspace(xml, this.blocklyWorkspace);
+    this.saveBlocks();
+    
+    // console.log(`Updated component references in blocks from ${oldId} to ${newId}`);
   }
 
   // Add a method to handle component ID changes
   handleComponentIdChange(oldId, newId) {
     // Get the workspace
-    const workspace = this.getWorkspace();
+    const workspace = this.blocklyWorkspace;
     if (!workspace) return;
     
     // Find all blocks that reference the old component ID
@@ -823,7 +749,7 @@ class BlocksManager {
     // If you have any cached data about components, update it too
     // ...
     
-    console.log(`Updated component references in blocks from ${oldId} to ${newId}`);
+    // console.log(`Updated component references in blocks from ${oldId} to ${newId}`);
   }
 
   // --- Old methods removed or commented out ---

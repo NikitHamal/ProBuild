@@ -10,7 +10,7 @@ class Navbar {
       <div class="container">
         <div class="flex justify-between items-center">
           <div class="logo">
-            <h1>Sketchware Pro</h1>
+            <h1>ProBuild</h1>
           </div>
           <div class="nav-links">
             <button id="theme-toggle" class="theme-toggle">

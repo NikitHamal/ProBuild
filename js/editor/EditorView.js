@@ -8,7 +8,7 @@ import BlocksManager from './blocks/BlocksManager.js';
 import CodeManager from './code/CodeManager.js';
 import RunManager from './utils/RunManager.js';
 import PreviewManager from './utils/PreviewManager.js';
-import BuildManager from './utils/BuildManager.js';
+import BuildWorkflowManager from './build/BuildWorkflowManager.js';
 
 class EditorView {
   constructor() {
@@ -66,7 +66,7 @@ class EditorView {
     this.codeManager = new CodeManager(this);
     this.runManager = new RunManager(this);
     this.previewManager = new PreviewManager(this);
-    this.buildManager = new BuildManager(this);
+    this.buildWorkflowManager = new BuildWorkflowManager(this);
     
     this.renderEditor();
     this.setupEventListeners();
@@ -255,7 +255,7 @@ class EditorView {
         if (tabName === 'design') {
           this.componentManager.setupDesignTabEvents();
         } else if (tabName === 'blocks') {
-          this.blocksManager.initBlocksEditor();
+          this.blocksManager.initializeBlockly();
         } else if (tabName === 'code') {
           this.codeManager.initCodeEditor();
         }
@@ -354,7 +354,7 @@ class EditorView {
     const buildAppBtn = document.querySelector('.build-app-btn');
     if (buildAppBtn) {
       buildAppBtn.addEventListener('click', () => {
-        this.buildManager.showBuildOptionsDialog();
+        this.buildWorkflowManager.startBuildProcess();
       });
     }
     
@@ -471,15 +471,12 @@ class EditorView {
   }
 
   requestPreviewUpdate() {
-    if (this.previewManager && this.previewManager.isPreviewWindowOpen()) {
-      this.previewManager.updatePreviewContent();
-    }
+    this.previewManager.updatePreview();
   }
 
   notifyCodePotentiallyDirty(componentId, propertyName) {
-    if (this.codeManager) {
-      this.codeManager.markFileAsDirty(componentId, propertyName);
-    }
+    // Potentially mark code as dirty or trigger analysis later
+    // console.log(`Component ${componentId} property ${propertyName} changed.`);
   }
 
   // --- Undo/Redo Implementation ---
@@ -490,51 +487,38 @@ class EditorView {
    * Example: this.editorView.executeCommand(new AddComponentCommand(...));
    */
   executeCommand(command) {
-    if (command.execute()) { // Execute the command
-      this.undoStack.push(command); // Add to undo stack
-      this.redoStack = []; // Clear redo stack
-      this.updateUndoRedoButtons(); // Update button states
-      this.requestPreviewUpdate(); // Update the design preview
-      // Potentially mark app as unsaved
-    } else {
-       console.warn("Command execution failed:", command);
-       this.notificationManager.showNotification('Action failed.', 'error');
-    }
+    this.undoStack.push(command);
+    this.redoStack = []; // Clear redo stack when a new command is executed
+    command.execute();
+    this.updateUndoRedoButtons();
   }
 
   undo() {
-    if (this.undoStack.length > 0) {
-      const command = this.undoStack.pop();
-      if (command.undo()) { // Execute the undo logic
-        this.redoStack.push(command); // Add to redo stack
-        this.updateUndoRedoButtons(); // Update button states
-        this.requestPreviewUpdate(); // Update the design preview
-         // Potentially mark app as unsaved
-      } else {
-         console.warn("Undo execution failed:", command);
-         this.notificationManager.showNotification('Undo failed.', 'error');
-         // Put command back? Or discard? Discarding for now.
-         this.updateUndoRedoButtons();
-      }
+    if (this.undoStack.length === 0) {
+      return;
     }
+    const command = this.undoStack.pop();
+    if (!command.undo()) {
+      // If undo fails, push it back onto the stack?
+      // Or notify the user?
+      // For now, let's assume undo can fail silently but log it
+    } else {
+      this.redoStack.push(command);
+    }
+    this.updateUndoRedoButtons();
   }
 
   redo() {
-    if (this.redoStack.length > 0) {
-      const command = this.redoStack.pop();
-       // Use execute method for redo
-      if (command.execute()) { 
-        this.undoStack.push(command); // Add back to undo stack
-        this.updateUndoRedoButtons(); // Update button states
-        this.requestPreviewUpdate(); // Update the design preview
-         // Potentially mark app as unsaved
-      } else {
-           console.warn("Redo execution failed:", command);
-           this.notificationManager.showNotification('Redo failed.', 'error');
-           // Put command back? Or discard? Discarding for now.
-           this.updateUndoRedoButtons();
-      }
+    if (this.redoStack.length === 0) {
+      return;
     }
+    const command = this.redoStack.pop();
+    if (!command.execute()) {
+      // If redo fails, push it back onto the stack?
+    } else {
+      this.undoStack.push(command);
+    }
+    this.updateUndoRedoButtons();
   }
 
   updateUndoRedoButtons() {

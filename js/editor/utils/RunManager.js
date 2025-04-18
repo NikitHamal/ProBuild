@@ -307,7 +307,7 @@ Build Time:     ${buildTime} seconds
 Timestamp:      ${timestamp}
 File Size:      ${fileSize} MB
 Build Type:     Debug
-Generator:      Sketchware Pro Web IDE
+Generator:      ProBuild Web IDE
 
 ---------------------------------------------------------------
 COMPONENTS

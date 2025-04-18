@@ -123,6 +123,25 @@ class PreviewManager {
     }
     // --- End Component Generation ---
 
+    // --- Get Generated Code from Blocks --- 
+    let generatedJs = '// No blocks code generated';
+    try {
+        if (this.editorView.blocksManager) {
+            const code = this.editorView.blocksManager.getGeneratedCode();
+            if (code) {
+                generatedJs = `
+// --- Start Generated Code --- 
+${code}
+// --- End Generated Code --- 
+`;
+            }
+        }
+    } catch (err) {
+        console.error("Error getting generated code for preview:", err);
+        generatedJs = '// Error loading blocks code.';
+    }
+    // --- End Get Generated Code ---
+
     // Create complete HTML for the preview window
     return `<!DOCTYPE html>
 <html lang="en">
@@ -388,300 +407,323 @@ class PreviewManager {
       z-index: 1000;
       font-size: 14px;
     }
+    
+    /* Basic component styles - to be expanded */
+    .component-linearlayout-h, .component-linearlayout-v {
+        display: flex;
+        width: 100%; /* Default for now */
+    }
+    .component-linearlayout-h { flex-direction: row; }
+    .component-linearlayout-v { flex-direction: column; }
+    
+    .component-textview { 
+        white-space: pre-wrap; /* Respect newlines */
+        word-wrap: break-word; /* Wrap long words */
+    }
+    
+    .component-button {
+        /* Use accent color defined above */
+        background-color: ${app.customColors?.colorAccent || '#2196F3'};
+        color: white;
+        padding: 10px 16px;
+        border: none;
+        border-radius: 4px;
+        font-weight: 500;
+        cursor: pointer;
+        text-align: center;
+    }
+    
+    .component-edittext {
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        width: 100%; /* Default */
+    }
+    
+    .component-imageview {
+        display: block; /* Prevents extra space below */
+        max-width: 100%;
+        height: auto;
+    }
+    
+    .component-checkbox, .component-radiobutton, .component-switch {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px; /* Basic spacing */
+    }
+    .component-checkbox input, .component-radiobutton input {
+         margin-right: 5px;
+    }
+
+    /* Add more component styles here */
+
   </style>
 </head>
 <body>
   <div class="android-device">
     <div class="device-screen">
       <div class="status-bar">
-        <div class="status-time">${currentTime}</div>
+        <span>${currentTime}</span>
         <div class="status-bar-icons">
           <i class="material-icons">signal_cellular_alt</i>
           <i class="material-icons">wifi</i>
           <i class="material-icons">battery_full</i>
         </div>
       </div>
-      
       <div class="app-bar">
-        <i class="material-icons">menu</i>
-        ${currentScreen?.name || app.name}
+        <i class="material-icons">menu</i> ${currentScreen?.name || app.name}
       </div>
-      
       <div class="app-content">
         ${componentsHtml}
       </div>
-      
       <div class="navigation-bar">
-        <i class="material-icons nav-button">arrow_back</i>
-        <i class="material-icons nav-button home">home</i>
-        <i class="material-icons nav-button">apps</i>
+        <i class="material-icons nav-button">arrow_back_ios</i>
+        <i class="material-icons nav-button home">radio_button_unchecked</i>
+        <i class="material-icons nav-button">check_box_outline_blank</i>
       </div>
     </div>
   </div>
   
+  <!-- Inject the generated JavaScript -->
   <script>
-    // Add interactivity to the preview
-    document.addEventListener('DOMContentLoaded', () => {
-      // Make buttons show toast messages when clicked
-      const buttons = document.querySelectorAll('.button');
-      buttons.forEach(button => {
-        button.addEventListener('click', () => {
-          showToast(button.textContent + ' clicked');
-        });
-      });
-      
-      // Make menu button show toast
-      document.querySelector('.app-bar i').addEventListener('click', () => {
-        showToast('Menu opened');
-      });
-      
-      // Make navigation buttons show toast
-      document.querySelectorAll('.nav-button').forEach(navButton => {
-        navButton.addEventListener('click', () => {
-          const action = navButton.classList.contains('home') ? 'Home' : 
-                        (navButton.textContent === 'arrow_back' ? 'Back' : 'Recent Apps');
-          showToast(action + ' button pressed');
-        });
-      });
-      
-      // Show initial toast
-      setTimeout(() => {
-        showToast('${app.name} preview loaded');
-      }, 500);
-    });
+    // Helper function for toasts (if not provided by blocks code)
+    function showToast(message, duration = 3000) {
+        console.log("Toast:", message); // Basic console log toast
+        const toast = document.createElement('div');
+        toast.style.position = 'fixed';
+        toast.style.bottom = '20px';
+        toast.style.left = '50%';
+        toast.style.transform = 'translateX(-50%)';
+        toast.style.backgroundColor = 'rgba(0,0,0,0.7)';
+        toast.style.color = 'white';
+        toast.style.padding = '10px 20px';
+        toast.style.borderRadius = '5px';
+        toast.style.zIndex = '1000';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => { document.body.removeChild(toast); }, duration);
+    }
     
-    function showToast(message) {
-      // Remove existing toast if any
-      const existingToast = document.querySelector('.toast');
-      if (existingToast) {
-        existingToast.remove();
-      }
-      
-      // Create and add new toast
-      const toast = document.createElement('div');
-      toast.className = 'toast';
-      toast.textContent = message;
-      document.body.appendChild(toast);
-      
-      // Auto-remove toast after 3 seconds
-      setTimeout(() => {
-        toast.remove();
-      }, 3000);
+    // Add basic component interaction helpers (can be called by generated code)
+    const componentApi = {
+        setText: (id, text) => {
+            const element = document.getElementById(id);
+            if (element) { 
+                if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') element.value = text;
+                else element.textContent = text; 
+            }
+        },
+        getText: (id) => {
+            const element = document.getElementById(id);
+            if (element) { 
+                return element.tagName === 'INPUT' || element.tagName === 'TEXTAREA' ? element.value : element.textContent;
+            } 
+            return '';
+        },
+        // Add more API functions here (e.g., setVisibility, setEnabled, etc.)
+    };
+
+    // --- Sketchware API Runtime Environment ---
+    const sketchware_events = {
+        onAppStart: (callback) => {
+            // Execute app start event immediately
+            if (callback) setTimeout(callback, 100);
+        },
+        onScreenCreated: (callback) => {
+            // Execute screen created event after DOM is ready
+            if (callback) document.addEventListener('DOMContentLoaded', callback);
+        },
+        onButtonClick: (buttonId, callback) => {
+            // Add click listener to the button when DOM is ready
+            if (!buttonId || !callback) return;
+    document.addEventListener('DOMContentLoaded', () => {
+                const button = document.getElementById(buttonId);
+                if (button) button.addEventListener('click', callback);
+            });
+        }
+    };
+    
+    // Helper functions for component properties
+    function sketchware_setProp(componentId, propName, value) {
+        if (!componentId || !propName) return;
+        const element = document.getElementById(componentId);
+        if (!element) {
+            console.warn("Component not found: " + componentId);
+            return;
+        }
+        
+        switch(propName) {
+            case 'text':
+                if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') 
+                    element.value = value;
+                else 
+                    element.textContent = value;
+                break;
+            case 'backgroundColor':
+                element.style.backgroundColor = value;
+                break;
+            case 'textColor':
+                element.style.color = value;
+                break;
+            case 'visibility':
+                element.style.display = value === 'gone' ? 'none' : 
+                                       (value === 'invisible' ? 'hidden' : 'block');
+                break;
+            case 'enabled':
+                if (element.tagName === 'BUTTON' || element.tagName === 'INPUT')
+                    element.disabled = !value;
+                break;
+            // Add more property handlers as needed
+            default:
+                console.warn("Property not implemented: " + propName);
+        }
+    }
+    
+    function sketchware_getProp(componentId, propName) {
+        if (!componentId || !propName) return null;
+        const element = document.getElementById(componentId);
+        if (!element) {
+            console.warn("Component not found: " + componentId);
+            return null;
+        }
+        
+        switch(propName) {
+            case 'text':
+                return element.tagName === 'INPUT' || element.tagName === 'TEXTAREA' ? 
+                    element.value : element.textContent;
+            case 'backgroundColor':
+                return getComputedStyle(element).backgroundColor;
+            case 'textColor':
+                return getComputedStyle(element).color;
+            case 'visibility':
+                const display = getComputedStyle(element).display;
+                return display === 'none' ? 'gone' : 'visible';
+            case 'enabled':
+                return !(element.disabled);
+            // Add more property handlers as needed
+            default:
+                console.warn("Property getter not implemented: " + propName);
+                return null;
+        }
+    }
+    
+    function sketchware_showToast(message) {
+        showToast(message);
+    }
+    // --- End Sketchware API ---
+
+    // Execute the generated code within a try-catch block
+    try {
+      ${generatedJs}
+    } catch (e) {
+      console.error("Error executing generated code:", e);
+      alert("Error in generated code: " + e.message);
     }
   </script>
 </body>
 </html>`;
   }
   
-  generateComponentHtml(component, componentMap) { // Added componentMap
-    if (!component || !component.type) return '';
+  generateComponentHtml(component, componentMap) {
+    if (!component) return '';
     
-    // Ensure properties exist and provide defaults
     const props = component.properties || {};
+    let style = '';
+    let classes = `component component-${component.type}`;
+    let childrenHtml = '';
+    let attributes = `id="${component.id}"`; // Crucial for targeting with JS
+    let elementContent = '';
 
-    // --- Style Generation ---
-    // More accurately reflect common properties
-    let style = `
-      position: absolute;
-      left: ${props.x || 0}px;
-      top: ${props.y || 0}px;
-      width: ${props.width ? (props.width === 'match_parent' ? '100%' : (props.width === 'wrap_content' ? 'auto' : props.width + 'px')) : 'auto'};
-      height: ${props.height ? (props.height === 'match_parent' ? '100%' : (props.height === 'wrap_content' ? 'auto' : props.height + 'px')) : 'auto'};
-      margin: ${props.margin || 0}px; /* Use component margin */
-      padding: ${props.padding || 0}px; /* Use component padding */
-      background-color: ${props.bgColor || 'transparent'};
-      border-radius: ${props.borderRadius || '0px'};
-      border: ${props.borderWidth || 0}px solid ${props.borderColor || 'transparent'};
-      box-shadow: ${props.boxShadow || 'none'};
-      font-size: ${props.textSize || 14}px;
-      color: ${props.textColor || '#212121'}; /* Default to dark text */
-      text-align: ${props.textAlign || 'left'};
-      /* Add more style properties as needed */
-      ${props.weight ? `font-weight: ${props.weight};` : ''}
-      ${props.visibility === 'gone' ? 'display: none;' : (props.visibility === 'invisible' ? 'visibility: hidden;' : '')}
-    `;
+    // 1. Generate Style String from Properties
+    // Layout Params (Width/Height)
+    const layoutWidth = props.layout_width || 'wrap_content';
+    const layoutHeight = props.layout_height || 'wrap_content';
+    if (layoutWidth === 'match_parent') style += 'width: 100%;';
+    else if (layoutWidth === 'wrap_content') style += 'width: auto; display: inline-block;'; // Or use flexbox sizing
+    else if (layoutWidth) style += `width: ${layoutWidth}px;`; // Assuming numeric value is px
 
-    // --- Handle Layout Specifics ---
-    // Note: This is a basic interpretation. Real Android layout is complex.
-    // For now, absolute positioning is removed in favor of flow layout + specific layout styles.
-    // Add specific layout properties if needed later (e.g., gravity, weight within LinearLayout)
+    if (layoutHeight === 'match_parent') style += 'height: 100%;'; // Needs parent context
+    else if (layoutHeight === 'wrap_content') style += 'height: auto;';
+    else if (layoutHeight) style += `height: ${layoutHeight}px;`;
 
-    // --- Generate HTML based on type ---
-    let innerHtml = '';
-    let baseClass = 'component'; // Base class for all
-
-    switch (component.type) {
-      case 'button':
-        baseClass = 'button component'; // Use existing button style + base
-        innerHtml = props.text || 'Button';
-        // Apply specific button styles, prioritizing properties
-        const buttonBgColor = (props.bgColor && props.bgColor !== 'transparent') ? props.bgColor : (this.editorView.currentApp.customColors?.colorAccent || '#2196F3');
-        const buttonTextColor = props.textColor || 'white'; // Default to white if not specified
-        style += `background-color: ${buttonBgColor}; color: ${buttonTextColor}; border: none; text-transform: uppercase; font-weight: 500; box-shadow: 0 2px 4px rgba(0,0,0,0.2); display: inline-block;`;
-        return `<button class="${baseClass}" style="${style}">${innerHtml}</button>`;
-
-      case 'textview':
-        baseClass = 'text-view component';
-        if (props.textSize && props.textSize > 20) {
-          baseClass += ' heading'; // Reuse existing heading style if applicable
-        } else if (props.textSize && props.textSize > 16) {
-          baseClass += ' subheading'; // Reuse existing subheading style
-        }
-        innerHtml = (props.text || 'Text').replace(/\n/g, '<br>'); // Handle newlines
-        style += `line-height: 1.5; white-space: pre-wrap; word-wrap: break-word;`;
-        return `<div class="${baseClass}" style="${style}">${innerHtml}</div>`;
-
-      case 'edittext':
-        baseClass = 'edit-text component';
-        // Use existing EditText styles + component styles
-        style += `border: none; border-bottom: 1px solid #BDBDBD; padding: 12px 0 8px 0; width: 100%; background-color: transparent;`; // Ensure width is handled
-        // Add focus style if needed via JS or keep simple for preview
-        return `<input type="text" class="${baseClass}" style="${style}" placeholder="${props.hint || 'Enter text here'}" value="${props.text || ''}">`;
-
-      case 'imageview':
-        baseClass = 'image-view component';
-        // Use existing ImageView styles + component styles
-        // Basic placeholder, actual image src would need handling
-        innerHtml = `<i class="material-icons" style="font-size: ${Math.min(parseInt(props.width || 64), parseInt(props.height || 64))}px; color: #9E9E9E;">image</i>`;
-        style += `display: flex; align-items: center; justify-content: center; overflow: hidden; background-color: #E0E0E0;`;
-        // Add src handling if image property exists: style += `background-image: url(${props.src}); background-size: cover; background-position: center;`
-        return `<div class="${baseClass}" style="${style}">${innerHtml}</div>`;
-
-      case 'checkbox':
-        baseClass = 'checkbox component';
-        innerHtml = `<i class="material-icons" style="margin-right: 8px; color: ${this.editorView.currentApp.customColors?.colorAccent || '#2196F3'};">${props.checked ? 'check_box' : 'check_box_outline_blank'}</i>${props.text || 'Checkbox'}`;
-        style += `display: flex; align-items: center;`;
-        return `<div class="${baseClass}" style="${style}">${innerHtml}</div>`;
-
-      case 'radiobutton':
-        baseClass = 'radio-button component';
-        innerHtml = `<i class="material-icons" style="margin-right: 8px; color: ${this.editorView.currentApp.customColors?.colorAccent || '#2196F3'};">${props.checked ? 'radio_button_checked' : 'radio_button_unchecked'}</i>${props.text || 'Radio Button'}`;
-        style += `display: flex; align-items: center;`;
-        return `<div class="${baseClass}" style="${style}">${innerHtml}</div>`;
-
-      case 'spinner':
-        baseClass = 'spinner component';
-        // Use existing spinner style + component style
-        style += `width: 100%; padding: 12px 0; border-bottom: 1px solid #BDBDBD;`;
-        innerHtml = `${props.text || 'Dropdown'} <i class="material-icons" style="font-size: 16px; vertical-align: middle;">arrow_drop_down</i>`;
-        return `<div class="${baseClass}" style="${style}">${innerHtml}</div>`;
-
-      case 'listview':
-        baseClass = 'list-view component';
-        // Use existing listview styles + component style
-        innerHtml = ''; // Children would be specific list items, complex to simulate accurately
-        for (let i = 0; i < 3; i++) { // Basic placeholder
-          innerHtml += `<div class="list-item" style="padding: 16px; border-bottom: 1px solid #EEEEEE;">List Item ${i + 1}</div>`;
-        }
-        style += `background: white; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); overflow: hidden; width: 100%;`;
-        return `<div class="${baseClass}" style="${style}">${innerHtml}</div>`;
-
-      case 'cardview':
-        baseClass = 'card-view component';
-        // Use existing cardview styles + component style
-        // Render children inside the card content area
-        let cardChildrenHtml = component.children ? component.children.map(childId => {
-            const childComp = componentMap.get(childId); // Use map for efficiency
-            return this.generateComponentHtml(childComp, componentMap);
-          }).join('') : '';
-        innerHtml = `<div class="card-content" style="padding: ${props.cardPadding || 16}px;">${cardChildrenHtml || this.generateDemoComponents()}</div>`; // Fallback demo if no children
-        style += `background: white; border-radius: ${props.cardCornerRadius || 4}px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; width: 100%;`;
-        return `<div class="${baseClass}" style="${style}">${innerHtml}</div>`;
-
-      case 'linearlayout-v':
-      case 'linearlayout-h':
-        baseClass = 'linear-layout component';
-        const direction = component.type === 'linearlayout-h' ? 'row' : 'column';
-        style += `display: flex; flex-direction: ${direction};`;
-        if (direction === 'row') {
-          style += `align-items: ${props.alignItems || 'flex-start'}; flex-wrap: wrap; gap: 8px;`; // Basic horizontal layout
-        } else {
-           style += `align-items: ${props.alignItems || 'stretch'};`; // Basic vertical layout
-        }
-        // Render children
-        innerHtml = component.children ? component.children.map(childId => {
-            const childComp = componentMap.get(childId); // Use map
-            return this.generateComponentHtml(childComp, componentMap);
-          }).join('') : '';
-        return `<div class="${baseClass}" style="${style}">${innerHtml}</div>`;
-
-      // Add cases for ScrollView (H/V) - needs overflow styles
-      case 'scrollview-v':
-        baseClass = 'scrollview-v component';
-        style += `overflow-y: auto; overflow-x: hidden; height: ${props.height ? props.height + 'px' : '200px'};`; // Default height or specified
-         innerHtml = component.children ? component.children.map(childId => {
-            const childComp = componentMap.get(childId);
-            // Wrap children in a container div if there's more than one, or if the child isn't a layout itself.
-            // Note: ScrollView in Android expects *one* direct child, usually a LinearLayout.
-            return this.generateComponentHtml(childComp, componentMap);
-          }).join('') : '';
-         // Simple approach: just render children sequentially inside. Proper Android behavior needs one child layout.
-        return `<div class="${baseClass}" style="${style}">${innerHtml}</div>`;
-
-      case 'scrollview-h':
-         baseClass = 'scrollview-h component';
-         style += `overflow-x: auto; overflow-y: hidden; width: ${props.width ? props.width + 'px' : '100%'}; display: flex; flex-direction: row;`; // Use flex for horizontal scroll
-         innerHtml = component.children ? component.children.map(childId => {
-            const childComp = componentMap.get(childId);
-             // Children should likely have fixed widths or wrap_content for horizontal scrolling
-             let childStyle = 'flex-shrink: 0; '; // Prevent shrinking
-             const childHtml = this.generateComponentHtml(childComp, componentMap);
-             // A bit hacky: inject style into the child element string if possible
-             if (childHtml.startsWith('<div')) {
-                return childHtml.replace('<div', `<div style="${childStyle}"`);
-             } else if (childHtml.startsWith('<button')) {
-                 return childHtml.replace('<button', `<button style="${childStyle}"`);
-             } // etc. for other tags
-             return childHtml; // Return as is if cannot inject style easily
-          }).join('') : '';
-        return `<div class="${baseClass}" style="${style}">${innerHtml}</div>`;
-
-      // Add other component types (Switch, ProgressBar, SeekBar, WebView etc.) here
-      // For complex ones like WebView, just a placeholder might be sufficient for preview
-      case 'webview':
-          baseClass = 'webview component';
-          style += 'border: 1px dashed #ccc; background-color: #f0f0f0; display: flex; align-items: center; justify-content: center; text-align: center; color: #666;';
-          innerHtml = 'WebView Placeholder<br>(Content loads in actual app)';
-          return `<div class="${baseClass}" style="${style}">${innerHtml}</div>`;
-
-       case 'switch':
-            baseClass = 'switch component';
-            // Basic visual representation
-            const switchThumbColor = props.checked ? (this.editorView.currentApp.customColors?.colorAccent || '#2196F3') : '#bdbdbd';
-            const switchTrackColor = props.checked ? (this.editorView.currentApp.customColors?.colorAccent || '#2196F3') + '80' : '#ccc'; // Semi-transparent accent or grey
-            innerHtml = `
-                <div style="display: flex; align-items: center;">
-                    <span style="margin-right: 8px;">${props.text || 'Switch'}</span>
-                    <div style="width: 36px; height: 20px; background-color: ${switchTrackColor}; border-radius: 10px; position: relative; cursor: pointer;">
-                        <div style="width: 16px; height: 16px; background-color: ${switchThumbColor}; border-radius: 50%; position: absolute; top: 2px; left: ${props.checked ? '18px' : '2px'}; transition: left 0.2s;"></div>
-                    </div>
-                </div>`;
-            return `<div class="${baseClass}" style="${style}">${innerHtml}</div>`;
-
-        case 'progressbar':
-             baseClass = 'progressbar component';
-             const progress = props.progress || 50; // Default 50%
-             const progressBg = this.editorView.currentApp.customColors?.colorAccent || '#2196F3';
-             style += 'height: 4px; background-color: #e0e0e0; border-radius: 2px; overflow: hidden; width: 100%;';
-             innerHtml = `<div style="width: ${progress}%; height: 100%; background-color: ${progressBg};"></div>`;
-             return `<div class="${baseClass}" style="${style}">${innerHtml}</div>`;
-
-       case 'seekbar':
-             baseClass = 'seekbar component';
-             const seekProgress = props.progress || 30; // Default 30%
-             const seekBg = this.editorView.currentApp.customColors?.colorAccent || '#2196F3';
-             style += 'width: 100%; height: 20px; display: flex; align-items: center; cursor: pointer;';
-             innerHtml = `
-                <div style="flex-grow: 1; height: 4px; background-color: #e0e0e0; border-radius: 2px; position: relative;">
-                    <div style="position: absolute; top: 0; left: 0; height: 100%; width: ${seekProgress}%; background-color: ${seekBg}; border-radius: 2px;"></div>
-                    <div style="position: absolute; top: -6px; left: ${seekProgress}%; transform: translateX(-50%); width: 16px; height: 16px; background-color: ${seekBg}; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                </div>`;
-             return `<div class="${baseClass}" style="${style}">${innerHtml}</div>`;
-
-      default:
-        // Fallback for unknown types
-        return `<div class="component" style="${style}">Unsupported Component: ${component.type}</div>`;
+    // Margins (Example - needs parsing of margin property)
+    if (props.layout_margin) { 
+        const margin = parseInt(props.layout_margin) || 0;
+        style += `margin: ${margin}px;`; 
     }
+    // Padding (Example)
+    if (props.padding) { 
+        const padding = parseInt(props.padding) || 0;
+        style += `padding: ${padding}px;`; 
+    }
+    
+    // Background Color
+    if (props.backgroundColor) style += `background-color: ${props.backgroundColor};`;
+    
+    // Text Properties (for relevant components)
+    if (props.text) elementContent = props.text; // Default content is text prop
+    if (props.textColor) style += `color: ${props.textColor};`;
+    if (props.textSize) style += `font-size: ${props.textSize}px;`; // Assuming px
+    // Add alignment, style (bold, italic) later
+
+    // 2. Handle Children (if layout component)
+    if (component.children && component.children.length > 0) {
+        childrenHtml = component.children
+            .map(childId => componentMap.get(childId))
+            .filter(child => child) // Filter out potential undefined children
+            .map(child => this.generateComponentHtml(child, componentMap))
+            .join('');
+
+        // Apply layout-specific styles (Flexbox for LinearLayout)
+        if (component.type === 'linearlayout-v') {
+            style += 'display: flex; flex-direction: column;';
+            // Add gravity/alignment later
+        }
+        if (component.type === 'linearlayout-h') {
+            style += 'display: flex; flex-direction: row;';
+             // Add gravity/alignment later
+        }
+    }
+    
+    // 3. Generate Specific Element HTML
+    let html = '';
+    switch (component.type) {
+      case 'linearlayout-h':
+      case 'linearlayout-v':
+      case 'scrollview-h': // Basic ScrollView - needs overflow style
+      case 'scrollview-v':
+          style += component.type.includes('scroll') ? ' overflow: auto;': '';
+          html = `<div ${attributes} class="${classes}" style="${style}">${childrenHtml}</div>`;
+          break;
+      case 'textview':
+          html = `<div ${attributes} class="${classes}" style="${style}">${elementContent}</div>`;
+          break;
+      case 'button':
+          // Button uses <button> tag
+          html = `<button ${attributes} class="${classes}" style="${style}">${elementContent}</button>`;
+          break;
+      case 'edittext':
+          // EditText uses <input> or <textarea>
+          attributes += ` placeholder="${props.hint || ''}"`;
+          html = `<input type="text" ${attributes} class="${classes}" style="${style}" value="${elementContent}">`;
+          // Add multiline support later (<textarea>)
+          break;
+      case 'imageview':
+          // ImageView uses <img> tag
+          attributes += ` src="${props.src || ''}" alt="${props.contentDescription || 'Image'}"`;
+          html = `<img ${attributes} class="${classes}" style="${style}">`;
+          break;
+      case 'checkbox':
+          attributes += props.checked ? ' checked' : '';
+          html = `<div class="${classes}" style="${style}"><label><input type="checkbox" ${attributes}> ${elementContent}</label></div>`;
+          break;
+      // Add other component types (RadioButton, Switch, ProgressBar, Spinner, etc.) here
+      default:
+          html = `<div ${attributes} class="${classes} component-unknown" style="${style}">[${component.type}] ${elementContent}${childrenHtml}</div>`;
+    }
+
+    return html;
   }
   
   generateDemoComponents() {
