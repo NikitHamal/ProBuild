@@ -1,0 +1,297 @@
+/* Build manager styles */
+
+.build-option {
+  margin: 16px 0;
+  padding: 16px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.build-option:hover {
+  background: #e9e9e9;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.build-option-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.build-option-header i {
+  margin-right: 8px;
+}
+
+.build-option-header div {
+  font-weight: 600;
+}
+
+.github-info {
+  margin: 24px 0;
+  padding: 16px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.status-box {
+  padding: 12px;
+  background: #FFF8E1;
+  border-left: 4px solid #FFC107;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+.build-steps {
+  margin-top: 16px;
+}
+
+.step {
+  margin-bottom: 8px;
+}
+
+.step-status {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  transition: all 0.3s ease;
+}
+
+.step-icon {
+  margin-right: 8px;
+  transition: all 0.3s ease;
+}
+
+.dialog-btn.build-debug-btn,
+.dialog-btn.build-release-btn,
+.dialog-btn.build-signed-btn {
+  margin-top: 8px;
+  background-color: #4CAF50;
+  color: white;
+}
+
+.dialog-btn.build-debug-btn:hover,
+.dialog-btn.build-release-btn:hover,
+.dialog-btn.build-signed-btn:hover {
+  background-color: #43A047;
+}
+
+.dialog-btn.open-github-btn {
+  background-color: #24292e;
+  color: white;
+}
+
+.dialog-btn.open-github-btn:hover {
+  background-color: #333;
+}
+
+/* Animation for build process */
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+.step[data-step="current"] .step-status {
+  animation: pulse 1.5s infinite;
+}
+
+/* Build Progress Dialog */
+.build-progress-dialog {
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.build-progress-dialog .dialog-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+}
+
+.status-badge.pending {
+  background-color: #FFC107;
+}
+
+.status-badge.running {
+  background-color: #2196F3;
+}
+
+.status-badge.success {
+  background-color: #4CAF50;
+}
+
+.status-badge.failed {
+  background-color: #F44336;
+}
+
+.status-badge.cancelled {
+  background-color: #9E9E9E;
+}
+
+.status-badge.neutral {
+  background-color: #607D8B;
+}
+
+.status-time {
+  font-size: 12px;
+  color: #757575;
+}
+
+.progress-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 8px;
+  background-color: #E0E0E0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-right: 8px;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #4CAF50;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.progress-label {
+  font-size: 12px;
+  color: #757575;
+  min-width: 40px;
+  text-align: right;
+}
+
+.status-details {
+  padding: 16px;
+  background-color: #F5F5F5;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.status-title {
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.status-message {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.build-log-container {
+  background-color: #263238;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 16px;
+}
+
+.build-log-title {
+  background-color: #37474F;
+  color: white;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.build-log {
+  color: #ECEFF1;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 12px;
+  max-height: 200px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+
+.log-step {
+  display: flex;
+  margin-bottom: 4px;
+  padding: 4px 0;
+  align-items: flex-start;
+}
+
+.log-step span {
+  margin-right: 8px;
+}
+
+.log-step .step-name {
+  flex: 1;
+}
+
+.log-step .step-status {
+  font-size: 11px;
+  text-transform: uppercase;
+  padding: 2px 4px;
+  border-radius: 2px;
+}
+
+.log-step.success .step-status {
+  color: #4CAF50;
+}
+
+.log-step.failure .step-status {
+  color: #F44336;
+}
+
+.log-step.skipped .step-status {
+  color: #9E9E9E;
+}
+
+.log-step.in_progress .step-status {
+  color: #2196F3;
+}
+
+.log-error {
+  color: #FF5252;
+  margin-top: 8px;
+}
+
+.dialog-btn.cancel-build-btn {
+  background-color: #F44336;
+  color: white;
+}
+
+.dialog-btn.cancel-build-btn:hover {
+  background-color: #E53935;
+}
+
+.dialog-btn.view-on-github-btn {
+  background-color: #24292e;
+  color: white;
+  display: flex;
+  align-items: center;
+}
+
+.dialog-btn.view-on-github-btn i {
+  margin-right: 4px;
+}
+
+.dialog-btn.view-on-github-btn:hover {
+  background-color: #333;
+} 

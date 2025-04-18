@@ -16,6 +16,74 @@ class ComponentManager {
     this.onComponentSelected = null; // New callback that can be set by EditorView
   }
 
+  initComponentsPanel() {
+    // Initialize drag and drop functionality for components
+    this.initDragAndDrop();
+    
+    // Initialize click handler for the preview container
+    const previewContainer = document.getElementById('preview-container');
+    if (previewContainer) {
+      previewContainer.addEventListener('click', (e) => {
+        // Only handle direct clicks on the container (not bubbled)
+        if (e.target === previewContainer) {
+          // Deselect any selected component
+          this.deselectComponent();
+          
+          // Hide property panel if visible
+          if (this.editorView.propertyPanelVisible) {
+            this.editorView.propertyPanel.hidePropertyPanel();
+          }
+        }
+      });
+    }
+    
+    // Render the components preview
+    this.renderComponentsPreview();
+  }
+  
+  initDragAndDrop() {
+    // Get all draggable components from the sidebar
+    const componentItems = document.querySelectorAll('.component-item[draggable="true"]');
+    const previewContainer = document.getElementById('preview-container');
+    
+    if (!previewContainer) return;
+    
+    // Add event listeners for drag operations on component items
+    componentItems.forEach(item => {
+      item.addEventListener('dragstart', (e) => {
+        // Store the component type in dataTransfer
+        e.dataTransfer.setData('text/plain', item.dataset.type);
+        // Set a custom drag image if needed
+        const dragIcon = document.createElement('div');
+        dragIcon.textContent = item.querySelector('.component-name').textContent;
+        dragIcon.className = 'drag-preview';
+        document.body.appendChild(dragIcon);
+        e.dataTransfer.setDragImage(dragIcon, 0, 0);
+        setTimeout(() => document.body.removeChild(dragIcon), 0);
+      });
+    });
+    
+    // Add event listeners for the preview container
+    previewContainer.addEventListener('dragover', (e) => {
+      e.preventDefault(); // Allow drop
+      e.dataTransfer.dropEffect = 'copy';
+    });
+    
+    previewContainer.addEventListener('drop', (e) => {
+      e.preventDefault();
+      const componentType = e.dataTransfer.getData('text/plain');
+      if (componentType) {
+        // Calculate the position relative to the preview container
+        const rect = previewContainer.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        // Add the component at the dropped position
+        this.addComponentToScreen(componentType, x, y);
+      }
+    });
+  }
+
   handleKeyDown(e) {
     if (!this.editorView.selectedComponent) return; 
     
@@ -668,22 +736,12 @@ class ComponentManager {
   }
 
   deselectComponent() {
-    const selectedElement = document.querySelector('.preview-component.selected');
-    if (selectedElement) {
-      selectedElement.classList.remove('selected');
+    // Deselect the currently selected component
+    const prevSelectedElement = document.querySelector('.preview-component.selected');
+    if (prevSelectedElement) {
+      prevSelectedElement.classList.remove('selected');
     }
-    
     this.editorView.selectedComponent = null;
-    
-    // Call the onComponentSelected callback with null if it exists
-    if (typeof this.onComponentSelected === 'function') {
-        this.onComponentSelected(null);
-    } else {
-        // Fallback to old behavior if callback not set
-        this.editorView.propertyPanel.hidePropertyPanel();
-    }
-    
-    this.clearDimensionOverlay(); // Clear overlay on deselection
   }
 
   // Helper to find component recursively (you might already have this)

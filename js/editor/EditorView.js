@@ -8,6 +8,7 @@ import BlocksManager from './blocks/BlocksManager.js';
 import CodeManager from './code/CodeManager.js';
 import RunManager from './utils/RunManager.js';
 import PreviewManager from './utils/PreviewManager.js';
+import BuildManager from './utils/BuildManager.js';
 
 class EditorView {
   constructor() {
@@ -65,6 +66,7 @@ class EditorView {
     this.codeManager = new CodeManager(this);
     this.runManager = new RunManager(this);
     this.previewManager = new PreviewManager(this);
+    this.buildManager = new BuildManager(this);
     
     this.renderEditor();
     this.setupEventListeners();
@@ -128,7 +130,7 @@ class EditorView {
         `<option value="${device.name}"${device.name === this.selectedDevice.name ? ' selected' : ''}>${device.name}</option>`
     ).join('');
 
-    // Added IDs to undo/redo buttons
+    // Changed Run button to Build button
     return `
       <div class="editor-header">
         <div class="editor-title">
@@ -141,7 +143,7 @@ class EditorView {
           <button id="redo-btn" class="editor-action-btn" title="Redo"><i class="material-icons">redo</i></button>
           <button class="editor-action-btn primary save-app-btn"><i class="material-icons">save</i>Save</button>
           <button class="editor-action-btn preview-app-btn" style="background-color: #2196F3; color: white;"><i class="material-icons">visibility</i>Preview</button>
-          <button class="editor-action-btn run-app-btn"><i class="material-icons">play_arrow</i>Run</button>
+          <button class="editor-action-btn build-app-btn" style="background-color: #4CAF50; color: white;"><i class="material-icons">build</i>Build</button>
         </div>
       </div>
     `;
@@ -248,169 +250,130 @@ class EditorView {
         const panel = document.getElementById('editor-panel');
         if (panel) {
           panel.innerHTML = this.renderTabPanel(tabName);
-          if (tabName === 'design') {
-            this.componentManager.renderComponentsPreview();
-            this.componentManager.setupDesignTabEvents();
-          } else if (tabName === 'blocks') {
-            this.blocksManager.setupEventListeners();
-            if (this.currentScreen) {
-              this.blocksManager.changeScreen(this.currentScreen.id);
-            }
-          } else if (tabName === 'code') {
-            this.codeManager.setupEventListeners();
-            if (this.currentScreen) {
-              this.codeManager.changeScreen(this.currentScreen.id);
-            }
-          }
+        }
+        
+        if (tabName === 'design') {
+          this.componentManager.setupDesignTabEvents();
+        } else if (tabName === 'blocks') {
+          this.blocksManager.initBlocksEditor();
+        } else if (tabName === 'code') {
+          this.codeManager.initCodeEditor();
         }
       });
     });
     
-    this.componentManager.setupDesignTabEvents();
-    this.screenManager.setupScreenEventListeners();
-    
-    // Add event listener for component search
-    const searchInput = document.getElementById('component-search');
-    if (searchInput) {
-      searchInput.addEventListener('input', this.handleComponentSearch.bind(this));
-    }
-    
-    // Setup screen item click event
-    document.querySelectorAll('.sidebar-item.screen-item').forEach(item => {
-      item.addEventListener('click', (e) => {
-        // Ignore clicks on the action buttons
-        if (!e.target.closest('.screen-action-btn')) {
-          const screenId = item.dataset.screenId;
-          this.onScreenChanged(screenId);
+    document.querySelectorAll('.sidebar-tab').forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        const currentActive = document.querySelector('.sidebar-tab.active');
+        if (currentActive) {
+          currentActive.classList.remove('active');
+          const activePanel = document.querySelector('.sidebar-panel.active');
+          if (activePanel) activePanel.classList.remove('active');
         }
+        
+        tab.classList.add('active');
+        const panelId = tab.dataset.sidebarTab + '-panel';
+        const panel = document.getElementById(panelId);
+        if (panel) panel.classList.add('active');
       });
     });
     
-    // Setup screen edit button events
-    document.querySelectorAll('.edit-screen-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation(); // Prevent screen selection
-        const screenId = btn.dataset.screenId;
-        this.dialogManager.showEditScreenDialog(screenId);
-      });
-    });
-    
-    // Setup screen delete button events
-    document.querySelectorAll('.delete-screen-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation(); // Prevent screen selection
-        const screenId = btn.dataset.screenId;
-        this.dialogManager.showDeleteScreenDialog(screenId);
-      });
-    });
-    
-    const editAppDetailsBtn = document.querySelector('.edit-app-details');
-    if (editAppDetailsBtn) {
-      editAppDetailsBtn.addEventListener('click', () => {
-        this.dialogManager.showEditAppDetailsDialog();
-      });
-    }
-    
-    // --- Undo/Redo Button Listeners ---
-    const undoBtn = document.getElementById('undo-btn');
-    if (undoBtn) {
-      undoBtn.addEventListener('click', () => this.undo());
-    }
-    const redoBtn = document.getElementById('redo-btn');
-    if (redoBtn) {
-      redoBtn.addEventListener('click', () => this.redo());
-    }
-    // ---------------------------------
-    
-    // Save Button Listener (using specific class now)
-    const saveBtn = document.querySelector('.save-app-btn');
-    if (saveBtn) {
-      saveBtn.addEventListener('click', () => {
-        this.saveApp();
-      });
-    }
-
-    // Run Button Listener (using specific class now)
-    const runBtn = document.querySelector('.run-app-btn');
-    if (runBtn) {
-        runBtn.addEventListener('click', () => {
-          this.runManager.showBuildDialog();
-        });
-    }
-
-    // Preview Button Listener
-    const previewBtn = document.querySelector('.preview-app-btn');
-    if (previewBtn) {
-      previewBtn.addEventListener('click', () => {
-        this.previewManager.launchAppPreview();
-      });
-    }
-
-    // Device Selector Listener
+    // Device selector
     const deviceSelector = document.getElementById('device-selector');
     if (deviceSelector) {
       deviceSelector.addEventListener('change', (e) => {
-        this.changeDevicePreview(e.target.value);
+        const deviceName = e.target.value;
+        this.changeDevicePreview(deviceName);
       });
     }
-
-    // Global keydown listener for arrows and delete
-    document.addEventListener('keydown', this.handleKeyDown.bind(this));
-    // Add Ctrl+Z / Ctrl+Y shortcuts
-    document.addEventListener('keydown', (e) => {
-        if (e.ctrlKey && e.key === 'z') {
-            e.preventDefault();
-            this.undo();
-        } else if (e.ctrlKey && (e.key === 'y' || (e.key === 'Z' && e.shiftKey))) { // Ctrl+Y or Ctrl+Shift+Z
-             e.preventDefault();
-             this.redo();
-        }
+    
+    // Screen selection
+    document.querySelectorAll('.screen-item').forEach(screenItem => {
+      screenItem.addEventListener('click', (e) => {
+        if (e.target.closest('.screen-action-btn')) return;
+        const screenId = screenItem.dataset.screenId;
+        this.onScreenChanged(screenId);
+      });
     });
-
-    // Add new sidebar tab event listeners
-    document.querySelectorAll('.sidebar-tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        // Deactivate all tabs
-        document.querySelectorAll('.sidebar-tab').forEach(t => {
-          t.classList.remove('active');
-        });
-        
-        // Deactivate all panels
-        document.querySelectorAll('.sidebar-panel').forEach(p => {
-          p.classList.remove('active');
-        });
-        
-        // Activate clicked tab
-        tab.classList.add('active');
-        
-        // Activate corresponding panel
-        const tabName = tab.dataset.sidebarTab;
-        const panel = document.getElementById(`${tabName}-panel`);
-        if (panel) {
-          panel.classList.add('active');
+    
+    // Edit screen
+    document.querySelectorAll('.edit-screen-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const screenId = btn.dataset.screenId;
+        const screen = this.currentApp.screens.find(s => s.id === screenId);
+        if (screen) {
+          this.screenManager.showEditScreenDialog(screen);
         }
       });
     });
     
-    // Switch to properties tab when a component is selected
-    this.componentManager.onComponentSelected = (component) => {
-      if (component) {
-        // If a component was selected, show and update properties
-        this.selectedComponent = component;
-        
-        // Switch to properties tab
-        const propertiesTab = document.querySelector('.sidebar-tab[data-sidebar-tab="properties"]');
-        if (propertiesTab) {
-          propertiesTab.click();
+    // Delete screen
+    document.querySelectorAll('.delete-screen-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const screenId = btn.dataset.screenId;
+        const screen = this.currentApp.screens.find(s => s.id === screenId);
+        if (screen) {
+          this.screenManager.showDeleteScreenDialog(screen);
         }
-        
-        this.propertyPanel.showPropertyPanel();
-      } else {
-        // If component selection was cleared
-        this.selectedComponent = null;
-        this.propertyPanel.hidePropertyPanel();
-      }
-    };
+      });
+    });
+    
+    // Add screen
+    const addScreenBtn = document.querySelector('.add-screen');
+    if (addScreenBtn) {
+      addScreenBtn.addEventListener('click', () => {
+        this.screenManager.showAddScreenDialog();
+      });
+    }
+    
+    // Edit app details
+    const editAppDetailsBtn = document.querySelector('.edit-app-details');
+    if (editAppDetailsBtn) {
+      editAppDetailsBtn.addEventListener('click', () => {
+        this.screenManager.showEditAppDialog(this.currentApp);
+      });
+    }
+    
+    // Save app button
+    const saveAppBtn = document.querySelector('.save-app-btn');
+    if (saveAppBtn) {
+      saveAppBtn.addEventListener('click', () => {
+        this.saveApp();
+      });
+    }
+    
+    // Preview button
+    const previewAppBtn = document.querySelector('.preview-app-btn');
+    if (previewAppBtn) {
+      previewAppBtn.addEventListener('click', () => {
+        this.previewManager.showPreviewDialog(this.currentApp);
+      });
+    }
+    
+    // Change Run button to Build button
+    const buildAppBtn = document.querySelector('.build-app-btn');
+    if (buildAppBtn) {
+      buildAppBtn.addEventListener('click', () => {
+        this.buildManager.showBuildOptionsDialog();
+      });
+    }
+    
+    // Component search
+    const componentSearch = document.getElementById('component-search');
+    if (componentSearch) {
+      componentSearch.addEventListener('input', (e) => {
+        this.handleComponentSearch(e);
+      });
+    }
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      this.handleKeyDown(e);
+    });
+    
+    // Initialize the components manager 
+    // (for drag & drop functionality and component selection)
+    this.componentManager.setupDesignTabEvents();
   }
 
   handleKeyDown(e) {

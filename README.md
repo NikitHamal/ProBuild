@@ -46,6 +46,16 @@ sketchware-pro/
 2. Open `index.html` in your browser
 3. Start creating your first app!
 
+## Building APKs with GitHub Actions
+
+This project includes GitHub Actions workflows for automatically building Android APKs:
+
+- **Automatic Builds**: APKs are automatically built when code is pushed to the main branch
+- **Manual Builds**: APKs can be manually built using GitHub Actions workflows
+- **Signed Builds**: Create signed APKs by setting up keystore secrets in your repository
+
+For detailed instructions on using GitHub Actions to build APKs, see [.github/README.md](.github/README.md).
+
 ## Notes
 
 This is a frontend-only implementation. All data is stored in the browser's localStorage. 
