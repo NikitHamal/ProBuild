@@ -1,3 +1,10 @@
+import { 
+  AddComponentCommand,
+  DeleteComponentCommand,
+  UpdatePropertyCommand,
+  MoveComponentCommand
+} from '../commands/ComponentCommands.js';
+
 class ComponentManager {
   constructor(editorView) {
     this.editorView = editorView;
@@ -6,6 +13,7 @@ class ComponentManager {
     this.dragStartY = 0;
     this.draggedComponentStartX = 0;
     this.draggedComponentStartY = 0;
+    this.onComponentSelected = null; // New callback that can be set by EditorView
   }
 
   handleKeyDown(e) {
@@ -15,7 +23,12 @@ class ComponentManager {
     const isInputFocused = targetTagName === 'INPUT' || targetTagName === 'SELECT';
 
     let needsUpdate = false;
-    const step = e.shiftKey ? 10 : 1; 
+    const step = e.shiftKey ? 10 : 1;
+    // Store the original position for undo
+    const originalPosition = { 
+      x: this.editorView.selectedComponent.properties.x, 
+      y: this.editorView.selectedComponent.properties.y 
+    };
 
     switch (e.key) {
       case 'ArrowUp':
@@ -45,23 +58,35 @@ class ComponentManager {
       case 'Delete':
       case 'Backspace': 
         if (isInputFocused) return; 
-        e.preventDefault(); 
-        this.editorView.appService.deleteComponent(
-          this.editorView.currentApp.id, 
-          this.editorView.currentScreen.id, 
-          this.editorView.selectedComponent.id
-        );
-        this.editorView.propertyPanel.hidePropertyPanel(); 
-        this.renderComponentsPreview(); 
-        break;
+        e.preventDefault();
+        
+        // Use DeleteComponentCommand instead of direct deletion
+        const componentId = this.editorView.selectedComponent.id;
+        const deleteCommand = new DeleteComponentCommand(this.editorView, componentId);
+        this.editorView.executeCommand(deleteCommand);
+        
+        this.editorView.propertyPanel.hidePropertyPanel();
+        return; // Skip the code below since we're using a command
     }
 
     if (needsUpdate) {
       this.editorView.selectedComponent.properties.x = Math.max(0, this.editorView.selectedComponent.properties.x);
       this.editorView.selectedComponent.properties.y = Math.max(0, this.editorView.selectedComponent.properties.y);
       
-      this.saveComponentUpdate(false, false); 
-      this.editorView.propertyPanel.updatePropertyEditor(); 
+      // Create a MoveComponentCommand for position changes
+      const componentId = this.editorView.selectedComponent.id;
+      const newPosition = { 
+        x: this.editorView.selectedComponent.properties.x, 
+        y: this.editorView.selectedComponent.properties.y 
+      };
+      
+      // Only create a command if the position actually changed
+      if (originalPosition.x !== newPosition.x || originalPosition.y !== newPosition.y) {
+        const moveCommand = new MoveComponentCommand(this.editorView, componentId, newPosition);
+        this.editorView.executeCommand(moveCommand);
+      }
+      
+      this.editorView.propertyPanel.updatePropertyEditor();
     }
   }
 
@@ -75,6 +100,14 @@ class ComponentManager {
     if (previewContainer) {
       previewContainer.addEventListener('dragover', this.handleDragOver.bind(this));
       previewContainer.addEventListener('drop', this.handleDrop.bind(this));
+      
+      // Add click listener for deselection
+      previewContainer.addEventListener('click', (e) => {
+        // If the direct click target is the container itself (the background)
+        if (e.target === previewContainer) {
+          this.deselectComponent();
+        }
+      });
     }
 
     this.renderComponentsPreview();
@@ -109,16 +142,52 @@ class ComponentManager {
   }
 
   renderComponentsPreview() {
+    // Get the preview container
     const previewContainer = document.getElementById('preview-container');
     if (!previewContainer) return;
+    
+    // Clear existing preview
     previewContainer.innerHTML = '';
+    
+    // Add alignment guides and overlay containers
+    const alignmentGuides = document.createElement('div');
+    alignmentGuides.id = 'alignment-guides';
+    previewContainer.appendChild(alignmentGuides);
+    
+    const dimensionOverlay = document.createElement('div');
+    dimensionOverlay.id = 'dimension-overlay';
+    previewContainer.appendChild(dimensionOverlay);
+    
+    // Only proceed if a screen is selected
+    if (!this.editorView.currentScreen) return;
+    
+    // Show empty message if no components
     if (this.editorView.currentScreen.components.length === 0) {
-      previewContainer.innerHTML = `<div class="empty-preview"><p>Drag and drop components here</p></div>`;
+      previewContainer.innerHTML += `<div class="empty-preview"><p>Drag and drop components here</p></div>`;
       return;
     }
+    
+    // Render each component
     this.editorView.currentScreen.components.forEach(component => {
-      const element = this.createComponentElement(component);
-      previewContainer.appendChild(element);
+      const componentElement = this.createComponentElement(component);
+      if (componentElement) {
+        // Set position based on properties
+        componentElement.style.position = 'absolute';
+        componentElement.style.left = `${parseInt(component.properties.x, 10) || 0}px`;
+        componentElement.style.top = `${parseInt(component.properties.y, 10) || 0}px`;
+        
+        // Add to preview container
+        previewContainer.appendChild(componentElement);
+        
+        // If this was the selected component, reselect it
+        if (this.editorView.selectedComponent && this.editorView.selectedComponent.id === component.id) {
+          componentElement.classList.add('selected');
+          // Update property panel if visible
+          if (this.editorView.propertyPanelVisible) {
+            this.editorView.propertyPanel.updatePropertyValues();
+          }
+        }
+      }
     });
   }
 
@@ -143,6 +212,7 @@ class ComponentManager {
     if (props.margin) element.style.margin = props.margin;
     if (props.padding) element.style.padding = props.padding;
     element.style.backgroundColor = props.bgColor || 'transparent';
+    element.style.opacity = (props.opacity || 100) / 100;
     if (props.font) element.style.fontFamily = props.font;
     element.style.fontSize = `${props.textSize || 14}px`;
     element.style.color = props.textColor || '#000000';
@@ -185,6 +255,7 @@ class ComponentManager {
         element.style.textAlign = 'center';
         element.style.cursor = 'pointer';
         element.style.justifyContent = 'center'; // Center text
+        element.style.backgroundColor = props.bgColor || '#E0E0E0';
         break;
       case 'textview':
         element.textContent = props.text || 'TextView';
@@ -306,14 +377,15 @@ class ComponentManager {
     });
     element.addEventListener('click', (e) => {
       if (!this.isDraggingComponent) {
-        e.stopPropagation();
-        this.selectComponent(component.id, false);
+        e.stopPropagation(); // Prevent triggering the container click listener
+        // Always select the component AND show the panel on left click
+        this.selectComponent(component.id, true); 
       }
     });
     element.addEventListener('contextmenu', (e) => {
         e.preventDefault(); 
-        e.stopPropagation();
-        this.selectComponent(component.id, true);
+        e.stopPropagation(); // Prevent triggering the container click listener
+        // Do nothing else on right-click
     });
     
     return element;
@@ -479,67 +551,157 @@ class ComponentManager {
       guidesContainer.appendChild(guide);
     });
   }
+  
+  clearAlignmentGuides() {
+    const guidesContainer = document.getElementById('alignment-guides');
+    if (guidesContainer) {
+      guidesContainer.innerHTML = ''; // Remove all alignment guides
+    }
+  }
 
   handleComponentMouseUp(e) {
-    if (!this.isDraggingComponent) return;
-    document.removeEventListener('mousemove', this.boundHandleMouseMove);
-    document.removeEventListener('mouseup', this.boundHandleMouseUp);
-    
-    // Clear guides & dimensions
-    this.drawAlignmentGuides([]);
-    this.clearDimensionOverlay(); 
-
-    if (this.editorView.selectedComponent) {
-      // Properties were updated during mousemove, just need to save.
-      this.saveComponentUpdate(false, false); 
+    if (this.isDraggingComponent && this.editorView.selectedComponent) {
+      this.isDraggingComponent = false;
+      
+      // Create a command for the move operation
+      const componentId = this.editorView.selectedComponent.id;
+      const newPosition = { 
+        x: parseInt(this.editorView.selectedComponent.properties.x, 10) || 0, 
+        y: parseInt(this.editorView.selectedComponent.properties.y, 10) || 0 
+      };
+      
+      // Only record the command if it actually moved
+      if (this.draggedComponentStartX !== newPosition.x || this.draggedComponentStartY !== newPosition.y) {
+        // Store start position for accurate undo
+        const startPosition = {
+          x: parseInt(this.draggedComponentStartX, 10) || 0,
+          y: parseInt(this.draggedComponentStartY, 10) || 0
+        };
+        
+        const moveCommand = new MoveComponentCommand(
+          this.editorView, 
+          componentId, 
+          newPosition, 
+          null,  // newParentId - keeping same parent
+          startPosition  // Pass original position to command
+        );
+        this.editorView.executeCommand(moveCommand);
+      }
+      
+      // Update UI and clear overlay
+      this.clearAlignmentGuides();
+      this.updateDimensionOverlay(this.editorView.selectedComponent, e.target);
     }
-    setTimeout(() => { this.isDraggingComponent = false; }, 50);
   }
 
   saveComponentUpdate(reselect = true, showPanel = true) { 
     if (!this.editorView.selectedComponent) return;
-    const componentIdToSelect = this.editorView.selectedComponent.id; 
-    this.editorView.appService.updateComponent(
-      this.editorView.currentApp.id, 
-      this.editorView.currentScreen.id, 
-      this.editorView.selectedComponent
+    
+    const componentId = this.editorView.selectedComponent.id;
+    const componentCopy = JSON.parse(JSON.stringify(this.editorView.selectedComponent));
+    
+    // Create an UpdatePropertyCommand
+    const updateCommand = new UpdatePropertyCommand(
+      this.editorView, 
+      componentId, 
+      'properties', // We're updating all properties at once here
+      componentCopy.properties
     );
-    this.renderComponentsPreview(); 
+    
+    this.editorView.executeCommand(updateCommand);
+    
     if (reselect) {
-        this.selectComponent(componentIdToSelect, showPanel); 
+      this.selectComponent(componentId, showPanel);
     }
   }
 
   selectComponent(componentId, showPanel = true) { 
-    const prevSelected = document.querySelector('.preview-component.selected');
-    if (prevSelected && prevSelected.dataset.componentId !== componentId) {
-      prevSelected.classList.remove('selected');
+    const prevSelectedElement = document.querySelector('.preview-component.selected');
+    
+    // If trying to select the same component again, do nothing here
+    // Deselection is handled in the click listener now
+    if (prevSelectedElement && prevSelectedElement.dataset.componentId === componentId) {
+        // If panel should be shown (e.g., right-click), ensure it is
+        if (showPanel && !this.editorView.propertyPanelVisible) {
+            this.editorView.propertyPanel.showPropertyPanel();
+        }
+        return; 
+    }
+
+    // Deselect previous if different
+    if (prevSelectedElement) {
+        prevSelectedElement.classList.remove('selected');
     }
     
     // Find the newly selected component data
-    const newSelectedComponent = this.editorView.currentScreen.components.find(c => c.id === componentId);
-    if (!newSelectedComponent) {
-        this.editorView.propertyPanel.hidePropertyPanel(); 
-        this.editorView.selectedComponent = null;
+    const newSelectedComponentData = this._findComponentInScreen(this.editorView.currentScreen.components, componentId);
+
+    if (!newSelectedComponentData) {
+        this.deselectComponent(); // Deselect if component not found
         return;
     }
-    this.editorView.selectedComponent = newSelectedComponent;
+    
+    this.editorView.selectedComponent = newSelectedComponentData;
     
     // Highlight the element visually
-    const element = document.querySelector(`.preview-component[data-component-id="${componentId}"]`);
-    if (element && !element.classList.contains('selected')) {
-      element.classList.add('selected');
+    const newSelectedElement = document.querySelector(`.preview-component[data-component-id="${componentId}"]`);
+    if (newSelectedElement) {
+        newSelectedElement.classList.add('selected');
+        this.updateDimensionOverlay(newSelectedComponentData, newSelectedElement); // Show overlay on selection
     }
     
-    // Show or hide panel based on flag
-    if (showPanel) {
-        this.editorView.propertyPanel.showPropertyPanel();
+    // Call the onComponentSelected callback if it exists
+    if (typeof this.onComponentSelected === 'function') {
+        this.onComponentSelected(newSelectedComponentData);
     } else {
-        // Ensure panel is hidden if left-clicking or starting drag
-        if (this.editorView.propertyPanelVisible) {
-            this.editorView.propertyPanel.hidePropertyPanel();
+        // Fallback to old behavior if callback not set
+        // Show or hide panel based on flag
+        if (showPanel) {
+            this.editorView.propertyPanel.showPropertyPanel();
+        } else {
+            // Ensure panel is hidden if left-clicking or starting drag
+            if (this.editorView.propertyPanelVisible) {
+                this.editorView.propertyPanel.hidePropertyPanel();
+            }
         }
     }
+  }
+
+  deselectComponent() {
+    const selectedElement = document.querySelector('.preview-component.selected');
+    if (selectedElement) {
+      selectedElement.classList.remove('selected');
+    }
+    
+    this.editorView.selectedComponent = null;
+    
+    // Call the onComponentSelected callback with null if it exists
+    if (typeof this.onComponentSelected === 'function') {
+        this.onComponentSelected(null);
+    } else {
+        // Fallback to old behavior if callback not set
+        this.editorView.propertyPanel.hidePropertyPanel();
+    }
+    
+    this.clearDimensionOverlay(); // Clear overlay on deselection
+  }
+
+  // Helper to find component recursively (you might already have this)
+  _findComponentInScreen(components, id) {
+     for (const component of components) {
+       if (component.id === id) {
+         return component;
+       }
+       // Check children if this component is a container (adjust based on your structure)
+       const children = component.properties?.children || component.children;
+       if (children && Array.isArray(children) && children.length > 0) {
+         const found = this._findComponentInScreen(children, id);
+         if (found) {
+           return found;
+         }
+       }
+     }
+     return null;
   }
 
   addComponentToScreen(componentType, initialX = 0, initialY = 0) {
@@ -622,15 +784,14 @@ class ComponentManager {
     // Ensure ID is unique (might need better generation later)
     componentProps.id = `${componentType}_${Date.now()}`;
 
-    const newComponent = this.editorView.appService.addComponent(
-      this.editorView.currentApp.id, 
-      this.editorView.currentScreen.id, 
-      componentProps
-    );
+    // Use AddComponentCommand instead of direct addition
+    const command = new AddComponentCommand(this.editorView, componentProps);
+    this.editorView.executeCommand(command);
     
-    if (newComponent) {
-      this.renderComponentsPreview();
-      this.selectComponent(newComponent.id); // Select the newly added component
+    // The AddComponentCommand will handle rendering and selection
+    // The ID of the new component is stored in command.addedComponentId after execution
+    if (command.addedComponentId) {
+      this.selectComponent(command.addedComponentId);
     }
   }
 
@@ -641,49 +802,7 @@ class ComponentManager {
       return;
     }
 
-    overlay.innerHTML = ''; // Clear previous
-
-    const x = component.properties.x || 0;
-    const y = component.properties.y || 0;
-    const w = element.offsetWidth;
-    const h = element.offsetHeight;
-    const offset = 5; // How far outside the element to show labels
-
-    // Top Label (Y)
-    const topLabel = document.createElement('div');
-    topLabel.className = 'dimension-indicator';
-    topLabel.textContent = `Y: ${y}`;
-    topLabel.style.left = `${x + w / 2}px`;
-    topLabel.style.top = `${y - offset - 12}px`; // 12 is approx label height
-    topLabel.style.transform = 'translateX(-50%)';
-    overlay.appendChild(topLabel);
-
-    // Left Label (X)
-    const leftLabel = document.createElement('div');
-    leftLabel.className = 'dimension-indicator';
-    leftLabel.textContent = `X: ${x}`;
-    leftLabel.style.left = `${x - offset}px`;
-    leftLabel.style.top = `${y + h / 2}px`;
-    leftLabel.style.transform = 'translate(-100%, -50%)';
-    overlay.appendChild(leftLabel);
-
-    // Bottom Label (H)
-    const bottomLabel = document.createElement('div');
-    bottomLabel.className = 'dimension-indicator';
-    bottomLabel.textContent = `H: ${h}`;
-    bottomLabel.style.left = `${x + w / 2}px`;
-    bottomLabel.style.top = `${y + h + offset}px`;
-    bottomLabel.style.transform = 'translateX(-50%)';
-    overlay.appendChild(bottomLabel);
-
-    // Right Label (W)
-    const rightLabel = document.createElement('div');
-    rightLabel.className = 'dimension-indicator';
-    rightLabel.textContent = `W: ${w}`;
-    rightLabel.style.left = `${x + w + offset}px`;
-    rightLabel.style.top = `${y + h / 2}px`;
-    rightLabel.style.transform = 'translateY(-50%)';
-    overlay.appendChild(rightLabel);
+    overlay.innerHTML = ''; // Clear previous - Keep this to remove any stale content
   }
 
   clearDimensionOverlay() {

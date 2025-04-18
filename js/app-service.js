@@ -4,20 +4,30 @@ class AppService {
   }
 
   loadApps() {
+    const storedApps = localStorage.getItem('apps');
+    if (!storedApps) {
+      return []; // No apps stored yet
+    }
     try {
-      const storedApps = localStorage.getItem('apps');
-      return storedApps ? JSON.parse(storedApps) : [];
+      // Added try-catch for parsing
+      return JSON.parse(storedApps);
     } catch (error) {
-      console.error("Error loading apps from localStorage:", error);
+      console.error("Error parsing apps from localStorage:", error);
+      // Optionally: Notify the user, try to recover, or clear corrupted data
+      // For now, returning empty array to prevent app crash
+      // localStorage.removeItem('apps'); // uncomment to clear corrupted data
       return [];
     }
   }
 
   saveApps() {
     try {
+      // Added try-catch for stringifying/saving
       localStorage.setItem('apps', JSON.stringify(this.apps));
     } catch (error) {
       console.error("Error saving apps to localStorage:", error);
+      // Optionally: Notify the user
+      // Consider mechanisms to prevent data loss if quota is exceeded
     }
   }
 
@@ -196,6 +206,41 @@ class AppService {
     }
     
     return false;
+  }
+
+  updateComponentId(appId, screenId, oldId, newId) {
+    const app = this.getAppById(appId);
+    if (!app) return false;
+
+    const screen = app.screens.find(s => s.id === screenId);
+    if (!screen) return false;
+
+    // Find the component with the old ID
+    const component = screen.components.find(c => c.id === oldId);
+    if (!component) return false;
+    
+    // Update the component ID
+    component.id = newId;
+    
+    // Update references to this component in other components (if any)
+    // For example, if components have child references or layout relationships
+    screen.components.forEach(c => {
+      // Update children references if applicable
+      if (c.properties && c.properties.children && Array.isArray(c.properties.children)) {
+        const childIndex = c.properties.children.indexOf(oldId);
+        if (childIndex !== -1) {
+          c.properties.children[childIndex] = newId;
+        }
+      }
+      
+      // Update any other references as needed for your specific app
+    });
+    
+    // Also update any references in blocks or code that might be stored
+    // This depends on how your app's blocks/code data is structured
+    
+    this.updateApp(app);
+    return true;
   }
 }
 

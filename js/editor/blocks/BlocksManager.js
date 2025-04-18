@@ -575,6 +575,21 @@ class BlocksManager {
 
     // Inject Blockly
     try {
+      // --- Override default Blockly dialogs ---
+      const dialogManager = this.editorView.dialogManager;
+      Blockly.dialog.setPrompt((title, defaultValue, callback) => {
+        dialogManager.showPromptDialog('Blockly Prompt', title, defaultValue, callback);
+      });
+      Blockly.dialog.setConfirm((message, callback) => {
+        dialogManager.showConfirmDialog('Blockly Confirm', message, callback);
+      });
+      Blockly.dialog.setAlert((message, callback) => {
+        // Use confirm dialog for alert, as we don't have a dedicated one
+        // Callback for alert is optional and usually just closes it
+        dialogManager.showConfirmDialog('Blockly Alert', message, () => { if (callback) callback(); });
+      });
+      // --- End Override ---
+
       this.blocklyWorkspace = Blockly.inject(blocklyDiv, {
         toolbox: toolboxXml,
         renderer: 'geras', // Popular renderer
@@ -737,6 +752,78 @@ class BlocksManager {
     } else {
         console.error(`Screen with ID ${screenId} not found.`);
     }
+  }
+
+  // Method to update screen references when a screen is renamed
+  updateScreenReferences(screenId, oldName, newName) {
+    // This method would need to be implemented based on how blocks reference other screens
+    // For example, it might update Intent blocks that reference screen names
+    // For now, we'll just log the fact that this method was called
+    console.log(`BlocksManager: Updating references for screen ${screenId} from ${oldName} to ${newName}`);
+    
+    // Update any blocks that reference the old screen name
+    // The implementation would depend on how blocks are stored
+    // This might involve:
+    // 1. Finding all blocks that reference screen names (e.g., Intent blocks)
+    // 2. Updating the references in those blocks
+    // 3. Re-saving the blocks data
+    
+    // Example implementation (commented out since we don't know the exact structure):
+    /*
+    const blockData = this.getBlocksForScreen(screenId);
+    if (blockData) {
+      // Find all blocks that reference screen names (e.g., Intent blocks)
+      // Update references from oldName to newName
+      // Save the updated blocks data
+    }
+    
+    // Also update references in other screens' blocks
+    this.editorView.currentApp.screens.forEach(screen => {
+      if (screen.id !== screenId) {
+        const otherBlockData = this.getBlocksForScreen(screen.id);
+        if (otherBlockData) {
+          // Similar update logic for blocks in other screens
+        }
+      }
+    });
+    */
+  }
+
+  // Add a method to handle component ID changes
+  handleComponentIdChange(oldId, newId) {
+    // Get the workspace
+    const workspace = this.getWorkspace();
+    if (!workspace) return;
+    
+    // Find all blocks that reference the old component ID
+    const allBlocks = workspace.getAllBlocks();
+    
+    allBlocks.forEach(block => {
+      // Check if the block is related to components (e.g., event handlers, property getters/setters)
+      if (block.type && (
+          block.type.startsWith('component_') || 
+          block.type.includes('_component_') ||
+          block.type.endsWith('_component')
+      )) {
+        // Look for fields that might contain component IDs
+        const fields = block.inputList.flatMap(input => input.fieldRow);
+        
+        fields.forEach(field => {
+          if (field && field.getValue && field.getValue() === oldId) {
+            // Update the field value to the new ID
+            field.setValue(newId);
+          }
+        });
+      }
+    });
+    
+    // Force workspace update
+    workspace.render();
+    
+    // If you have any cached data about components, update it too
+    // ...
+    
+    console.log(`Updated component references in blocks from ${oldId} to ${newId}`);
   }
 
   // --- Old methods removed or commented out ---

@@ -777,6 +777,155 @@ class CodeManager {
       }
     }
   }
+
+  // Method to update screen references when a screen is renamed
+  updateScreenReferences(screenId, oldName, newName) {
+    // This method would need to be implemented based on how code references other screens
+    // For example, it might update Activity imports, Intent calls, etc.
+    console.log(`CodeManager: Updating references for screen ${screenId} from ${oldName} to ${newName}`);
+    
+    // Update code in the renamed screen
+    // e.g., update class name, constructor, etc.
+    
+    // Update references in other screens' code
+    // e.g., update imports, Activity references, Intent targets, etc.
+    
+    // Example implementation (commented out since we don't know the exact structure):
+    /*
+    // Get all code files for the screen
+    const screenFiles = this.getFilesForScreen(screenId);
+    
+    // Update class name, file name, etc.
+    if (screenFiles && screenFiles.length > 0) {
+      screenFiles.forEach(file => {
+        // Update class declarations, etc.
+        let content = file.content;
+        content = content.replace(
+          new RegExp(`class\\s+${oldName}\\s+extends`, 'g'), 
+          `class ${newName} extends`
+        );
+        
+        // Save the updated file
+        this.saveFileContent(file.id, content);
+      });
+    }
+    
+    // Update references in other screens
+    this.editorView.currentApp.screens.forEach(screen => {
+      if (screen.id !== screenId) {
+        const otherScreenFiles = this.getFilesForScreen(screen.id);
+        if (otherScreenFiles && otherScreenFiles.length > 0) {
+          otherScreenFiles.forEach(file => {
+            // Update imports
+            let content = file.content;
+            content = content.replace(
+              new RegExp(`import\\s+.*\\.${oldName};`, 'g'),
+              `import ${this.getPackageName()}.${newName};`
+            );
+            
+            // Update Intent references
+            content = content.replace(
+              new RegExp(`Intent\\(.*,\\s*${oldName}\\.class\\)`, 'g'),
+              `Intent(this, ${newName}.class)`
+            );
+            
+            // Save the updated file
+            this.saveFileContent(file.id, content);
+          });
+        }
+      }
+    });
+    */
+    
+    // Mark all files as dirty so they'll be regenerated
+    this.markAllFilesAsDirty();
+  }
+  
+  markAllFilesAsDirty() {
+    // Mark all code files as needing regeneration
+    console.log('CodeManager: Marking all files as dirty for regeneration');
+    // Implementation depends on how dirty state is tracked
+  }
+
+  // Add method to handle component ID changes
+  handleComponentIdChange(oldId, newId) {
+    // Get the current screen's code
+    if (!this.editorView.currentScreen) return;
+    
+    const screenId = this.editorView.currentScreen.id;
+    const appCode = this.getAppCode();
+    if (!appCode) return;
+    
+    // Find all code files associated with this screen
+    const screenFiles = appCode.files.filter(file => 
+      file.screenId === screenId || file.screenId === 'shared'
+    );
+    
+    let codeUpdated = false;
+    
+    // Update references in each file
+    screenFiles.forEach(file => {
+      // Look for component ID references in the code
+      // Common patterns: "componentId", componentId, R.id.componentId, findViewById(R.id.componentId)
+      
+      // Define regex patterns to find the component ID
+      const patterns = [
+        new RegExp(`["']${oldId}["']`, 'g'),           // "oldId" or 'oldId'
+        new RegExp(`\\b${oldId}\\b`, 'g'),             // Direct references
+        new RegExp(`R\\.id\\.${oldId}\\b`, 'g'),       // R.id.oldId
+        new RegExp(`findViewById\\(R\\.id\\.${oldId}\\)`, 'g') // findViewById(R.id.oldId)
+      ];
+      
+      let newContent = file.content;
+      let fileUpdated = false;
+      
+      // Apply each pattern
+      patterns.forEach(pattern => {
+        // Create replacement string based on the pattern
+        let replacement;
+        if (pattern.toString().includes('"')) {
+          replacement = `"${newId}"`;
+        } else if (pattern.toString().includes("'")) {
+          replacement = `'${newId}'`;
+        } else if (pattern.toString().includes('R.id.')) {
+          if (pattern.toString().includes('findViewById')) {
+            replacement = `findViewById(R.id.${newId})`;
+          } else {
+            replacement = `R.id.${newId}`;
+          }
+        } else {
+          replacement = newId;
+        }
+        
+        // Replace all occurrences
+        const updatedContent = newContent.replace(pattern, replacement);
+        
+        // Check if anything was replaced
+        if (updatedContent !== newContent) {
+          newContent = updatedContent;
+          fileUpdated = true;
+        }
+      });
+      
+      // If the file was updated, save the changes
+      if (fileUpdated) {
+        file.content = newContent;
+        codeUpdated = true;
+        
+        // Also update any active editors
+        const editor = this.getEditor(file.id);
+        if (editor) {
+          editor.setValue(newContent);
+        }
+      }
+    });
+    
+    // If any files were updated, save the app code
+    if (codeUpdated) {
+      this.saveAppCode(appCode);
+      console.log(`Updated component references in code from ${oldId} to ${newId}`);
+    }
+  }
 }
 
 export default CodeManager; 

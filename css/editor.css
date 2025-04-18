@@ -45,7 +45,7 @@ body, html {
 }
 
 .component-item:hover {
-  background: rgba(0,0,0,0.05);
+  background: rgba(0, 0, 0, 0.06);
 }
 
 .component-item i {
@@ -114,9 +114,23 @@ body, html {
   font-size: 16px;
 }
 
-.editor-action-btn.primary {
+.editor-action-btn:not(:disabled):hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.editor-action-btn.primary:not(:disabled):hover {
+  background: var(--primary-dark-color, #1976D2);
+}
+
+.editor-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: transparent;
+}
+
+.editor-action-btn.primary:disabled {
   background: var(--primary-color);
-  color: #fff;
+  opacity: 0.6;
 }
 
 #device-selector {
@@ -163,11 +177,21 @@ body, html {
   font-weight: 500;
 }
 
+.editor-tab:not(.active):hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
 .editor-panel {
   flex: 1;
   overflow-y: auto;
   background: var(--background-color);
   padding: 8px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.editor-panel::-webkit-scrollbar {
+  display: none;
 }
 
 .canvas-container {
@@ -256,139 +280,208 @@ body, html {
 
 /* Right sidebar for project/screens */
 .editor-sidebar {
-  width: 170px;
+  width: 250px; /* Increased width */
   background: var(--surface-color);
   border-left: 1px solid #ddd;
-  overflow-y: auto;
-  height: 100%;
-  z-index: 2;
-  font-size: 0.95rem;
-}
-
-.sidebar-section {
-  margin-bottom: 8px;
-}
-
-.sidebar-title {
-  padding: 8px 12px;
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-}
-
-.sidebar-item {
-  padding: 8px 12px;
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 1;
+}
+
+/* Sidebar tabs */
+.sidebar-tabs {
+  display: flex;
+  background: var(--surface-color);
+  border-bottom: 1px solid #ddd;
+}
+
+.sidebar-tab {
+  padding: 10px 0;
+  text-align: center;
+  flex: 1;
   cursor: pointer;
-  font-size: 0.95rem;
-}
-
-.sidebar-item i {
-  font-size: 16px;
-}
-
-.sidebar-item.active {
-  background: rgba(0,0,0,0.08);
   font-weight: 500;
-}
-
-.sidebar-item.edit-app-details {
   color: var(--text-secondary);
   font-size: 0.9rem;
-  border-top: 1px solid rgba(0,0,0,0.1);
-  margin-top: 2px;
-  padding-top: 6px;
 }
 
-/* Bottom properties panel - Fixed Position */
-.property-editor {
-  position: fixed;
-  left: 120px; /* Width of left sidebar */
-  right: 170px; /* Width of right sidebar */
-  bottom: 0;
-  background: var(--background-color);
-  box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
-  border-top: 1px solid #ddd;
-  z-index: 1001;
-  width: auto; /* Let left/right define width */
-  max-width: none;
-  min-width: auto;
-  padding: 16px;
+.sidebar-tab.active {
+  color: var(--primary-color);
+  border-bottom: 2px solid var(--primary-color);
+}
+
+.sidebar-tab:not(.active):hover {
+  /* background: rgba(0, 0, 0, 0.04); */
+}
+
+/* Sidebar content panels */
+.sidebar-panel {
+  flex: 1;
+  overflow-y: auto;
   display: none;
-  flex-direction: row;
-  align-items: flex-start;
-  justify-content: flex-start;
-  min-height: 64px;
-  font-size: 1rem;
-  box-sizing: border-box;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-.property-editor.visible {
+.sidebar-panel::-webkit-scrollbar {
+  display: none;
+}
+
+.sidebar-panel.active {
   display: flex;
+  flex-direction: column;
 }
 
-.property-editor .panel-title {
+/* Properties panel - Figma style */
+.property-panel {
+  overflow-y: auto;
+  padding: 0;
+  flex: 1;
+  font-size: 11px;
+  color: #333;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.property-panel::-webkit-scrollbar {
   display: none;
 }
 
 .property-group {
+  border-bottom: 1px solid #eee;
+  overflow: hidden;
+  margin-bottom: 0;
+}
+
+.property-group:last-child {
+  border-bottom: none;
+}
+
+.property-group-header {
+  padding: 8px 10px;
+  background: #f9f9f9;
   display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  margin: 0 16px 0 0;
-  gap: 16px;
-  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
 }
 
 .property-group-title {
+  font-weight: 600;
+  font-size: 11px;
+  color: #333;
+  text-transform: none;
+  letter-spacing: 0.3px;
+}
+
+.property-group-toggle {
+  color: #888;
+  font-size: 18px;
+}
+
+.property-group.collapsed .property-group-toggle {
+  transform: rotate(-90deg);
+}
+
+.property-group.collapsed .property-rows {
   display: none;
+}
+
+.property-rows {
+  padding: 4px 8px 8px 8px;
 }
 
 .property-row {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  margin: 0 8px 0 0;
-  gap: 2px;
-  min-width: 120px;
+  align-items: center;
+  padding: 3px 0;
+  margin: 0;
 }
 
 .property-label {
-  width: auto;
-  min-width: 48px;
-  font-size: 0.97rem;
-  color: var(--text-secondary);
-  margin-bottom: 2px;
+  font-size: 11px;
+  color: #333;
+  flex: 1;
+  padding-right: 8px;
 }
 
 .property-input {
-  flex: 1;
-  min-width: 60px;
-  width: 100%;
+  width: 110px;
 }
 
 .property-input input,
 .property-input select {
   width: 100%;
-  padding: 4px 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-  box-sizing: border-box;
+  border: 1px solid #dadada;
+  border-radius: 2px;
+  padding: 3px 6px;
+  font-size: 11px;
+  background-color: white;
+  color: #333;
+  height: 24px;
 }
 
-.property-editor .close-btn {
-  margin-left: auto;
-  margin-right: 16px;
-  background: none;
-  border: none;
-  font-size: 18px;
-  color: var(--text-secondary);
+.property-input input:focus,
+.property-input select:focus {
+  border-color: #0d99ff;
+  outline: none;
+}
+
+.property-input input[type="color"] {
+  padding: 0;
+  height: 24px;
   cursor: pointer;
+}
+
+.property-input input[type="checkbox"] {
+  width: auto;
+  margin-right: 0;
+  height: auto;
+}
+
+.no-component-selected {
   display: flex;
+  flex-direction: column;
   align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 20px;
+  color: #888;
+  text-align: center;
+}
+
+.no-component-selected i {
+  font-size: 32px;
+  margin-bottom: 16px;
+  opacity: 0.4;
+}
+
+.no-component-selected p {
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+/* Remove the old property editor styles */
+.property-editor {
+  display: none;
+  position: absolute;
+  right: -320px;
+  top: 0;
+  width: 280px;
+  height: 100%;
+  background: var(--surface-color);
+  box-shadow: var(--shadow-lg);
+  z-index: 5;
+  border-left: 1px solid #ddd;
+  transition: right 0.3s ease;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.property-editor.visible {
+  right: 0;
 }
 
 @media (max-width: 900px) {
@@ -452,4 +545,177 @@ body, html {
     bottom: 48px; /* Above the bottom sidebar */
     padding: 8px;
   }
-} 
+}
+
+/* Added styles for component search input */
+.components-sidebar .sidebar-section {
+  padding: 8px;
+}
+.components-sidebar #component-search {
+  width: 100%;
+  font-size: 0.9rem;
+  padding: 4px 6px;
+  box-sizing: border-box; /* Include padding in width */
+  margin-bottom: 8px; /* Add some space below search */
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* Ensure action buttons are visible on active item too */
+.sidebar-item.screen-item.active:hover .screen-item-actions {
+    opacity: 1;
+}
+
+/* Sidebar section styles retained for project panel */
+.sidebar-section {
+  margin-bottom: 12px;
+  padding: 0 8px;
+}
+
+.sidebar-title {
+  padding: 8px 4px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.sidebar-item {
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  border-radius: 4px;
+  margin-bottom: 2px;
+  transition: background 0.1s;
+}
+
+.sidebar-item i {
+  font-size: 16px;
+}
+
+.sidebar-item:not(.active):hover {
+  /* background: rgba(0, 0, 0, 0.06); */
+}
+
+.sidebar-item.active {
+  background: rgba(0, 0, 0, 0.08);
+  font-weight: 500;
+}
+
+.sidebar-item.edit-app-details {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  border-top: 1px solid rgba(0,0,0,0.1);
+  margin-top: 2px;
+  padding-top: 6px;
+}
+
+/* Screen item styles */
+.sidebar-item.screen-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  padding-right: 8px;
+}
+
+.screen-item-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.screen-item-actions {
+  display: flex;
+  gap: 2px;
+  opacity: 1;
+  /* transition: opacity 0.2s ease; */
+}
+
+.sidebar-item.screen-item:hover .screen-item-actions,
+.sidebar-item.screen-item.active .screen-item-actions {
+  /* opacity: 1; */
+}
+
+.screen-action-btn {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.screen-action-btn i {
+  font-size: 16px;
+  color: var(--text-secondary);
+}
+
+.screen-action-btn:hover {
+  /* background: rgba(0,0,0,0.05); */
+}
+
+.screen-action-btn:hover i {
+  /* color: var(--text-primary); */
+}
+
+.edit-screen-btn:hover i {
+  /* color: var(--primary-color); */
+}
+
+.delete-screen-btn:hover i {
+  /* color: #f44336; */
+}
+
+.sidebar-item.screen-item.active:hover .screen-item-actions {
+  /* opacity: 1; */
+}
+
+/* Font selection dropdown styles */
+.property-input select#prop-font {
+  font-size: 11px;
+  height: 24px;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23666%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  background-size: 8px 8px;
+  padding-right: 18px;
+}
+
+/* Style for individual font options */
+.property-input select#prop-font option {
+  font-size: 12px;
+  padding: 4px;
+}
+
+/* Font preview - make each font display in its own font */
+.property-input select#prop-font option[value="Roboto"] { font-family: 'Roboto', sans-serif; }
+.property-input select#prop-font option[value="Open Sans"] { font-family: 'Open Sans', sans-serif; }
+.property-input select#prop-font option[value="Lato"] { font-family: 'Lato', sans-serif; }
+.property-input select#prop-font option[value="Montserrat"] { font-family: 'Montserrat', sans-serif; }
+.property-input select#prop-font option[value="Roboto Condensed"] { font-family: 'Roboto Condensed', sans-serif; }
+.property-input select#prop-font option[value="Source Sans Pro"] { font-family: 'Source Sans Pro', sans-serif; }
+.property-input select#prop-font option[value="Oswald"] { font-family: 'Oswald', sans-serif; }
+.property-input select#prop-font option[value="Raleway"] { font-family: 'Raleway', sans-serif; }
+.property-input select#prop-font option[value="Ubuntu"] { font-family: 'Ubuntu', sans-serif; }
+.property-input select#prop-font option[value="Merriweather"] { font-family: 'Merriweather', serif; }
+.property-input select#prop-font option[value="Poppins"] { font-family: 'Poppins', sans-serif; }
+.property-input select#prop-font option[value="Playfair Display"] { font-family: 'Playfair Display', serif; }
+.property-input select#prop-font option[value="Nunito"] { font-family: 'Nunito', sans-serif; }
+.property-input select#prop-font option[value="PT Sans"] { font-family: 'PT Sans', sans-serif; }
+.property-input select#prop-font option[value="Rubik"] { font-family: 'Rubik', sans-serif; }
+.property-input select#prop-font option[value="Noto Sans"] { font-family: 'Noto Sans', sans-serif; }
+.property-input select#prop-font option[value="Roboto Mono"] { font-family: 'Roboto Mono', monospace; }
+.property-input select#prop-font option[value="Fira Sans"] { font-family: 'Fira Sans', sans-serif; }
+.property-input select#prop-font option[value="Work Sans"] { font-family: 'Work Sans', sans-serif; }
+.property-input select#prop-font option[value="Quicksand"] { font-family: 'Quicksand', sans-serif; } 
