@@ -123,7 +123,9 @@ class ComponentInteractionHandler {
         this.editorView.selectedComponent.properties.y = Math.round(newY);
 
         // Update property editor inputs in real-time
-        this.editorView.propertyPanel.updatePropertyEditor();
+        if (this.editorView.propertyPanel && typeof this.editorView.propertyPanel.updatePropertyEditor === 'function') {
+            this.editorView.propertyPanel.updatePropertyEditor();
+        }
 
         // Draw alignment guides (delegated)
         this.componentManager.alignmentOverlayHandler.drawAlignmentGuides(activeSnapLines);
