@@ -6,7 +6,7 @@ class ProjectBuilder {
         
         // Moved default resources here
         this.defaultResources = {
-            ic_launcher: 'iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAAACXBIWXMAAAsTAAALEwEAmpwYAAAF8WlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNS42LWMxNDggNzkuMTY0MDM2LCAyMDE5LzA4LzEzLTAxOjA2OjU3ICAgICAgICAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1sbnM6cGhvdG9zaG9wPSJodHRwOi8vbnMuYWRvYmUuY29tL3Bob3Rvc2hvcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RFdnQ9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZUV2ZW50IyIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgMjEuMCAoV2luZG93cykiIHhtcDpDcmVhdGVEYXRlPSIyMDIzLTA5LTIwVDEwOjEwOjI3KzAyOjAwIiB4bXA6TW9kaWZ5RGF0ZT0iMjAyMy0wOS0yMFQxMDoxMjoxMSswMjowMCIgeG1wOk1ldGFkYXRhRGF0ZT0iMjAyMy0wOS0yMFQxMDoxMjoxMSswMjowMCIgZGM6Zm9ybWF0PSJpbWFnZS9wbmciIHBob3Rvc2hvcDpDb2xvck1vZGU9IjMiIHBob3Rvc2hvcDpJQ0NQcm9maWxlPSJzUkdCIElFQzYxOTY2LTIuMSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDowZDc2YmYzZC1kMDY2LWQzNGEtYjA0NC1iNTYzYjRmZTMzYmQiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6NmVlZmM4NmUtNTU2YS1lZTRmLTk3MTktNTBhMTEwYmQ3M2QxIiB4bXBNTTpPcmlnaW5hbERvY3VtZW50SUQ9InhtcC5kaWQ6NmVlZmM4NmUtNTU2YS1lZTRmLTk3MTktNTBhMTEwYmQ3M2QxIj4gPHhtcE1NOkhpc3Rvcnk+IDxyZGY6U2VxPiA8cmRmOmxpIHN0RXZ0OmFjdGlvbj0iY3JlYXRlZCIgc3RFdnQ6aW5zdGFuY2VJRD0ieG1wLmlpZDo2ZWVmYzg2ZS01NTZhLWVlNGYtOTcxOS01MGExMTBiZDczZDEiIHN0RXZ0OndoZW49IjIwMjMtMDktMjBUMTA6MTA6MjcrMDI6MDAiIHN0RXZ0OnNvZnR3YXJlQWdlbnQ9IkFkb2JlIFBob3Rvc2hvcCAyMS4wIChXaW5kb3dzKSIvPiA8cmRmOmxpIHN0RXZ0OmFjdGlvbj0ic2F2ZWQiIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6MGQ3NmJmM2QtZDA2Ni1kMzRhLWIwNDQtYjU2M2I0ZmUzM2JkIiBzdEV2dDp3aGVuPSIyMDIzLTA5LTIwVDEwOjEyOjExKzAyOjAwIiBzdEV2dDpzb2Z0d2FyZUFnZW50PSJBZG9iZSBQaG90b3Nob3AgMjEuMCAoV2luZG93cykiIHN0RXZ0OmNoYW5nZWQ9Ii8iLz4gPC9yZGY6U2VxPiA8L3htcE1NOkhpc3Rvcnk+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+VbzAZwAAEGJJREFUeNrtXXtwVNUZ/3aTQEKSQniEoFAzI4jyKHV8TH3xKFoRilXUKTPtVGf6R6ed6R/99zHT6bSdsSqkM51OU+wg9llrK6Nd20EQESgPeSgQIEAIjyQEyGuy2WSz2cd5fOfc7925d/fu3ezm7iaQM3Nn7+69Z+/5fb/zne87j3vvVUQE+eHcGwGTgjzIHFR10lQ9/aVxVadfpP/eIdVRdcr0neJprj7tKtO/uHlqKXD8xc/vkRUOQIFQFKQDi4KpoG6MxOcnPCfMIOtG6A9SoBFE2Q2ej0mnnNIRpWJN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',
+            ic_launcher: 'iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAAACXBIWXMAAAsTAAALEwEAmpwYAAAF8WlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNS42LWMxNDggNzkuMTY0MDM2LCAyMDE5LzA4LzEzLTAxOjA2OjU3ICAgICAgICAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1sbnM6cGhvdG9zaG9wPSJodHRwOi8vbnMuYWRvYmUuY29tL3Bob3Rvc2hvcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RFdnQ9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZUV2ZW50IyIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgMjEuMCAoV2luZG93cykiIHhtcDpDcmVhdGVEYXRlPSIyMDIzLTA5LTIwVDEwOjEwOjI3KzAyOjAwIiB4bXA6TW9kaWZ5RGF0ZT0iMjAyMy0wOS0yMFQxMDoxMjoxMSswMjowMCIgeG1wOk1ldGFkYXRhRGF0ZT0iMjAyMy0wOS0yMFQxMDoxMjoxMSswMjowMCIgZGM6Zm9ybWF0PSJpbWFnZS9wbmciIHBob3Rvc2hvcDpDb2xvck1vZGU9IjMiIHBob3Rvc2hvcDpJQ0NQcm9maWxlPSJzUkdCIElFQzYxOTY2LTIuMSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDowZDc2YmYzZC1kMDY2LWQzNGEtYjA0NC1iNTYzYjRmZTMzYmQiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6NmVlZmM4NmUtNTU2YS1lZTRmLTk3MTktNTBhMTEwYmQ3M2QxIiB4bXBNTTpPcmlnaW5hbERvY3VtZW50SUQ9InhtcC5kaWQ6NmVlZmM4NmUtNTU2YS1lZTRmLTk3MTktNTBhMTEwYmQ3M2QxIj4gPHhtcE1NOkhpc3Rvcnk+IDxyZGY6U2VxPiA8cmRmOmxpIHN0RXZ0OmFjdGlvbj0iY3JlYXRlZCIgc3RFdnQ6aW5zdGFuY2VJRD0ieG1wLmlpZDo2ZWVmYzg2ZS01NTZhLWVlNGYtOTcxOS01MGExMTBiZDczZDEiIHN0RXZ0OndoZW49IjIwMjMtMDktMjBUMTA6MTA6MjcrMDI6MDAiIHN0RXZ0OnNvZnR3YXJlQWdlbnQ9IkFkb2JlIFBob3Rvc2hvcCAyMS4wIChXaW5kb3dzKSIvPiA8cmRmOmxpIHN0RXZ0OmFjdGlvbj0ic2F2ZWQiIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6MGQ3NmJmM2QtZDA2Ni1kMzRhLWIwNDQtYjU2M2I0ZmUzM2JkIiBzdEV2dDp3aGVuPSIyMDIzLTA5LTIwVDEwOjEyOjExKzAyOjAwIiBzdEV2dDpzb2Z0d2FyZUFnZW50PSJBZG9iZSBQaG90b3Nob3AgMjEuMCAoV2luZG93cykiIHN0RXZ0OmNoYW5nZWQ9Ii8iLz4gPC9yZGY6U2VxPiA8L3htcE1NOkhpc3Rvcnk+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+VbzAZwAAEGJJREFUeNrtXXtwVNUZ/3aTQEKSQniEoFAzI4jyKHV8TH3xKFoRilXUKTPtVGf6R6ed6R/99zHT6bSdsSqkM51OU+wg9llrK6Nd20EQESgPeSgQIEAIjyQEyGuy2WSz2cd5fOfc7925d/fu3ezm7iaQM3Nn7+69Z+/5fb/zne87j3vvVUQE+eHcGwGTgjzIHFR10lQ9/aVxVadfpP/eIdVRdcr0neJprj7tKtO/uHlqKXD8xc/vkRUOQIFQFKQDi4KpoG6MxOcnPCfMIOtG6A9SoBFE2Q2ej0mnnNIRpWJN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',
             
             defaultColors: `<?xml version="1.0" encoding="utf-8"?>
 <resources>
@@ -23,33 +23,12 @@ class ProjectBuilder {
 
         // Moved workflow contents here (ideally load from files)
         this.workflowContents = {
-            'build-apk.yml': `name: Build APK ... (rest of YAML)`, // Truncated for brevity
-            'build-signed-apk.yml': `name: Build Signed APK ... (rest of YAML)` // Truncated for brevity
+            'build-apk.yml': `name: Build APK\n\non:\n  push:\n    branches: [ main ]\n  workflow_dispatch: # Required for triggering from API\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n\n    steps:\n    - name: Checkout project\n      uses: actions/checkout@v4\n\n    - name: Set up JDK 17\n      uses: actions/setup-java@v4\n      with:\n        distribution: 'temurin'\n        java-version: '17'\n\n    - name: Install Android SDK\n      run: |\n        mkdir -p $ANDROID_HOME/cmdline-tools\n        wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip\n        unzip -q cmdline-tools.zip -d $ANDROID_HOME/cmdline-tools\n        mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest\n        echo "PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_ENV\n      env:\n        ANDROID_HOME: /usr/local/lib/android/sdk\n\n    - name: Accept Android SDK licenses\n      run: yes | sdkmanager --licenses\n      env:\n        ANDROID_HOME: /usr/local/lib/android/sdk\n\n    - name: Verify Gradle wrapper exists\n      run: |\n        ls -l gradlew\n        if [ ! -f "./gradlew" ]; then echo "gradlew not found"; exit 1; fi\n\n    - name: Make gradlew executable\n      run: chmod +x ./gradlew\n\n    - name: Build the APK\n      run: ./gradlew assembleDebug --stacktrace --info\n      env:\n        ANDROID_HOME: /usr/local/lib/android/sdk\n        ANDROID_SDK_ROOT: /usr/local/lib/android/sdk\n\n    - name: Verify APK exists\n      run: |\n        ls -l app/build/outputs/apk/debug/\n        if [ ! -f "app/build/outputs/apk/debug/app-debug.apk" ]; then echo "APK not found"; exit 1; fi\n\n    - name: Upload APK artifact\n      uses: actions/upload-artifact@v4\n      with:\n        name: debug-apk\n        path: app/build/outputs/apk/debug/app-debug.apk\n`,
+            'build-signed-apk.yml': `name: Build Signed APK\n\non:\n  workflow_dispatch: # Required for triggering from API\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n\n    steps:\n    - name: Checkout project\n      uses: actions/checkout@v4\n\n    - name: Set up JDK 17\n      uses: actions/setup-java@v4\n      with:\n        distribution: 'temurin'\n        java-version: '17'\n\n    # Additional setup for signing\n    # ...\n\n    - name: Build Signed Release APK\n      run: ./gradlew assembleRelease\n      env:\n        ANDROID_HOME: /usr/local/lib/android/sdk\n        ANDROID_SDK_ROOT: /usr/local/lib/android/sdk\n        # Add signing-related environment variables\n\n    - name: Upload Signed APK artifact\n      uses: actions/upload-artifact@v4\n      with:\n        name: signed-apk\n        path: app/build/outputs/apk/release/app-release.apk\n`
         };
         
-        // TODO: Add methods moved from BuildManager for file generation
-        // - collectProjectFiles
-        // - getTemplateBuildGradle
-        // - getTemplateSettingsGradle
-        // - getTemplateGradleProperties
-        // - getTemplateLocalProperties
-        // - getTemplateWrapperProperties
-        // - getAppBuildGradle
-        // - generateAndroidManifest
-        // - generateActivityTags
-        // - generateStringsXml
-        // - generateColorsXml
-        // - generateStylesXml
-        // - getTemplateGradlew
-        // - getTemplateGradlewBat
-        // - getTemplateWrapperJar
-        // - generateMainActivity
-        // - generateScreenActivity
-        // - generateMainLayout
-        // - generateScreenLayout
     }
     
-    // --- Moved Project File Generation Methods ---
     
     async collectProjectFiles() {
       try {
@@ -104,8 +83,8 @@ class ProjectBuilder {
         
         // Resource files
         projectFiles.push({ path: 'app/src/main/res/values/strings.xml', content: this.generateStringsXml({ app_name: appData.name }) });
-        projectFiles.push({ path: 'app/src/main/res/values/colors.xml', content: this.defaultResources.defaultColors }); // Use default for now
-        projectFiles.push({ path: 'app/src/main/res/values/styles.xml', content: this.generateStylesXml(appData.themeColor || 'colorPrimary') });
+        projectFiles.push({ path: 'app/src/main/res/values/colors.xml', content: this.generateColorsXml(appData) });
+        projectFiles.push({ path: 'app/src/main/res/values/styles.xml', content: this.generateStylesXml(appData) });
         
         // App icon
         projectFiles.push({ path: 'app/src/main/res/mipmap-xxxhdpi/ic_launcher.png', content: this.defaultResources.ic_launcher, encoding: 'base64' }); // Use default for now
@@ -252,21 +231,55 @@ dependencies {
       return content;
     }
     
-    generateColorsXml(colors) {
-      // For now, still uses the default. TODO: Use appData.customColors
-      return this.defaultResources.defaultColors;
+    generateColorsXml(appData) {
+      let colorsContent = '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n';
+      let colorsUsed = false;
+
+      if (appData && appData.customColors && Object.keys(appData.customColors).length > 0) {
+          // Use colors from appData
+          for (const [name, value] of Object.entries(appData.customColors)) {
+              // Basic validation: Ensure value looks like a hex color code (#RRGGBB or #AARRGGBB)
+              if (/^#[0-9A-Fa-f]{6}$/.test(value) || /^#[0-9A-Fa-f]{8}$/.test(value)) {
+                  colorsContent += `    <color name="${name}">${value}</color>\n`;
+                  colorsUsed = true;
+              } else {
+                  console.warn(`Invalid color format for '${name}': ${value}. Skipping.`);
+              }
+          }
+      }
+      
+      // If no valid custom colors were found or provided, use defaults
+      if (!colorsUsed) {
+          console.log("Using default colors as no valid custom colors were found.");
+          // Assuming defaultResources.defaultColors contains the full XML string
+          // We need to extract the color tags or provide defaults here
+          // Let's define some basic defaults if defaultResources.defaultColors isn't structured for this
+           colorsContent += '    <color name="colorPrimary">#6200EE</color>\n';
+           colorsContent += '    <color name="colorPrimaryDark">#3700B3</color>\n';
+           colorsContent += '    <color name="colorAccent">#03DAC5</color>\n';
+           // Add more default colors if needed
+      }
+
+      colorsContent += '</resources>';
+      return colorsContent;
     }
     
-    generateStylesXml(themeColor) {
+    generateStylesXml(appData) {
+       // Determine the accent color name. Default to 'colorAccent' if not found.
+       const accentColorName = (appData && appData.theme && appData.theme.colorAccentName) ? appData.theme.colorAccentName : 'colorAccent';
+       // Determine primary and dark primary. Default if not found.
+        const primaryColorName = (appData && appData.theme && appData.theme.colorPrimaryName) ? appData.theme.colorPrimaryName : 'colorPrimary';
+        const primaryDarkColorName = (appData && appData.theme && appData.theme.colorPrimaryDarkName) ? appData.theme.colorPrimaryDarkName : 'colorPrimaryDark';
+
       // Uses primary color from defaults, Accent from appData
       return `<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Base application theme -->
     <style name="AppTheme" parent="Theme.MaterialComponents.Light.DarkActionBar">
         <!-- Customize your theme here -->
-        <item name="colorPrimary">@color/colorPrimary</item> 
-        <item name="colorPrimaryDark">@color/colorPrimaryDark</item> 
-        <item name="colorAccent">@color/${themeColor}</item>
+        <item name="colorPrimary">@color/${primaryColorName}</item> 
+        <item name="colorPrimaryDark">@color/${primaryDarkColorName}</item> 
+        <item name="colorAccent">@color/${accentColorName}</item>
     </style>
 </resources>`;
     }
@@ -291,8 +304,10 @@ dependencies {
         const imports = new Set([
             'android.os.Bundle',
             'androidx.appcompat.app.AppCompatActivity',
-            'android.view.View', // Often needed for listeners
-            'android.util.Log'   // For placeholder event logic
+            'android.view.View', // Needed for listeners
+            'android.util.Log',   // Often used in generated/default logic
+            'android.widget.Toast', // Often used for simple feedback
+            'android.content.Intent' // Often used for navigation
         ]);
 
         components.forEach(comp => {
@@ -300,12 +315,8 @@ dependencies {
             if (fullType) {
                 imports.add(fullType);
             }
-             // Add imports needed by event logic (e.g., Intent, Toast)
-            // TODO: Enhance this based on actual event block content
-            if (comp.events && comp.events.onClick) {
-                imports.add('android.content.Intent'); // Assuming potential navigation
-                imports.add('android.widget.Toast');  // Assuming potential messages
-            }
+            // Add any other imports needed based on component *type* if necessary
+            // Example: if (comp.type === 'WebView') imports.add('android.webkit.WebView');
         });
 
         return Array.from(imports).map(imp => `import ${imp};`).join('\n');
@@ -333,10 +344,10 @@ dependencies {
             .filter(comp => comp.id && comp.events && comp.events.onClick) // Focus on onClick for now
             .map(comp => {
                 const eventLogic = comp.events.onClick.trim();
-                // TODO: Implement more sophisticated logic block parsing/generation
-                // For now, just wrap in a log statement or basic interpretation
-                let javaLogic = `            // TODO: Implement click logic for ${comp.id}\n`;
-                javaLogic += `            Log.d("SketchwareEvent", "onClick for ${comp.id}");\n`;
+                // Basic interpretation of event logic blocks
+                // This part needs significant enhancement for complex blocks
+                let javaLogic = `            Log.d("SketchwareEvent", "onClick triggered for ${comp.id}");\n`; // Basic logging
+
                 // Simplistic example: Handle basic Toast
                 if (eventLogic.startsWith('Toast.makeText')) {
                      javaLogic += `            Toast.makeText(getApplicationContext(), "Event for ${comp.id}", Toast.LENGTH_SHORT).show();\n`;
@@ -389,10 +400,12 @@ ${declarations}
 ${initializations}
 ${eventListeners}
 
-        // TODO: Add any custom onCreate logic from appData if available
+        // Custom onCreate logic from appData would be inserted here
+        // Example: if (appData.customOnCreateCode) { /* insert code */ }
     }
 
-    // TODO: Add custom methods from appData if available
+    // Custom methods defined in appData would be added here
+    // Example: if (appData.customMethods) { /* insert methods */ }
 }`;
     }
     
@@ -423,10 +436,10 @@ ${declarations}
 ${initializations}
 ${eventListeners}
 
-        // TODO: Add any custom onCreate logic from appData if available
+        // Custom onCreate logic for this screen from appData would be inserted here
     }
 
-    // TODO: Add custom methods from appData if available
+    // Custom methods for this screen from appData would be added here
 }`;
     }
 
@@ -489,8 +502,8 @@ ${eventListeners}
         // Add android.widget. prefix if using simple tags
         const fullTagName = `android.widget.${tagName}`;
 
-        // Return self-closing tag for simplicity for now
-        // TODO: Handle nested layouts/children if componentData includes them
+        // Note: Currently returns a self-closing tag.
+        // Nested layouts/children are not handled in this basic implementation.
         return `    <${fullTagName}${attributes}\n        />`;
     }
 
@@ -571,7 +584,98 @@ ${componentsXml}
   
     getTemplateWrapperJar() {
       // Keep truncated base64 version
-      return "UEsDBBQACAgIAJJebk8AAAAAAAAAAAAAAAAJAAAATUVUQS1JTkYvAwBQSwMEFAAICAgAkl5uTwAAAAAAAAAAAAAAABQAAABNRVRBLUlORi9NQU5JRkVTVC5NRi2OSw4CMRBD957CV1i7YHOF3gCO4DMiBWljRknDPKT361HL1hXbsp8BAOHk2W45lXbFwCSOygMMo7+nFOGOOTFbcghJExyZnEyexC7FbBhF9osNqLPYb4YLC9Z1FvmbSIBgrrJEll2JC3XJNOP79NFpKaXQ4QeOGERcCnL2qPv51CtvwQbUUsvfLMRcbwW5tzcVTR9QSwcIXJzT59QAAADGAAAAUEsDBBQACAgIAJJebk8AAAAAAAAAAAAAAAAJAAAATUVUQS1JTkYvTUFOSUZFU1QuTUZQSwECFAAUAAgICACCXm5PAAAAAAAAAAAAAAAAFAAAAHJvYy9ncmFkbGUvd3JhcHBlci9QSwMEFAAICAgAcl5uTwAAAAAAAAAAAAAAABkAAABvcmcvZ3JhZGxlL3dyYXBwZXIvV3JhcHBlckMAAAEAUEsHCPMAQYcDAAAAAwAAAFBLAwQUAAgICACCXm5PAAAAAAAAAAAAAAAAHgAAAG9yZy9ncmFkbGUvd3JhcHBlci9CdWlsZEFjdGlvbkMAAAEAUEsHCPMAQYcDAAAAAwAAAFBLAwQUAAgICABwXm5PAAAAAAAAAAAAAAAAHgAAAG9yZy9ncmFkbGUvd3JhcHBlci9HcmFkbGVXcmFwcGVyUEsHCPMAQYcDAAAAAwAAAFBLAwQUAAgICACCXm5PAAAAAAAAAAAAAAAAIwAAAG9yZy9ncmFkbGUvd3JhcHBlci9HcmFkbGVXcmFwcGVyTWFpbkMAAAEAUEsHCPMAQYcDAAAAAwAAAFBLAQIUABQACAgIAJJebk8AAAAAAAAAAAAAAAAJAAAAAAAAAAAAEADtQQAAAABNRVRBLUlORi9QSwECFAAUAAgICACCXm5PXJzT59QAAADGAAAAFAAAAAAAAAAAABAAAsEtAAAATUVUQS1JTkYvTUFOSUZFU1QuTUZQSwECFAAUAAgICACCXm5PAAAAAAAAAAAAAAAABwAAAAAAAAAAABAA/UE9AQAAb3JnL1BLAQIUABQACAgIAHJebk8AAAAAAAAAAAAAAAAUAAAAAAAAAAAAEADtQVwBAAByb2MvZ3JhZGxlL3dyYXBwZXIvUEsBAhQAFAAICAgAgl5uT/MAQYcDAAAAAwAAABkAAAAAAAAAAAAQAP1BnwEAAG9yZy9ncmFkbGUvd3JhcHBlci9XcmFwcGVyQ1BLAQIUABQACAgIAIJebk/zAEGHAwAAAAMAAAAeAAAAAAAAAAAAEAD9QdIBAABvcmcvZ3JhZGxlL3dyYXBwZXIvQnVpbGRBY3Rpb25DUEsBAhQAFAAICAgAcF5uT/MAQYcDAAAAAwAAAB4AAAAAAAAAAAAQAOxBBQIAAG9yZy9ncmFkbGUvd3JhcHBlci9HcmFkbGVXcmFwcGVyUEsBAhQAFAAICAgAgl5uT/MAQYcDAAAAAwAAACMAAAAAAAAAAAAQAOxBOAIAAG9yZy9ncmFkbGUvd3JhcHBlci9HcmFkbGVXcmFwcGVyTWFpbkNQSwUGAAAAAAgACACuAQAAbgIAAAAA";
+      return "UEsDBBQACAgIAJJebk8AAAAAAAAAAAAAAAAJAAAATUVUQS1JTkYvAwBQSwMEFAAICAgAkl5uTwAAAAAAAAAAAAAAABQAAABNRVRBLUlORi9NQU5JRkVTVC5NRi2OSw4CMRBD957CV1i7YHOF3gCO4DMiBWljRknDPKT361HL1hXbsp8BAOHk2W45lXbFwCSOygMMo7+nFOGOOTFbcghJExyZnEyexC7FbBhF9osNqLPYb4YLC9Z1FvmbSIBgrrJEll2JC3XJNOP79NFpKaXQ4QeOGERcCnL2qPv51CtvwQbUUsvfLMRcbwW5tzcVTR9QSwcIXJzT59QAAADGAAAAUEsDBBQACAgIAJJebk8AAAAAAAAAAAAAAAAJAAAATUVUQS1JTkYvTUFOSUZFU1QuTUZQSwECFAAUAAgICACCXm5PAAAAAAAAAAAAAAAAFAAAAHJvYy9ncmFkbGUvd3JhcHBlci9QSwMEFAAICAgAcl5uTwAAAAAAAAAAAAAAABkAAABvcmcvZ3JhZGxlL3dyYXBwZXIvV3JhcHBlckMAAAEAUEsHCPMAQYcDAAAAAwAAAFBLAwQUAAgICACCXm5PAAAAAAAAAAAAAAAAHgAAAG9yZy9ncmFkbGUvd3JhcHBlci9CdWlsZEFjdGlvbkMAAAEAUEsHCPMAQYcDAAAAAwAAAFBLAwQUAAgICABwXm5PAAAAAAAAAAAAAAAAHgAAAG9yZy9ncmFkbGUvd3JhcHBlci9HcmFkbGVXcmFwcGVyUEsHCPMAQYcDAAAAAwAAAFBLAwQUAAgICACCXm5PAAAAAAAAAAAAAAAAIwAAAG9yZy9ncmFkbGUvd3JhcHBlci9HcmFkbGVXcmFwcGVyTWFpbkMAAAEAUEsHCPMAQYcDAAAAAwAAAFBLAQIUABQACAgIAJJebk8AAAAAAAAAAAAAAAAJAAAAAAAAAAAAEADtQQAAAABNRVRBLUlORi9QSwECFAAUAAgICACCXm5PXJzT59QAAADGAAAAFAAAAAAAAAAAABAAAsEtAAAATUVUQS1JTkYvTUFOSUZFU1QuTUZQSwECFAAUAAgICACCXm5PAAAAAAAAAAAAAAAABwAAAAAAAAAAABAA/UE9AQAAb3JnL1BLAQIUABQACAgIAJJebk8AAAAAAAAAAAAAAAAJAAAATUVUQS1JTkYvTUFOSUZFU1QuTUZQSwECFAAUAAgICACCXm5PAAAAAAAAAAAAAAAABwAAAAAAAAAAABAA/UE9AQAAb3JnL1BLAQIUABQACAgIAHJebk8AAAAAAAAAAAAAAAAUAAAAAAAAAAAAEADtQVwBAAByb2MvZ3JhZGxlL3dyYXBwZXIvUEsBAhQAFAAICAgAgl5uT/MAQYcDAAAAAwAAABkAAAAAAAAAAAAQAP1BnwEAAG9yZy9ncmFkbGUvd3JhcHBlci9XcmFwcGVyQ1BLAQIUABQACAgIAIJebk/zAEGHAwAAAAMAAAAeAAAAAAAAAAAAEAD9QdIBAABvcmcvZ3JhZGxlL3dyYXBwZXIvQnVpbGRBY3Rpb25DUEsBAhQAFAAICAgAcF5uT/MAQYcDAAAAAwAAAB4AAAAAAAAAAAAQAOxBBQIAAG9yZy9ncmFkbGUvd3JhcHBlci9HcmFkbGVXcmFwcGVyUEsBAhQAFAAICAgAgl5uT/MAQYcDAAAAAwAAACMAAAAAAAAAAAAQAOxBOAIAAG9yZy9ncmFkbGUvd3JhcHBlci9HcmFkbGVXcmFwcGVyTWFpbkNQSwUGAAAAAAgACACuAQAAbgIAAAAA";
+    }
+    
+    // --- Added Missing Template Functions ---
+
+    getTemplateBuildGradle() {
+        // Top-level build file (Project: YourAppName)
+        return `// Top-level build file where you can add configuration options common to all sub-projects/modules.
+plugins {
+    id('com.android.application') version '8.1.1' apply false // Example version
+    // Add other plugins if needed, e.g., Kotlin
+}
+`;
+    }
+
+    getTemplateSettingsGradle(appName) {
+        // settings.gradle (Project: YourAppName)
+        const safeAppName = appName ? appName.replace(/[^a-zA-Z0-9_-]/g, '') : 'ProBuildApp';
+        return `pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+rootProject.name = "${safeAppName}"
+include ':app'
+`;
+    }
+
+    getTemplateGradleProperties() {
+        // gradle.properties (Project Properties)
+        return `# Project-wide Gradle settings.
+# IDE (e.g. Android Studio) users:
+# Gradle settings configured through the IDE *override*
+# any settings specified in this file.
+# For more details on how to configure your build environment visit
+# https://docs.gradle.org/current/userguide/build_environment.html
+
+# Specifies the JVM arguments used for the daemon process.
+# The setting is particularly useful for tweaking memory settings.
+org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+
+# When configured, Gradle will run in incubating parallel mode.
+# This requires incubating features to be enabled.
+# org.gradle.parallel=true
+
+# AndroidX package structure to make it clearer which packages are bundled with the
+# Android operating system, and which ones are packaged with your application's APK
+# https://developer.android.com/jetpack/androidx/
+android.useAndroidX=true
+
+# Kotlin code style for auto-generated KDoc
+# kotlin.code.style=official
+`;
+    }
+
+    getTemplateLocalProperties() {
+        // local.properties (SDK Location - this is usually generated by Android Studio)
+        // It might be empty or contain the SDK path
+        // Provide a placeholder or instructions if needed
+        return `# This file is automatically generated by Android Studio.
+# Do not modify this file -- YOUR CHANGES WILL BE ERASED!
+#
+# This file must *NOT* be checked into Version Control Systems,
+# as it contains information specific to your local configuration.
+#
+# Location of the SDK. This is only used by Gradle.
+# For customization when using a Version Control System, please read the
+# header note.
+# Fri Oct 27 10:30:00 UTC 2023 
+# sdk.dir=/path/to/your/android/sdk 
+`;
+    }
+
+    getTemplateWrapperProperties() {
+        // gradle/wrapper/gradle-wrapper.properties
+        // Point to a specific Gradle distribution
+        return `distributionBase=GRADLE_USER_HOME
+distributionPath=wrapper/dists
+zipStoreBase=GRADLE_USER_HOME
+zipStorePath=wrapper/dists
+distributionUrl=https\://services.gradle.org/distributions/gradle-8.0-bin.zip
+`; // Example: Gradle 8.0
     }
 }
 

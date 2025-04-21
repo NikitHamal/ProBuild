@@ -2,66 +2,106 @@ class CodeGenerator {
   constructor(codeManager) {
     this.codeManager = codeManager;
     this.editorView = codeManager.editorView;
-    this.currentApp = codeManager.currentApp;
   }
   
   generateFile(fileId, screen) {
+    // Access currentApp directly from editorView to ensure it's up-to-date
+    const currentApp = this.editorView.currentApp;
+    if (!currentApp) {
+        console.error("CodeGenerator: Cannot generate file, currentApp is null.");
+        return '// Error: App data not loaded';
+    }
+    
+    // Ensure screen is valid
+    if (!screen) {
+        console.error("CodeGenerator: Cannot generate file, screen is null.");
+        return '// Error: Screen data not available';
+    }
+
     switch (fileId) {
       case 'main':
-        return this.generateJavaActivity(screen);
+        return this.generateJavaActivity(screen, currentApp);
       case 'layout':
         return this.generateLayoutXml(screen);
       case 'strings':
-        return this.generateStringsXml();
+        return this.generateStringsXml(currentApp);
       case 'colors':
-        return this.generateColorsXml();
+        return this.generateColorsXml(currentApp);
       case 'manifest':
-        return this.generateManifestXml();
+        return this.generateManifestXml(currentApp);
       default:
         return '// File not supported';
     }
   }
   
-  generateJavaActivity(screen) {
-    const packageName = this.currentApp.packageName || 'com.example.app';
+  generateJavaActivity(screen, currentApp) {
+    const packageName = currentApp.packageName || 'com.example.app';
     const screenName = screen.name;
     const components = screen.components || [];
     
+    // --- Preservation Logic Start ---
+    const fileId = 'main';
+    const startComment = '// BLOCKS_START';
+    const endComment = '// BLOCKS_END';
+    const placeholder = '// <<< BLOCKS_CODE_GOES_HERE >>>';
+    let existingBlockCode = null;
+
+    // Get existing content if available from FileManager
+    const existingContent = this.codeManager.fileManager.fileContents[fileId];
+    
+    if (typeof existingContent === 'string') {
+        const startIndex = existingContent.indexOf(startComment);
+        const endIndex = existingContent.indexOf(endComment);
+
+        if (startIndex !== -1 && endIndex !== -1 && startIndex < endIndex) {
+            // Found existing block - extract content between comments
+            const before = startIndex + startComment.length;
+            existingBlockCode = existingContent.substring(before, endIndex).trim();
+            console.log('CodeGenerator: Preserving existing block code.');
+        } else {
+           // Check if the placeholder exists (might happen if blocks were never used)
+           if (existingContent.includes(placeholder)) {
+               existingBlockCode = placeholder; // Preserve the placeholder itself
+               console.log('CodeGenerator: Preserving placeholder.');
+           }
+        }
+    }
+    // --- Preservation Logic End ---
+
     let declarations = '';
     let findViewsCode = '';
-    let initListenersCode = '';
     
-    // Generate code for each component
+    // Generate code for each component (declarations, findViewById)
     components.forEach(component => {
       const { type, id, properties } = component;
-      const componentId = id || `component_${Date.now()}`;
+      const componentId = id;
       
-      // Skip components without proper IDs
       if (!componentId) return;
       
-      // Convert component type to Java class name
       const componentClass = this.getComponentClassName(type);
       if (!componentClass) return;
       
-      // Add declaration
       declarations += `    private ${componentClass} ${componentId};\n`;
-      
-      // Add findViewById
       findViewsCode += `        ${componentId} = findViewById(R.id.${componentId});\n`;
-      
-      // Add event listeners if needed
-      if (type === 'button') {
-        initListenersCode += `
-        ${componentId}.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // TODO: Implement button click handler
-            }
-        });
-`;
-      }
     });
     
+    // Determine the code to insert: preserved blocks or just the delimiters
+    let blockCodeSection = '';
+    if (existingBlockCode && existingBlockCode !== placeholder) {
+        // We found actual block code between the delimiters
+        blockCodeSection = 
+`        ${startComment}
+${existingBlockCode}
+        ${endComment}`;
+    } else {
+        // No existing block code found, or only the placeholder was found.
+        // Output just the delimiters to mark the spot for future insertions.
+        blockCodeSection = 
+`        ${startComment}
+        ${endComment}`;
+    }
+        
+    // Assemble the final Java code, removing extra comments
     return `package ${packageName};
 
 import android.os.Bundle;
@@ -80,11 +120,11 @@ ${declarations}
         // Initialize Views
 ${findViewsCode}
         
-        // Set up listeners
-${initListenersCode}
+${blockCodeSection}
     }
     
-    // Add your methods here
+    // Add your custom methods below this line
+
 }
 `;
   }
@@ -184,8 +224,8 @@ ${componentsXml}
 `;
   }
   
-  generateStringsXml() {
-    const appName = this.currentApp.name || 'My App';
+  generateStringsXml(currentApp) {
+    const appName = currentApp.name || 'My App';
     
     return `<?xml version="1.0" encoding="utf-8"?>
 <resources>
@@ -198,8 +238,8 @@ ${componentsXml}
 `;
   }
   
-  generateColorsXml() {
-    const customColors = this.currentApp.customColors || {
+  generateColorsXml(currentApp) {
+    const customColors = currentApp.customColors || {
       colorAccent: '#2196F3',
       colorPrimary: '#3F51B5',
       colorPrimaryDark: '#303F9F',
@@ -222,18 +262,19 @@ ${componentsXml}
 `;
   }
   
-  generateManifestXml() {
-    const packageName = this.currentApp.packageName || 'com.example.app';
-    const appName = this.currentApp.name || 'My App';
-    const versionCode = this.currentApp.versionCode || '1';
-    const versionName = this.currentApp.versionName || '1.0';
-    const minSdk = this.currentApp.minSdk || '21';
+  generateManifestXml(currentApp) {
+    const packageName = currentApp.packageName || 'com.example.app';
+    const appName = currentApp.name || 'My App';
+    const versionCode = currentApp.versionCode || '1';
+    const versionName = currentApp.versionName || '1.0';
+    const minSdk = currentApp.minSdk || '21';
+    const mainActivityName = currentApp.screens?.[0]?.name || 'MainActivity';
     
     // Generate screen activities
     let activitiesXml = '';
     
-    if (this.currentApp.screens && this.currentApp.screens.length > 0) {
-      this.currentApp.screens.forEach((screen, index) => {
+    if (currentApp.screens && currentApp.screens.length > 0) {
+      currentApp.screens.forEach((screen, index) => {
         const isMainActivity = index === 0;
         
         let intentFilter = '';

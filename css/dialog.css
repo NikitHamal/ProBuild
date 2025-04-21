@@ -12,17 +12,13 @@
 }
 
 .dialog {
-  background-color: var(--background-color);
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow-lg);
-  width: 100%;
-  max-width: 450px;
-  padding: var(--spacing-md) var(--spacing-lg);
-  animation: dialogFadeIn 0.2s ease-out;
-  overflow: hidden;
+  background-color: #fff;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
-  max-height: 90vh;
+  overflow: hidden;
 }
 
 .dialog.new-project {
@@ -45,30 +41,16 @@
   }
 }
 
-@keyframes dialogFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 .dialog-header {
-  padding: var(--spacing-md);
-  border-bottom: 1px solid #eee;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e0e0e0;
+  background-color: #f5f5f5;
 }
 
 .dialog-title {
-  font-size: 1.3rem;
-  font-weight: 600;
-  text-align: center;
+  font-size: 18px;
+  font-weight: 500;
+  color: #333;
 }
 
 .back-btn {
@@ -85,52 +67,48 @@
 }
 
 .dialog-content {
-  margin: 0;
-  padding: var(--spacing-md) var(--spacing-lg);
+  padding: 20px;
   overflow-y: auto;
-  flex: 1;
+  max-height: 60vh;
 }
 
 .dialog-actions {
+  padding: 12px 20px;
   display: flex;
-  gap: var(--spacing-md);
-  padding: var(--spacing-md);
-  border-top: 1px solid #eee;
-}
-
-.dialog-actions.end {
   justify-content: flex-end;
+  gap: 10px;
+  border-top: 1px solid #e0e0e0;
+  background-color: #f5f5f5;
 }
 
 .dialog-btn {
-  padding: var(--spacing-md);
-  border-radius: var(--border-radius);
-  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  background-color: #f5f5f5;
+  color: #333;
+  font-size: 14px;
   cursor: pointer;
-  border: none;
-  background-color: transparent;
-  flex: 1;
-  font-family: 'Poppins', sans-serif;
-  font-size: 1rem;
-  text-align: center;
+  transition: background-color 0.2s;
 }
 
 .dialog-btn:hover {
-  background-color: var(--surface-color);
+  background-color: #e9e9e9;
 }
 
 .dialog-btn.primary {
-  background-color: #B13B3B;
+  background-color: #4285f4;
   color: white;
+  border-color: #3367d6;
+}
+
+.dialog-btn.primary:hover {
+  background-color: #3367d6;
 }
 
 .dialog-btn.cancel {
   background-color: #7E5959;
   color: white;
-}
-
-.dialog-btn.primary:hover {
-  background-color: #8a2e2e;
 }
 
 .dialog-btn.cancel:hover {
@@ -518,4 +496,297 @@
   color: var(--text-secondary);
   margin-top: 4px;
   line-height: 1.4;
+}
+
+/* Build dialog specific styles */
+.build-steps {
+  margin: 15px 0;
+}
+
+.build-steps .step {
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  border-left: 3px solid #ddd;
+}
+
+.build-steps .step[data-status="current"] {
+  border-left-color: #4285f4;
+  background-color: #f0f5ff;
+}
+
+.build-steps .step[data-status="done"] {
+  border-left-color: #0f9d58;
+}
+
+.build-steps .step[data-status="pending"] {
+  color: #777;
+}
+
+.step-status {
+  display: flex;
+  align-items: center;
+}
+
+.step-icon {
+  margin-right: 8px;
+}
+
+.build-log-container {
+  margin-top: 15px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.build-log-title {
+  padding: 8px 12px;
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #e0e0e0;
+  font-weight: 500;
+}
+
+.build-log {
+  padding: 10px;
+  font-family: monospace;
+  white-space: pre-wrap;
+  font-size: 13px;
+  background-color: #f8f9fa;
+}
+
+.log-step {
+  display: flex;
+  align-items: center;
+  padding: 5px;
+  border-bottom: 1px solid #eee;
+}
+
+.log-step:last-child {
+  border-bottom: none;
+}
+
+.log-step .step-name {
+  flex: 1;
+}
+
+.log-step .step-status {
+  color: #777;
+  font-size: 12px;
+}
+
+.status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-badge.pending {
+  background-color: #f5f5f5;
+  color: #777;
+}
+
+.status-badge.running {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.status-badge.success {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status-badge.failed {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.status-badge.cancelled {
+  background-color: #fafafa;
+  color: #616161;
+}
+
+.progress-container {
+  margin: 15px 0;
+  display: flex;
+  align-items: center;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 10px;
+  background-color: #e0e0e0;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #4285f4;
+  border-radius: 5px;
+}
+
+.progress-label {
+  margin-left: 10px;
+  font-size: 12px;
+  color: #616161;
+}
+
+.status-details {
+  margin: 15px 0;
+  padding: 10px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+}
+
+.status-title {
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+
+/* Input fields */
+.dialog-content input[type="text"],
+.dialog-content input[type="password"] {
+  width: 100%;
+  padding: 8px 10px;
+  margin-bottom: 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.dialog-content input[type="checkbox"] {
+  margin-right: 6px;
+}
+
+/* GitHub Config Form Styles */
+.github-config-form {
+  margin: 0 0 10px 0;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.help-text {
+  display: block;
+  color: #666;
+  font-size: 12px;
+  margin-top: 3px;
+}
+
+/* Build Options Styles */
+.build-intro {
+  margin-bottom: 20px;
+  font-size: 16px;
+}
+
+.build-option-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.build-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+}
+
+.build-option:hover {
+  background-color: #f0f0f0;
+}
+
+.build-option-info {
+  flex: 1;
+}
+
+.build-option-info h3 {
+  margin: 0 0 5px 0;
+  font-size: 16px;
+}
+
+.build-option-info p {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+}
+
+/* Build Success/Failed Styles */
+.build-success, .build-failed {
+  text-align: center;
+}
+
+.success-icon, .failure-icon {
+  margin-bottom: 15px;
+}
+
+.success-title, .failure-title {
+  margin-bottom: 20px;
+  font-size: 22px;
+}
+
+.build-details {
+  text-align: left;
+  margin: 20px auto;
+  width: 100%;
+  max-width: 400px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  padding: 15px;
+}
+
+.detail-row {
+  display: flex;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.detail-row:last-child {
+  margin-bottom: 0;
+}
+
+.detail-label {
+  font-weight: 500;
+  width: 100px;
+}
+
+.detail-value {
+  flex: 1;
+}
+
+.error-help {
+  margin-top: 15px;
+  color: #666;
+}
+
+/* Preparation Dialog */
+.preparation-status {
+  text-align: center;
+}
+
+.preparation-icon {
+  margin-bottom: 15px;
+}
+
+/* Progress Dialog Additions */
+.build-log-container {
+  text-align: left;
 } 

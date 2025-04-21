@@ -1,977 +1,283 @@
-import CodeGenerator from './CodeGenerator.js';
-import NotificationManager from '../utils/NotificationManager.js';
 import CodeFormatter from './CodeFormatter.js';
+import CodeHistoryManager from './CodeHistoryManager.js';
+import CodeSearchManager from './CodeSearchManager.js';
+import CodeFileManager from './CodeFileManager.js';
+import CodeEditorUIManager from './CodeEditorUIManager.js';
+import CodeEditorEventManager from './CodeEditorEventManager.js';
+import NotificationManager from '../utils/NotificationManager.js';
 
 class CodeManager {
   constructor(editorView) {
     this.editorView = editorView;
     this.currentApp = editorView.currentApp;
     this.currentScreen = editorView.currentScreen;
-    this.codeGenerator = new CodeGenerator(this);
-    this.codeFormatter = new CodeFormatter();
     this.notificationManager = new NotificationManager();
-    this.activeFile = 'main';
-    this.fileContents = {};
-    this.editorInstance = null;
-    this.fileHistory = {
-      undo: {},
-      redo: {}
-    };
-    this.searchResults = {
-      query: '',
-      matches: [],
-      currentIndex: -1
-    };
-    this.dirtyFiles = new Set(); // Keep track of files modified by property changes
+
+    this.activeFile = 'main'; // Default active file
+    this.editorInstance = null; // Reference to the actual editor (textarea)
+
+    // Instantiate Managers
+    this.codeFormatter = new CodeFormatter();
+    this.historyManager = new CodeHistoryManager(this);
+    this.searchManager = new CodeSearchManager(this);
+    this.fileManager = new CodeFileManager(this);
+    this.uiManager = new CodeEditorUIManager(this);
+    this.eventManager = new CodeEditorEventManager(this);
+    
+    // --- Load existing code from the App model ---
+    if (this.currentApp && this.currentApp.generatedCode) {
+        console.log("CodeManager: Loading previously saved code from App model.");
+        // Copy saved code into the file manager's cache
+        // Ensure we don't overwrite it later with default generation unless necessary
+        Object.keys(this.currentApp.generatedCode).forEach(fileId => {
+            this.fileManager.fileContents[fileId] = this.currentApp.generatedCode[fileId];
+        });
+        // Mark loaded files initially as non-dirty (assuming loaded code is the saved state)
+        this.fileManager.clearDirtyFiles(); 
+    } else {
+        console.log("CodeManager: No previously saved code found in App model, will generate defaults if needed.");
+    }
+    // --- End Load existing code ---
+
+    // Expose fileContents via fileManager
+    // Use this.fileManager.fileContents to access
   }
   
+  // --- Initialization and Rendering ---
   renderCodeTab() {
-    // Generate the code files for the current screen
-    this.generateCode();
+    // Generate initial code ONLY if it wasn't loaded
+    // The generateFileContent method inside generateCodeForAllFiles
+    // already checks if content exists in fileContents, so this call is okay.
+    // It will only generate for files missing from the loaded generatedCode.
+    this.fileManager.generateCodeForAllFiles();
     
-    // Load CSS file for code editor
-    this.loadCodeEditorCSS();
+    // Render the main UI structure
+    const tabContent = this.uiManager.renderCodeTabContent();
     
-    return `
-      <div class="code-editor">
-        <div class="code-toolbar">
-          <div class="code-file-tabs">
-            ${this.renderFileTabs()}
-          </div>
-          <div class="code-toolbar-actions">
-            <button class="code-toolbar-btn" id="code-run-btn" title="Run the generated code">
-              <i class="material-icons">play_arrow</i>
-              <span>Run</span>
-            </button>
-            <button class="code-toolbar-btn" id="code-save-btn" title="Save changes">
-              <i class="material-icons">save</i>
-              <span>Save</span>
-            </button>
-            <button class="code-toolbar-btn" id="code-format-btn" title="Format code">
-              <i class="material-icons">format_align_left</i>
-              <span>Format</span>
-            </button>
-            <button class="code-toolbar-btn" id="code-undo-btn" title="Undo" disabled>
-              <i class="material-icons">undo</i>
-            </button>
-            <button class="code-toolbar-btn" id="code-redo-btn" title="Redo" disabled>
-              <i class="material-icons">redo</i>
-            </button>
-            <div class="code-search">
-              <input type="text" id="code-search-input" placeholder="Search...">
-              <button id="code-search-btn" title="Search">
-                <i class="material-icons">search</i>
-              </button>
-              <button id="code-search-next-btn" title="Next match">
-                <i class="material-icons">arrow_downward</i>
-              </button>
-              <button id="code-search-prev-btn" title="Previous match">
-                <i class="material-icons">arrow_upward</i>
-              </button>
-            </div>
-          </div>
-        </div>
-        <div class="code-editor-container" id="code-editor-container">
-          ${this.renderCodeEditorPlaceholder()}
-        </div>
-        <div class="code-status-bar">
-          <span class="code-status-position">Line: 1, Col: 1</span>
-          <span class="code-status-file-type">${this.getFileExtension(this.activeFile)}</span>
-          <span class="code-status-encoding">UTF-8</span>
-        </div>
-      </div>
-    `;
+    // Return the HTML content
+    return tabContent;
   }
   
-  loadCodeEditorCSS() {
-    // Check if the CSS is already loaded
-    if (!document.getElementById('code-editor-css')) {
-      const link = document.createElement('link');
-      link.id = 'code-editor-css';
-      link.rel = 'stylesheet';
-      link.href = 'css/code-editor-improved.css';
-      document.head.appendChild(link);
-    }
-  }
-  
-  setupEventListeners() {
-    // Set up tab switching
-    document.querySelectorAll('.code-file-tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        const fileId = tab.dataset.fileId;
-        this.switchToFile(fileId);
-      });
-    });
-    
-    // Run button
-    const runBtn = document.getElementById('code-run-btn');
-    if (runBtn) {
-      runBtn.addEventListener('click', () => this.runCode());
-    }
-    
-    // Save button
-    const saveBtn = document.getElementById('code-save-btn');
-    if (saveBtn) {
-      saveBtn.addEventListener('click', () => this.saveCode());
-    }
-    
-    // Format button
-    const formatBtn = document.getElementById('code-format-btn');
-    if (formatBtn) {
-      formatBtn.addEventListener('click', () => this.formatCode());
-    }
-    
-    // Undo button
-    const undoBtn = document.getElementById('code-undo-btn');
-    if (undoBtn) {
-      undoBtn.addEventListener('click', () => this.undoChange());
-    }
-    
-    // Redo button
-    const redoBtn = document.getElementById('code-redo-btn');
-    if (redoBtn) {
-      redoBtn.addEventListener('click', () => this.redoChange());
-    }
-    
-    // Search functionality
-    const searchInput = document.getElementById('code-search-input');
-    const searchBtn = document.getElementById('code-search-btn');
-    const searchNextBtn = document.getElementById('code-search-next-btn');
-    const searchPrevBtn = document.getElementById('code-search-prev-btn');
-    
-    if (searchInput && searchBtn) {
-      searchBtn.addEventListener('click', () => {
-        this.searchInCode(searchInput.value);
-      });
+  initializeEditorAndListeners() {
+      // Render the initial code editor structure (placeholder)
+      // The actual editor instance is created by initCodeEditor
+      // Note: renderCodeTab already generated the HTML string in EditorView
       
-      searchInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          this.searchInCode(searchInput.value);
-        }
-      });
-    }
-    
-    if (searchNextBtn) {
-      searchNextBtn.addEventListener('click', () => {
-        this.searchNext();
-      });
-    }
-    
-    if (searchPrevBtn) {
-      searchPrevBtn.addEventListener('click', () => {
-        this.searchPrev();
-      });
-    }
-    
-    // Set up keyboard shortcuts
-    document.addEventListener('keydown', (e) => {
-      // Only handle if code tab is active
-      if (this.editorView.activeTab !== 'code') return;
-      
-      // Ctrl+S for save
-      if (e.ctrlKey && e.key === 's') {
-        e.preventDefault();
-        this.saveCode();
+      // Find the container where the editor should be initialized
+      const editorContainer = document.getElementById('editor-panel'); 
+      if (!editorContainer) {
+          console.error("Cannot initialize code editor: #editor-panel not found.");
+          return;
       }
+
+      // Initialize the actual editor instance (textarea) via UIManager
+      this.uiManager.initCodeEditor(); 
       
-      // Ctrl+Z for undo
-      if (e.ctrlKey && e.key === 'z' && !e.shiftKey) {
-        e.preventDefault();
-        this.undoChange();
-      }
-      
-      // Ctrl+Y or Ctrl+Shift+Z for redo
-      if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'z')) {
-        e.preventDefault();
-        this.redoChange();
-      }
-      
-      // Ctrl+F for search
-      if (e.ctrlKey && e.key === 'f') {
-        e.preventDefault();
-        document.getElementById('code-search-input')?.focus();
-      }
-      
-      // F3 for next search match
-      if (e.key === 'F3') {
-        e.preventDefault();
-        this.searchNext();
-      }
-      
-      // Shift+F3 for previous search match
-      if (e.shiftKey && e.key === 'F3') {
-        e.preventDefault();
-        this.searchPrev();
-      }
-    });
-    
-    // Initialize code editor
-    this.initCodeEditor();
-  }
-  
-  initCodeEditor() {
-    // In a real implementation, we would initialize a code editor like CodeMirror or Monaco
-    // For now, we'll use a simple textarea with enhanced features
-    const editorContainer = document.getElementById('code-editor-container');
-    if (!editorContainer) return;
-    
-    const textarea = document.createElement('textarea');
-    textarea.id = 'code-editor-textarea';
-    textarea.className = 'code-editor-textarea';
-    textarea.value = this.getActiveFileContent();
-    textarea.spellcheck = false;
-    
-    editorContainer.innerHTML = '';
-    editorContainer.appendChild(textarea);
-    
-    // Set up textarea events
-    textarea.addEventListener('input', () => {
-      // Save to undo history before updating
-      this.saveToHistory();
-      
-      // Update content
-      this.fileContents[this.activeFile] = textarea.value;
-      
-      // Update status bar
-      this.updateStatusBar(textarea);
-    });
-    
-    // Track cursor position for status bar
-    textarea.addEventListener('click', () => {
-      this.updateStatusBar(textarea);
-    });
-    
-    textarea.addEventListener('keyup', () => {
-      this.updateStatusBar(textarea);
-    });
-    
-    // Focus the textarea
-    textarea.focus();
-    
-    // Store reference
-    this.editorInstance = textarea;
-    
-    // Update status bar initially
-    this.updateStatusBar(textarea);
-    
-    // Apply syntax highlighting (simulated)
-    this.applySyntaxHighlighting();
-  }
-  
-  updateStatusBar(textarea) {
-    const statusPosition = document.querySelector('.code-status-position');
-    if (!statusPosition || !textarea) return;
-    
-    // Calculate line and column
-    const content = textarea.value;
-    const position = textarea.selectionStart;
-    
-    // Count lines up to position
-    const lines = content.substr(0, position).split('\n');
-    const lineNumber = lines.length;
-    const colNumber = lines[lines.length - 1].length + 1;
-    
-    statusPosition.textContent = `Line: ${lineNumber}, Col: ${colNumber}`;
-  }
-  
-  applySyntaxHighlighting() {
-    // In a real implementation, this would use a library for syntax highlighting
-    // For now, we'll just simulate it with a notification
-    const fileExt = this.getFileExtension(this.activeFile);
-    this.notificationManager.showNotification(`Applied ${fileExt} syntax highlighting`, 'info', 1000);
-  }
-  
-  getFileExtension(fileId) {
-    switch (fileId) {
-      case 'main':
-      case 'java':
-        return 'Java';
-      case 'layout':
-      case 'strings':
-      case 'colors':
-      case 'manifest':
-        return 'XML';
-      case 'gradle':
-        return 'Gradle';
-      default:
-        return 'Text';
-    }
-  }
-  
-  saveToHistory() {
-    // Only save if we have an active file and editor
-    if (!this.activeFile || !this.editorInstance) return;
-    
-    // Initialize array for this file if not exists
-    if (!this.fileHistory.undo[this.activeFile]) {
-      this.fileHistory.undo[this.activeFile] = [];
-    }
-    
-    // Save current content to undo history
-    this.fileHistory.undo[this.activeFile].push(this.editorInstance.value);
-    
-    // Clear redo history for this file when a new change is made
-    this.fileHistory.redo[this.activeFile] = [];
-    
-    // Update button states
-    this.updateUndoRedoButtons();
-    
-    // Limit history size
-    if (this.fileHistory.undo[this.activeFile].length > 50) {
-      this.fileHistory.undo[this.activeFile].shift();
-    }
-  }
-  
-  updateUndoRedoButtons() {
-    const undoBtn = document.getElementById('code-undo-btn');
-    const redoBtn = document.getElementById('code-redo-btn');
-    
-    if (undoBtn) {
-      if (this.fileHistory.undo[this.activeFile]?.length > 0) {
-        undoBtn.removeAttribute('disabled');
+      // Setup event listeners for the editor and toolbar via EventManager
+      this.eventManager.setupAllEventListeners();
+      // Pass the newly created editor instance to the event manager
+      if(this.editorInstance) {
+          this.eventManager.setupEditorEventListeners(this.editorInstance); 
       } else {
-        undoBtn.setAttribute('disabled', '');
+          console.error("Editor instance was not created by UIManager during initialization.");
       }
-    }
-    
-    if (redoBtn) {
-      if (this.fileHistory.redo[this.activeFile]?.length > 0) {
-        redoBtn.removeAttribute('disabled');
+      
+      // Attach listeners to the sidebar file list items
+      const fileListContainer = editorContainer.querySelector('.file-list');
+      if (fileListContainer) {
+          this.uiManager.attachSidebarFileListeners(fileListContainer);
       } else {
-        redoBtn.setAttribute('disabled', '');
-      }
-    }
-  }
-  
-  undoChange() {
-    if (!this.activeFile || !this.editorInstance) return;
-    
-    // Check if we have history
-    if (!this.fileHistory.undo[this.activeFile] || this.fileHistory.undo[this.activeFile].length === 0) {
-      return;
-    }
-    
-    // Initialize redo array if not exists
-    if (!this.fileHistory.redo[this.activeFile]) {
-      this.fileHistory.redo[this.activeFile] = [];
-    }
-    
-    // Save current state to redo history
-    this.fileHistory.redo[this.activeFile].push(this.editorInstance.value);
-    
-    // Get previous state
-    const previousState = this.fileHistory.undo[this.activeFile].pop();
-    
-    // Restore previous state
-    this.editorInstance.value = previousState;
-    this.fileContents[this.activeFile] = previousState;
-    
-    // Update button states
-    this.updateUndoRedoButtons();
-    
-    this.notificationManager.showNotification('Undo successful', 'info', 1000);
-  }
-  
-  redoChange() {
-    if (!this.activeFile || !this.editorInstance) return;
-    
-    // Check if we have redo history
-    if (!this.fileHistory.redo[this.activeFile] || this.fileHistory.redo[this.activeFile].length === 0) {
-      return;
-    }
-    
-    // Initialize undo array if not exists
-    if (!this.fileHistory.undo[this.activeFile]) {
-      this.fileHistory.undo[this.activeFile] = [];
-    }
-    
-    // Save current state to undo history
-    this.fileHistory.undo[this.activeFile].push(this.editorInstance.value);
-    
-    // Get next state
-    const nextState = this.fileHistory.redo[this.activeFile].pop();
-    
-    // Restore next state
-    this.editorInstance.value = nextState;
-    this.fileContents[this.activeFile] = nextState;
-    
-    // Update button states
-    this.updateUndoRedoButtons();
-    
-    this.notificationManager.showNotification('Redo successful', 'info', 1000);
-  }
-  
-  searchInCode(query) {
-    if (!query || !this.editorInstance) return;
-    
-    const content = this.editorInstance.value;
-    
-    // Reset search results
-    this.searchResults = {
-      query,
-      matches: [],
-      currentIndex: -1
-    };
-    
-    // Find all matches
-    let matchIndex = content.indexOf(query);
-    while (matchIndex !== -1) {
-      this.searchResults.matches.push(matchIndex);
-      matchIndex = content.indexOf(query, matchIndex + 1);
-    }
-    
-    if (this.searchResults.matches.length === 0) {
-      this.notificationManager.showNotification(`No matches found for "${query}"`, 'info');
-      return;
-    }
-    
-    // Set first match as current
-    this.searchResults.currentIndex = 0;
-    const firstMatch = this.searchResults.matches[0];
-    
-    // Set selection to match
-    this.editorInstance.focus();
-    this.editorInstance.setSelectionRange(firstMatch, firstMatch + query.length);
-    
-    // Scroll to match if needed
-    this.scrollToSelection();
-    
-    // Notify user
-    this.notificationManager.showNotification(
-      `Found ${this.searchResults.matches.length} match${this.searchResults.matches.length !== 1 ? 'es' : ''}`, 
-      'info'
-    );
-  }
-  
-  scrollToSelection() {
-    if (!this.editorInstance) return;
-    
-    // Calculate position of selection
-    const textarea = this.editorInstance;
-    const content = textarea.value.substring(0, textarea.selectionStart);
-    const lines = content.split('\n');
-    
-    // Estimate line height (can vary by browser/font)
-    const lineHeight = 18; // px, approximate
-    
-    // Calculate scroll position to center selection
-    const linePos = lines.length * lineHeight;
-    const viewportHeight = textarea.clientHeight;
-    const scrollPos = linePos - (viewportHeight / 2);
-    
-    // Set scroll position
-    if (scrollPos > 0) {
-      textarea.scrollTop = scrollPos;
-    }
-  }
-  
-  searchNext() {
-    if (!this.searchResults.query || this.searchResults.matches.length === 0 || !this.editorInstance) return;
-    
-    // Move to next match
-    this.searchResults.currentIndex = (this.searchResults.currentIndex + 1) % this.searchResults.matches.length;
-    const matchPos = this.searchResults.matches[this.searchResults.currentIndex];
-    
-    // Set selection
-    this.editorInstance.focus();
-    this.editorInstance.setSelectionRange(matchPos, matchPos + this.searchResults.query.length);
-    
-    // Scroll to match
-    this.scrollToSelection();
-  }
-  
-  searchPrev() {
-    if (!this.searchResults.query || this.searchResults.matches.length === 0 || !this.editorInstance) return;
-    
-    // Move to previous match
-    this.searchResults.currentIndex = 
-      (this.searchResults.currentIndex - 1 + this.searchResults.matches.length) % this.searchResults.matches.length;
-    const matchPos = this.searchResults.matches[this.searchResults.currentIndex];
-    
-    // Set selection
-    this.editorInstance.focus();
-    this.editorInstance.setSelectionRange(matchPos, matchPos + this.searchResults.query.length);
-    
-    // Scroll to match
-    this.scrollToSelection();
-  }
-  
-  renderFileTabs() {
-    const files = this.getFilesList();
-    
-    return files.map(file => {
-      const isDirty = this.dirtyFiles.has(file.id);
-      const dirtyIndicator = isDirty ? '<span class="dirty-indicator" title="Code may be out of sync">*</span>' : '';
-      return `
-        <div class="code-file-tab ${file.id === this.activeFile ? 'active' : ''}" data-file-id="${file.id}" title="${file.name}">
-          <span>${file.name}</span>${dirtyIndicator}
-        </div>
-      `;
-    }).join('');
-  }
-  
-  renderCodeEditorPlaceholder() {
-    return `<div class="code-editor-placeholder">Loading code editor...</div>`;
-  }
-  
-  getFilesList() {
-    // In a real implementation, this would be more dynamic based on project structure
-    // For now, return a static list of files for the current screen
-    const screenName = this.currentScreen.name;
-    const packagePath = this.currentApp.packageName.replace(/\./g, '/');
-    
-    return [
-      { id: 'main', name: `${screenName}.java` },
-      { id: 'layout', name: `activity_${screenName.toLowerCase()}.xml` },
-      { id: 'strings', name: 'strings.xml' },
-      { id: 'colors', name: 'colors.xml' },
-      { id: 'manifest', name: 'AndroidManifest.xml' },
-      { id: 'gradle', name: 'build.gradle' }
-    ];
-  }
-  
-  switchToFile(fileId) {
-    if (this.activeFile === fileId) return;
-    
-    // Update active file
-    this.activeFile = fileId;
-    
-    // Update UI
-    document.querySelectorAll('.code-file-tab').forEach(tab => {
-      const fileId = tab.dataset.fileId;
-      const isDirty = this.dirtyFiles.has(fileId);
-      const dirtyIndicator = tab.querySelector('.dirty-indicator');
-      
-      if (fileId === this.activeFile) {
-        tab.classList.add('active');
-      } else {
-        tab.classList.remove('active');
+           console.error("Could not find .file-list container to attach listeners.");
       }
       
-      // Update or remove dirty indicator
-      if (isDirty && !dirtyIndicator) {
-          const indicator = document.createElement('span');
-          indicator.className = 'dirty-indicator';
-          indicator.title = 'Code may be out of sync';
-          indicator.textContent = '*';
-          tab.appendChild(indicator);
-      } else if (!isDirty && dirtyIndicator) {
-          dirtyIndicator.remove();
-      }
-    });
-    
-    // Update file type in status bar
-    const fileTypeStatus = document.querySelector('.code-status-file-type');
-    if (fileTypeStatus) {
-      fileTypeStatus.textContent = this.getFileExtension(fileId);
-    }
-    
-    // Update editor content
-    if (this.editorInstance) {
-      this.editorInstance.value = this.getActiveFileContent();
-      this.updateStatusBar(this.editorInstance);
-      
-      // Apply syntax highlighting for new file
-      this.applySyntaxHighlighting();
-    }
-    
-    // Update undo/redo buttons
-    this.updateUndoRedoButtons();
-    
-    // Reset search results when switching files
-    this.searchResults = {
-      query: '',
-      matches: [],
-      currentIndex: -1
-    };
+      // Initial UI updates via respective managers
+      this.historyManager.updateUndoRedoButtons();
+      this.uiManager.updateSearchButtonStates();
   }
-  
-  getActiveFileContent() {
-    // Get cached content if available
-    if (this.fileContents[this.activeFile]) {
-      return this.fileContents[this.activeFile];
-    }
-    
-    // Generate code for the file
-    const content = this.generateFileContent(this.activeFile);
-    this.fileContents[this.activeFile] = content;
-    
-    return content;
-  }
-  
-  generateFileContent(fileId) {
-    return this.codeGenerator.generateFile(fileId, this.currentScreen);
-  }
-  
-  generateCode() {
-    // Use the CodeGenerator to generate all files
-    const files = this.getFilesList();
-    
-    files.forEach(file => {
-      // Only generate if not already generated
-      if (!this.fileContents[file.id]) {
-        this.fileContents[file.id] = this.generateFileContent(file.id);
-      }
-    });
-  }
-  
-  saveCode() {
-    // Store current file content
-    if (this.editorInstance && this.activeFile) {
-      this.fileContents[this.activeFile] = this.editorInstance.value;
-    }
-    
-    // In a real implementation, we would save all files to storage
-    // For now, just show a notification and simulate saving to the app
-    
-    // Update app model with generated code
-    if (!this.currentApp.generatedCode) {
-      this.currentApp.generatedCode = {};
-    }
-    
-    // Save all files to app model
-    Object.keys(this.fileContents).forEach(fileId => {
-      this.currentApp.generatedCode[fileId] = this.fileContents[fileId];
-    });
-    
-    // Update app in storage
-    this.editorView.appService.updateApp(this.currentApp);
-    
-    this.notificationManager.showNotification('Code saved successfully', 'success');
-  }
-  
-  runCode() {
-    // Save before running
-    this.saveCode();
-    
-    // In a real implementation, we would compile and run the code
-    // For now, show a notification
-    this.notificationManager.showNotification(`Simulating run for ${this.currentScreen.name}... Check console for details.`, 'info');
-    console.log(`--- Running Code for ${this.currentScreen.name} ---`);
-    console.log(`App Name: ${this.currentApp.name}`);
-    console.log(`Package Name: ${this.currentApp.packageName}`);
-    console.log(`Screen: ${this.currentScreen.name}`);
-    console.log("Code Files:", this.fileContents);
-    console.log("--- End Run Simulation ---");
-  }
-  
+
+  // --- Core Actions (Delegated) ---
   formatCode() {
     if (!this.editorInstance || !this.activeFile) return;
     
-    // Save current state to undo history
-    this.saveToHistory();
+    // Delegate history saving
+    this.historyManager.saveToHistory(); 
     
-    // Get the current code
     const currentCode = this.editorInstance.value;
+    const fileType = this.fileManager.getFileExtension(this.activeFile);
+    const formattedCode = this.codeFormatter.format(currentCode, fileType);
     
-    // Format based on file type
-    const formattedCode = this.codeFormatter.format(currentCode, this.getFileExtension(this.activeFile));
-    
-    // Update editor
+    // Update editor via UIManager is preferred, but direct update might be okay for now
     this.editorInstance.value = formattedCode;
-    this.fileContents[this.activeFile] = formattedCode;
+    // Update file content via FileManager
+    this.fileManager.updateFileContent(this.activeFile, formattedCode); 
     
     this.notificationManager.showNotification('Code formatted', 'success');
   }
+
+  switchToFile(fileId) {
+    if (this.activeFile === fileId || !fileId) return;
+
+    // Update active file state (managed here)
+    this.activeFile = fileId;
+    
+    // Update UI via UIManager (editor content, status bar, sidebar highlight)
+    this.uiManager.updateEditorContent();
+    this.uiManager.refreshFileSidebarUI(); // Use the renamed method
+    
+    // Update button states via respective managers
+    this.historyManager.updateUndoRedoButtons();
+    this.searchManager.resetSearch();
+    this.uiManager.updateSearchButtonStates();
+  }
   
-  markFileAsDirty(componentId, propertyName) {
-    // Determine which files are affected by this property change
-    // Basic logic: layout properties affect layout.xml, others might affect Java
-    // TODO: Refine this logic based on specific properties
-    const propId = propertyName.replace('prop-', ''); // e.g., 'prop-text' -> 'text'
-    
-    console.log(`Property changed: ${propId} for component ${componentId}`);
-
-    // Layout file is affected by most visual properties
-    this.dirtyFiles.add('layout'); 
-    
-    // Java file is affected by things needing event handlers or variable references (like ID changes, though ID is read-only for now)
-    // For now, let's assume text changes might also need Java updates (e.g., if used in logic)
-    if ([ 'text', 'checked', 'progress' /* other interaction props */ ].includes(propId)) {
-         this.dirtyFiles.add('main');
-    }
-
-    // Refresh the file tabs UI to show dirty indicators
-    this.refreshFileTabsUI();
-  }
-
-  refreshFileTabsUI() {
-    const fileTabsContainer = document.querySelector('.code-file-tabs');
-    if (fileTabsContainer) {
-      fileTabsContainer.innerHTML = this.renderFileTabs();
-      // Re-attach event listeners to the new tabs
-      document.querySelectorAll('.code-file-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-          const fileId = tab.dataset.fileId;
-          this.switchToFile(fileId);
-        });
-      });
-    }
-  }
-
+  // --- Interaction with other Editor parts ---
   changeScreen(screenId) {
-    // Update current screen and regenerate code
     const screen = this.editorView.currentApp.screens.find(s => s.id === screenId);
     if (screen) {
+      // Update current screen (managed here)
       this.currentScreen = screen;
       
-      // Keep existing user changes
+      // Preserve user modifications before clearing
       const userModifiedFiles = {};
-      
-      // Check which files have been modified by the user
-      if (this.editorInstance && this.activeFile) {
-        this.fileContents[this.activeFile] = this.editorInstance.value;
-      }
-      
-      // Get generated content for comparison
-      Object.keys(this.fileContents).forEach(fileId => {
-        const generatedContent = this.generateFileContent(fileId);
-        
-        // If file was modified by user, save it
-        if (this.fileContents[fileId] !== generatedContent) {
-          userModifiedFiles[fileId] = this.fileContents[fileId];
-        }
+      Object.keys(this.fileManager.fileContents).forEach(fileId => {
+          // Compare against newly generated content for THIS screen
+          const generatedContent = this.fileManager.generateFileContent(fileId); // Pass currentScreen implicitly
+          if (this.fileManager.fileContents[fileId] !== generatedContent) {
+              userModifiedFiles[fileId] = this.fileManager.fileContents[fileId];
+          }
       });
-      
-      // Clear file cache for regeneration
-      this.fileContents = {};
-      this.dirtyFiles.clear(); // Clear dirty status on screen change
-      
-      // Generate new code
-      this.generateCode();
-      
-      // Restore user modifications
-      Object.keys(userModifiedFiles).forEach(fileId => {
-        this.fileContents[fileId] = userModifiedFiles[fileId];
-      });
-      
-      // Clear history for clean state
-      this.fileHistory = {
-        undo: {},
-        redo: {}
-      };
-      
-      // Reset search results
-      this.searchResults = {
-        query: '',
-        matches: [],
-        currentIndex: -1
-      };
-      
-      // Update UI
-      const fileTabsContainer = document.querySelector('.code-file-tabs');
-      if (fileTabsContainer) {
-        fileTabsContainer.innerHTML = this.renderFileTabs();
-        // Re-attach listeners after re-rendering tabs
-        document.querySelectorAll('.code-file-tab').forEach(tab => {
-          tab.addEventListener('click', () => {
-            const fileId = tab.dataset.fileId;
-            this.switchToFile(fileId);
-          });
-        });
-      }
-      
-      // Update editor content if active
-      if (this.editorInstance) {
-        this.editorInstance.value = this.getActiveFileContent();
-      }
-    }
-  }
 
-  // Method to update screen references when a screen is renamed
-  updateScreenReferences(screenId, oldName, newName) {
-    // This method would need to be implemented based on how code references other screens
-    // For example, it might update Activity imports, Intent calls, etc.
-    console.log(`CodeManager: Updating references for screen ${screenId} from ${oldName} to ${newName}`);
-    
-    // Update code in the renamed screen
-    // e.g., update class name, constructor, etc.
-    
-    // Update references in other screens' code
-    // e.g., update imports, Activity references, Intent targets, etc.
-    
-    // Example implementation (commented out since we don't know the exact structure):
-    /*
-    // Get all code files for the screen
-    const screenFiles = this.getFilesForScreen(screenId);
-    
-    // Update class name, file name, etc.
-    if (screenFiles && screenFiles.length > 0) {
-      screenFiles.forEach(file => {
-        // Update class declarations, etc.
-        let content = file.content;
-        content = content.replace(
-          new RegExp(`class\\s+${oldName}\\s+extends`, 'g'), 
-          `class ${newName} extends`
-        );
-        
-        // Save the updated file
-        this.saveFileContent(file.id, content);
+      // Clear caches and states via managers
+      this.fileManager.clearFileCache();
+      this.fileManager.clearDirtyFiles();
+      this.historyManager.clearAllHistory();
+      this.searchManager.resetSearch();
+      
+      // Regenerate code for the new screen via FileManager
+      this.fileManager.generateCodeForAllFiles(); 
+      
+      // Restore user modifications via FileManager
+      Object.keys(userModifiedFiles).forEach(fileId => {
+          this.fileManager.fileContents[fileId] = userModifiedFiles[fileId]; 
       });
+      
+      // Update UI via UIManager
+      this.uiManager.refreshFileSidebarUI(); // Use the renamed method
+      // Update editor for the default file ('main') of the NEW screen
+      this.activeFile = 'main'; // Reset to default file
+      this.uiManager.updateEditorContent(); 
+      
+      // Update button states via managers
+      this.historyManager.updateUndoRedoButtons();
+      this.uiManager.updateSearchButtonStates();
     }
-    
-    // Update references in other screens
-    this.editorView.currentApp.screens.forEach(screen => {
-      if (screen.id !== screenId) {
-        const otherScreenFiles = this.getFilesForScreen(screen.id);
-        if (otherScreenFiles && otherScreenFiles.length > 0) {
-          otherScreenFiles.forEach(file => {
-            // Update imports
-            let content = file.content;
-            content = content.replace(
-              new RegExp(`import\\s+.*\\.${oldName};`, 'g'),
-              `import ${this.getPackageName()}.${newName};`
-            );
-            
-            // Update Intent references
-            content = content.replace(
-              new RegExp(`Intent\\(.*,\\s*${oldName}\\.class\\)`, 'g'),
-              `Intent(this, ${newName}.class)`
-            );
-            
-            // Save the updated file
-            this.saveFileContent(file.id, content);
-          });
-        }
-      }
-    });
-    */
-    
-    // Mark all files as dirty so they'll be regenerated
-    this.markAllFilesAsDirty();
   }
   
-  markAllFilesAsDirty() {
-    // Mark all code files as needing regeneration
-    console.log('CodeManager: Marking all files as dirty for regeneration');
-    // Implementation depends on how dirty state is tracked
-  }
-
-  // Add method to handle component ID changes
+  // Called externally when component ID changes (e.g., from PropertyPanel via ComponentIdManager)
   handleComponentIdChange(oldId, newId) {
-    // Get the current screen's code
-    if (!this.editorView.currentScreen) return;
-    
-    const screenId = this.editorView.currentScreen.id;
-    const appCode = this.getAppCode();
-    if (!appCode) return;
-    
-    // Find all code files associated with this screen
-    const screenFiles = appCode.files.filter(file => 
-      file.screenId === screenId || file.screenId === 'shared'
-    );
-    
-    let codeUpdated = false;
-    
-    // Update references in each file
-    screenFiles.forEach(file => {
-      // Look for component ID references in the code
-      // Common patterns: "componentId", componentId, R.id.componentId, findViewById(R.id.componentId)
-      
-      // Define regex patterns to find the component ID
-      const patterns = [
-        new RegExp(`["']${oldId}["']`, 'g'),           // "oldId" or 'oldId'
-        new RegExp(`\\b${oldId}\\b`, 'g'),             // Direct references
-        new RegExp(`R\\.id\\.${oldId}\\b`, 'g'),       // R.id.oldId
-        new RegExp(`findViewById\\(R\\.id\\.${oldId}\\)`, 'g') // findViewById(R.id.oldId)
-      ];
-      
-      let newContent = file.content;
-      let fileUpdated = false;
-      
-      // Apply each pattern
-      patterns.forEach(pattern => {
-        // Create replacement string based on the pattern
-        let replacement;
-        if (pattern.toString().includes('"')) {
-          replacement = `"${newId}"`;
-        } else if (pattern.toString().includes("'")) {
-          replacement = `'${newId}'`;
-        } else if (pattern.toString().includes('R.id.')) {
-          if (pattern.toString().includes('findViewById')) {
-            replacement = `findViewById(R.id.${newId})`;
-          } else {
-            replacement = `R.id.${newId}`;
-          }
-        } else {
-          replacement = newId;
-        }
-        
-        // Replace all occurrences
-        const updatedContent = newContent.replace(pattern, replacement);
-        
-        // Check if anything was replaced
-        if (updatedContent !== newContent) {
-          newContent = updatedContent;
-          fileUpdated = true;
-        }
-      });
-      
-      // If the file was updated, save the changes
-      if (fileUpdated) {
-        file.content = newContent;
-        codeUpdated = true;
-        
-        // Also update any active editors
-        const editor = this.getEditor(file.id);
-        if (editor) {
-          editor.setValue(newContent);
-        }
+     // This method now focuses SOLELY on updating the code content based on ID change.
+     // The UI updates and appService calls are handled by ComponentIdManager.
+     console.log(`CodeManager: Updating code references from ${oldId} to ${newId}`);
+     
+     // Determine affected files (e.g., main Java and layout XML)
+     // This logic could be refined or moved to FileManager if complex
+     const affectedFiles = ['main', 'layout']; 
+     
+     affectedFiles.forEach(fileId => {
+         // Regenerate content based on the NEW component ID (already updated in the model)
+         const newContent = this.fileManager.generateFileContent(fileId);
+         // Update content in file manager, mark as dirty, and trigger save
+         this.fileManager.updateFileContent(fileId, newContent); 
+     });
+     
+     // If an affected file is active, update the editor via UIManager
+     if (affectedFiles.includes(this.activeFile) && this.editorInstance) {
+         this.uiManager.updateEditorContent();
+     }
+  }
+
+  updateCodeFromBlocks(generatedJavaCode) {
+      // Check if generated code is valid
+      if (typeof generatedJavaCode !== 'string') {
+          console.warn('CodeManager: updateCodeFromBlocks received invalid code (null or not string). Skipping update.');
+          return; 
       }
-    });
-    
-    // If any files were updated, save the app code
-    if (codeUpdated) {
-      this.saveAppCode(appCode);
-      console.log(`Updated component references in code from ${oldId} to ${newId}`);
-    }
-  }
-
-  // --- Helper to ensure file exists ---
-  _ensureFileExists(screenId) {
-    if (!this.fileContents[screenId]) {
-      this.fileContents[screenId] = this.generateCodeForScreen(screenId);
-      this.dirtyFiles[screenId] = false;
-    }
-  }
-
-  // --- Method to update code from BlocksManager ---
-  updateCodeFromBlocks(generatedCode) {
-      // For simplicity, let's assume the blocks code corresponds to the 'main' logic file
-      // In a more complex setup, this would need more sophisticated mapping
-      const targetFileId = 'main'; // Or determine based on screen/context
       
-      // Update the stored content
-      this.fileContents[targetFileId] = generatedCode;
+      const targetFileId = 'main';
+      const placeholder = '// <<< BLOCKS_CODE_GOES_HERE >>>';
+      // *** Use simpler delimiters ***
+      const startComment = '// BLOCKS_START';
+      const endComment = '// BLOCKS_END';
       
-      // If the updated file is the currently active one, refresh the editor view
-      if (this.activeFile === targetFileId && this.editorInstance) {
-          // Preserve cursor/scroll position if possible (CodeMirror/Monaco specific)
-          const currentCursor = this.editorInstance.getCursor ? this.editorInstance.getCursor() : null;
-          const scrollInfo = this.editorInstance.getScrollInfo ? this.editorInstance.getScrollInfo() : null;
-          
-          // Update the editor's content
-          this.editorInstance.setValue(generatedCode);
-          
-          // Restore cursor/scroll position
-          if (currentCursor && this.editorInstance.setCursor) {
-              this.editorInstance.setCursor(currentCursor);
-          }
-          if (scrollInfo && this.editorInstance.scrollTo) {
-              this.editorInstance.scrollTo(scrollInfo.left, scrollInfo.top);
-          }
-          
-          // Optionally format the code after update
-          this.formatCode(); 
+      // Get current content via FileManager
+      let currentContent = this.fileManager.fileContents[targetFileId] || this.fileManager.generateFileContent(targetFileId);
+      let updatedContent = '';
+
+      // Determine base indentation (try start comment, then placeholder, then fallback)
+      let baseIndent = '        '; // Default fallback indent
+      const startCommentMatch = currentContent.match(/^(\s*)\/\/\s*BLOCKS_START/m); // Updated regex
+      const placeholderMatch = currentContent.match(/^(\s*)\/\/\s*<<<\s*BLOCKS_CODE_GOES_HERE\s*>>>/m);
+
+      if (startCommentMatch) {
+          baseIndent = startCommentMatch[1];
+      } else if (placeholderMatch) {
+          baseIndent = placeholderMatch[1];
+      }
+      
+      const indentedCode = generatedJavaCode.split('\n').map(line => line.trim() ? baseIndent + line : '').join('\n');
+
+      // Improved Replacement Logic (using new delimiters)
+      const startIndex = currentContent.indexOf(startComment);
+      const endIndex = currentContent.indexOf(endComment);
+
+      if (startIndex !== -1 && endIndex !== -1 && startIndex < endIndex) {
+          // Found existing block - replace content between comments
+          const before = currentContent.substring(0, startIndex + startComment.length);
+          const after = currentContent.substring(endIndex);
+          updatedContent = `${before}\n${indentedCode}\n${baseIndent}${endComment}`;
+          console.log('CodeManager: Replacing existing generated code block.');
+      } else if (currentContent.includes(placeholder)) {
+          // Found placeholder - replace it
+           updatedContent = currentContent.replace(placeholder,
+              `${startComment}\n${indentedCode}\n${baseIndent}${endComment}`
+          );
+          console.log('CodeManager: Replacing placeholder with generated code.');
       } else {
-          // Mark the file tab as potentially changed (e.g., add an indicator)
-          this.markFileAsDirty(targetFileId); 
+          // Fallback logic
+          console.warn(`Placeholder "${placeholder}" not found, attempting fallback insertion.`);
+          const onCreateEndMatch = currentContent.match(/^(\s*)}\s*\/\/\s*end\s+onCreate/m); // Example fallback
+          if (onCreateEndMatch) {
+             const insertionPoint = onCreateEndMatch.index;
+             const insertionIndent = onCreateEndMatch[1] || baseIndent;
+             updatedContent =
+                  currentContent.slice(0, insertionPoint) +
+                  `${insertionIndent}${startComment} // Fallback Insertion\n` + // Updated comment
+                  `${indentedCode}\n` +
+                  `${insertionIndent}${endComment}\n` +
+                  currentContent.slice(insertionPoint);
+             console.log('CodeManager: Using fallback insertion point.');
+          } else {
+             console.error('Could not find placeholder, existing block, or fallback location.');
+             updatedContent = currentContent + `\n\n${baseIndent}// !!! Code Integration Error !!!\n${startComment}\n${indentedCode}\n${baseIndent}${endComment}`;
+          }
       }
       
-      // Save the changes (optional, could rely on manual save)
-      // this.saveCode(); 
+      // Update file content via FileManager
+      this.fileManager.updateFileContent(targetFileId, updatedContent);
+      
+      // Update editor UI if the modified file is active
+      if (this.activeFile === targetFileId && this.editorInstance) {
+          this.uiManager.updateEditorContent();
+      } else if (this.activeFile === targetFileId) {
+          console.warn('CodeManager: Cannot update editor UI, editorInstance is not set.');
+      }
   }
-  // --- End added method ---
+  
+  // --- Expose necessary methods/properties for managers ---
+  // Allow managers to trigger auto-save via the fileManager
+  triggerAutoSave(immediate = false) {
+      this.fileManager.triggerAutoSave(immediate);
+  }
 }
 
 export default CodeManager;

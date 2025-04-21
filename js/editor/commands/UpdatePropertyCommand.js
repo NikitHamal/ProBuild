@@ -9,13 +9,14 @@ class UpdatePropertyCommand extends Command {
    * @param {string} componentId - The ID of the component to update
    * @param {string} propertyPath - The path to the property to update (e.g. 'properties.x' or 'properties.text')
    * @param {any} newValue - The new value for the property
+   * @param {any} oldValue - Optional: The old value for the property (for undo)
    */
-  constructor(editorView, componentId, propertyPath, newValue) {
+  constructor(editorView, componentId, propertyPath, newValue, oldValue = null) {
     super(editorView);
     this.componentId = componentId;
     this.propertyPath = propertyPath;
     this.newValue = newValue;
-    this.oldValue = null; // Will be set during execution
+    this.oldValue = oldValue; // If provided, use it; otherwise, will be set during execution
   }
   
   execute() {
@@ -44,9 +45,11 @@ class UpdatePropertyCommand extends Command {
         obj = obj[parts[i]];
       }
       
-      // Store the old value for undo
+      // Store the old value for undo if not already provided
       const lastPart = parts[parts.length - 1];
-      this.oldValue = obj[lastPart];
+      if (this.oldValue === null) {
+        this.oldValue = obj[lastPart];
+      }
       
       // Set the new value
       obj[lastPart] = this.newValue;
@@ -59,9 +62,23 @@ class UpdatePropertyCommand extends Command {
       );
       
       if (result) {
-        // Update UI
-        if (this.editorView.componentManager) {
-          this.editorView.componentManager.renderComponentsPreview();
+        // Immediately update visual representation for better UX
+        // If the property is directly on 'properties', update the visual
+        if (this.propertyPath.startsWith('properties.') && this.editorView.componentManager) {
+          // Extract the property name from the path
+          const propertyName = this.propertyPath.split('.').pop();
+          
+          // Create an object with just the changed property
+          const updateObj = {};
+          updateObj[propertyName] = this.newValue;
+          
+          // Update visuals immediately
+          this.editorView.componentManager.updateComponentVisuals(this.componentId, updateObj);
+        } else {
+          // For more complex changes, re-render the preview
+          if (this.editorView.componentManager) {
+            this.editorView.componentManager.renderComponentsPreview();
+          }
         }
         
         // Update property panel if this component is selected
@@ -71,7 +88,10 @@ class UpdatePropertyCommand extends Command {
         }
         
         // Notify code manager that property has changed (for generated code)
-        this.editorView.notifyCodePotentiallyDirty(this.componentId, this.propertyPath);
+        if (this.propertyPath.startsWith('properties.')) {
+          const propertyName = this.propertyPath.split('.').pop();
+          this.editorView.notifyCodePotentiallyDirty(this.componentId, propertyName);
+        }
         
         return true;
       }
@@ -109,11 +129,11 @@ class UpdatePropertyCommand extends Command {
         obj = obj[parts[i]];
       }
       
-      // Set the old value back
+      // Restore the old value
       const lastPart = parts[parts.length - 1];
       obj[lastPart] = this.oldValue;
       
-      // Update the component
+      // Update the component in the app
       const result = this.editorView.appService.updateComponent(
         app.id,
         screen.id,
@@ -121,9 +141,22 @@ class UpdatePropertyCommand extends Command {
       );
       
       if (result) {
-        // Update UI
-        if (this.editorView.componentManager) {
-          this.editorView.componentManager.renderComponentsPreview();
+        // Immediately update visual representation for better UX during undo
+        if (this.propertyPath.startsWith('properties.') && this.editorView.componentManager) {
+          // Extract the property name from the path
+          const propertyName = this.propertyPath.split('.').pop();
+          
+          // Create an object with just the changed property
+          const updateObj = {};
+          updateObj[propertyName] = this.oldValue;
+          
+          // Update visuals immediately for undo
+          this.editorView.componentManager.updateComponentVisuals(this.componentId, updateObj);
+        } else {
+          // For more complex changes, re-render the preview
+          if (this.editorView.componentManager) {
+            this.editorView.componentManager.renderComponentsPreview();
+          }
         }
         
         // Update property panel if this component is selected
@@ -132,8 +165,11 @@ class UpdatePropertyCommand extends Command {
           this.editorView.propertyPanel.updatePropertyValues();
         }
         
-        // Notify code manager that property has changed (for generated code)
-        this.editorView.notifyCodePotentiallyDirty(this.componentId, this.propertyPath);
+        // Notify code manager that property has been reverted (for generated code)
+        if (this.propertyPath.startsWith('properties.')) {
+          const propertyName = this.propertyPath.split('.').pop();
+          this.editorView.notifyCodePotentiallyDirty(this.componentId, propertyName);
+        }
         
         return true;
       }
@@ -152,14 +188,20 @@ class UpdatePropertyCommand extends Command {
    * @returns {Object|null} The found component or null
    */
   _findComponent(components, id) {
+    if (!components) return null;
+    
     for (const component of components) {
       if (component.id === id) {
         return component;
       }
       
       // Check children if this is a container
-      if (component.children && component.children.length > 0) {
-        const found = this._findComponent(component.children, id);
+      // Support both children array and properties.children
+      const children = component.children || 
+                      (component.properties && component.properties.children);
+                      
+      if (children && children.length > 0) {
+        const found = this._findComponent(children, id);
         if (found) {
           return found;
         }

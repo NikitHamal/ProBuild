@@ -1,13 +1,16 @@
 import ProjectBuilder from './ProjectBuilder.js';
 import GitHubService from './GitHubService.js';
 import BuildUIManager from './BuildUIManager.js';
+import NotificationManager from '../../ui/NotificationManager.js';
 
 // Orchestrates the build process
 class BuildWorkflowManager {
     constructor(editorView) {
         this.editorView = editorView;
         this.appService = editorView.appService;
-        this.notificationManager = editorView.notificationManager;
+        
+        // Use editorView's notificationManager if available, or create a new instance
+        this.notificationManager = editorView.notificationManager || NotificationManager.getInstance();
         this.buildUIManager = new BuildUIManager(this.notificationManager);
         
         // GitHub config (managed here, passed to GitHubService)
@@ -71,13 +74,20 @@ class BuildWorkflowManager {
             await this.githubService.checkAndPushProjectFiles(projectFiles);
 
             // 4. Trigger Workflow
-            await this.githubService.triggerWorkflow(workflowFile);
+            await this.githubService.triggerWorkflow(this.githubConfig.owner, this.githubConfig.repo, workflowFile);
+            
+            // 5. Find the latest workflow run (the one we just triggered)
+            const runData = await this.githubService.findLatestWorkflowRun(
+                this.githubConfig.owner,
+                this.githubConfig.repo,
+                workflowFile
+            );
             
             this.buildUIManager.closeCurrentDialog(); // Close preparation dialog
             this.notificationManager.showNotification('Build triggered on GitHub Actions.', 'info');
             
-            // 5. Monitor Workflow Run
-            await this.monitorWorkflow(workflowFile, isRelease);
+            // 6. Monitor Workflow Run
+            await this.monitorWorkflow(workflowFile, isRelease, runData);
 
         } catch (error) {
             console.error('Build initiation failed:', error);
@@ -110,11 +120,10 @@ class BuildWorkflowManager {
         });
     }
 
-    async monitorWorkflow(workflowFile, isRelease) {
+    async monitorWorkflow(workflowFile, isRelease, runData) {
         if (!this.githubService) return;
         
         try {
-            const runData = await this.githubService.findLatestWorkflowRun(workflowFile);
             if (!runData || !runData.id) {
                 this.notificationManager.showNotification('Unable to find the triggered workflow run.', 'error');
                 return;
@@ -175,6 +184,8 @@ class BuildWorkflowManager {
 
     handleBuildCompletion(workflowFile, isRelease, runData) {
         const buildType = isRelease ? (workflowFile === 'build-signed-apk.yml' ? 'signed release' : 'release') : 'debug';
+        
+        // Update artifact names to match what's in the workflow files
         let expectedArtifactName = 'debug-apk'; // Default for build-apk.yml debug
         if (workflowFile === 'build-apk.yml' && isRelease) {
             expectedArtifactName = 'release-apk'; // Adjusted name
@@ -236,7 +247,37 @@ class BuildWorkflowManager {
          if (!this.githubService) return;
          this.notificationManager.showNotification(`Fetching artifact '${artifactName}'...`, 'info');
          try {
-             const artifactInfo = await this.githubService.getArtifactDownloadUrl(runId, artifactName);
+             // First ensure the workflow run has been completed
+             const runStatus = await this.githubService.getWorkflowRunStatus(
+                 this.githubConfig.owner, 
+                 this.githubConfig.repo, 
+                 runId
+             );
+             
+             if (runStatus !== 'completed') {
+                 this.notificationManager.showNotification('Build is still in progress. Please wait until it completes.', 'warning');
+                 return;
+             }
+             
+             // Get all artifacts from the run
+             const artifactsData = await this.githubService._fetchGitHubAPI(`actions/runs/${runId}/artifacts`);
+             if (!artifactsData || !artifactsData.artifacts || artifactsData.artifacts.length === 0) {
+                 this.notificationManager.showNotification('No artifacts found for this build.', 'warning');
+                 return;
+             }
+             
+             // Find the specific artifact by name
+             const artifact = artifactsData.artifacts.find(a => a.name === artifactName);
+             if (!artifact) {
+                 this.notificationManager.showNotification(`Artifact '${artifactName}' not found in this build.`, 'warning');
+                 return;
+             }
+             
+             const artifactInfo = {
+                 name: artifact.name,
+                 url: artifact.archive_download_url
+             };
+             
              if (artifactInfo && artifactInfo.url) {
                  const blob = await this.githubService.downloadArtifact(artifactInfo.url);
                  

@@ -103,28 +103,25 @@ class PreviewManager {
 
   generatePreviewHtml() {
     const app = this.editorView.currentApp;
-    const currentScreen = this.editorView.currentScreen; // Use the actually selected screen
-    const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const currentScreen = this.editorView.currentScreen;
 
     // --- Generate components HTML from the current screen ---
     let componentsHtml = '';
     if (currentScreen && currentScreen.components && currentScreen.components.length > 0) {
-      // Filter top-level components (those not children of other components)
-      // Basic assumption: render components sequentially for now. More complex layout needs parent handling.
       const componentMap = new Map(currentScreen.components.map(c => [c.id, c]));
       const allChildIds = new Set(currentScreen.components.flatMap(c => c.children || []));
       const topLevelComponents = currentScreen.components.filter(c => !allChildIds.has(c.id));
-
-      componentsHtml = topLevelComponents.map(comp => this.generateComponentHtml(comp, componentMap)).join('');
-
+      // Pass true to indicate these are top-level for potential root styling
+      componentsHtml = topLevelComponents.map(comp => this.generateComponentHtml(comp, componentMap, true)).join(''); 
     } else {
-      // Keep demo components as a fallback if the screen is truly empty
-      componentsHtml = this.generateDemoComponents();
+      componentsHtml = '<div style="padding: 20px; text-align: center; color: #777;">Screen is empty. Add components in the Design tab.</div>'; // Simple empty message
     }
     // --- End Component Generation ---
 
     // --- Get Generated Code from Blocks --- 
-    let generatedJs = '// No blocks code generated';
+    let generatedJs = '// No blocks code generated for preview.';
+    // Optionally include block code if needed for simple interactions, but avoid complex simulation for now.
+    /* 
     try {
         if (this.editorView.blocksManager) {
             const code = this.editorView.blocksManager.getGeneratedCode();
@@ -140,9 +137,12 @@ ${code}
         console.error("Error getting generated code for preview:", err);
         generatedJs = '// Error loading blocks code.';
     }
+    */
     // --- End Get Generated Code ---
 
-    // Create complete HTML for the preview window
+    // --- Simplified HTML structure ---
+    // Removed Android device frame, status bar, app bar, navigation bar.
+    // Removed default component styles - styling will be inline via generateComponentHtml.
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -152,580 +152,261 @@ ${code}
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
   <style>
+    /* Basic reset and body styles */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-      font-family: 'Roboto', sans-serif;
     }
-    
     body {
-      background-color: #333;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      padding: 20px;
+      font-family: 'Roboto', sans-serif;
+      background-color: #f0f0f0; /* Light background for the preview page itself */
+      height: 100vh;
+      /* Use flexbox to potentially center the content if needed, or just let it fill */
+      /* display: flex; 
+         justify-content: center; 
+         align-items: flex-start; */ 
+    }
+    /* The main container for the app's visual elements */
+    .app-content-container {
+        width: 100%; /* Or match device width from editor? */
+        max-width: 400px; /* Limit width for phone-like view */
+        height: 100%; /* Or match device height from editor? */
+        max-height: 800px; /* Limit height */
+        background-color: ${currentScreen?.properties?.backgroundColor || 'white'}; /* Use screen background */
+        border: 1px solid #ccc; /* Simple border */
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15); /* Subtle shadow */
+        margin: 20px auto; /* Center the container on the page */
+        overflow: hidden; /* Prevent content spillover */
+        position: relative; /* Context for absolute positioning if needed */
+        display: flex; /* Default to flex container for top-level components */
+        flex-direction: column; /* Default direction */
     }
     
-    .android-device {
-      width: 360px;
-      height: 740px;
-      background: #111;
-      border-radius: 36px;
-      position: relative;
-      overflow: hidden;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-      border: 8px solid #222;
+    /* Minimal styles for basic elements if needed, but prefer inline */
+    img {
+        display: block; /* Prevent extra space below images */
+        max-width: 100%; /* Prevent images from overflowing */
     }
-    
-    .device-screen {
-      position: absolute;
-      top: 12px;
-      left: 12px;
-      right: 12px;
-      bottom: 12px;
-      background: white;
-      overflow: hidden;
-      border-radius: 20px;
-      display: flex;
-      flex-direction: column;
-    }
-    
-    .status-bar {
-      height: 24px;
-      background-color: ${app.customColors?.colorPrimaryDark || '#303F9F'}; /* Use Optional Chaining */
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0 16px;
-      color: white;
-      font-size: 12px;
-    }
-    
-    .status-bar-icons {
-      display: flex;
-      gap: 4px;
-    }
-    
-    .status-bar i {
-      font-size: 14px;
-    }
-    
-    .app-bar {
-      height: 56px;
-      background-color: ${app.customColors?.colorPrimary || '#3F51B5'}; /* Use Optional Chaining */
-      color: white;
-      display: flex;
-      align-items: center;
-      padding: 0 16px;
-      font-size: 20px;
-      font-weight: 500;
-    }
-    
-    .app-bar i {
-      margin-right: 32px;
-    }
-    
-    .app-content {
-      flex: 1;
-      background-color: #f5f5f5; /* Default background */
-      overflow-y: auto;
-      position: relative; /* Needed for potential absolute positioning within components */
-      /* Removed padding: 16px; Let components handle their own padding/margins */
-    }
-    
-    .navigation-bar {
-      height: 48px;
-      background-color: #fff;
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      border-top: 1px solid #ddd;
-    }
-    
-    .nav-button {
-      color: #757575;
-    }
-    
-    .nav-button.home {
-      color: #212121;
-    }
-    
-    /* Component styles */
-    .component {
-      /* Removed margin-bottom: 16px; Use component-specific margins */
-      box-sizing: border-box; /* Ensure padding/border are included in width/height */
-    }
-    
-    .button {
-      background-color: ${app.customColors?.colorAccent || '#2196F3'}; /* Use Optional Chaining */
-      color: white;
-      padding: 12px 24px;
-      border-radius: 4px;
-      border: none;
-      font-weight: 500;
-      text-transform: uppercase;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-      margin: 8px 0;
-      display: inline-block;
-      word-wrap: break-word; /* Break long words */
-    }
-    
-    .text-view {
-      margin: 8px 0;
-      color: #212121;
-      line-height: 1.5;
-      white-space: pre-wrap; /* Allow wrapping */
-      word-wrap: break-word; /* Break long words */
-    }
-    
-    .text-view.heading {
-      font-size: 24px;
-      font-weight: 500;
-      margin: 16px 0 8px 0;
-      width: 100%; /* Default width */
-    }
-    
-    .text-view.subheading {
-      font-size: 18px;
-      font-weight: 400;
-      color: #424242;
-      margin: 8px 0;
-    }
-    
-    .edit-text {
-      border: none;
-      border-bottom: 1px solid #BDBDBD;
-      padding: 12px 0 8px 0;
-      margin: 8px 0 24px 0;
-      width: 100%;
-      font-size: 16px;
-      background-color: transparent;
-    }
-    
-    .edit-text:focus {
-      border-bottom: 2px solid ${app.customColors?.colorAccent || '#2196F3'}; /* Use Optional Chaining */
-      outline: none;
-    }
-    
-    .edit-text::placeholder {
-      color: #9E9E9E;
-    }
-    
-    .image-view {
-      width: 100%;
-      height: 200px;
-      background-color: #E0E0E0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 8px 0;
-      border-radius: 4px;
-      overflow: hidden;
-      color: #9E9E9E;
-    }
-    
-    .image-view i {
-      font-size: 64px;
-      color: #9E9E9E;
-    }
-    
-    .checkbox, .radio-button {
-      display: flex;
-      align-items: center;
-      margin: 8px 0;
-    }
-    
-    .checkbox i, .radio-button i {
-      margin-right: 8px;
-      color: ${app.customColors?.colorAccent || '#2196F3'}; /* Use Optional Chaining */
-    }
-    
-    .spinner {
-      width: 100%; /* Default width */
-      padding: 12px 0;
-      margin: 8px 0;
-      border-bottom: 1px solid #BDBDBD;
-    }
-    
-    .list-view {
-      background: white;
-      border-radius: 4px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.12);
-      overflow: hidden;
-      /* margin: 8px 0; Use component margin */
-      width: 100%; /* Default width */
-    }
-    
-    .list-item {
-      padding: 16px;
-      border-bottom: 1px solid #EEEEEE;
-    }
-    
-    .list-item:last-child {
-      border-bottom: none;
-    }
-    
-    .card-view {
-      background: white;
-      border-radius: 4px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      overflow: hidden;
-      /* margin: 16px 0; Use component margin */
-      width: 100%; /* Default width */
-    }
-    
-    .card-content {
-      padding: 16px;
-    }
-    
-    .linear-layout {
-      display: flex;
-      /* Default to column */
-      flex-direction: column;
-      width: 100%; /* Default width for layouts */
-      /* Removed box-sizing - component class handles it */
-    }
-    
-    .linear-layout.horizontal {
-      flex-direction: row;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-    
-    .toast {
-      position: fixed;
-      bottom: 80px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0,0,0,0.7);
-      color: white;
-      padding: 12px 24px;
-      border-radius: 24px;
-      z-index: 1000;
-      font-size: 14px;
-    }
-    
-    /* Basic component styles - to be expanded */
-    .component-linearlayout-h, .component-linearlayout-v {
-        display: flex;
-        width: 100%; /* Default for now */
-    }
-    .component-linearlayout-h { flex-direction: row; }
-    .component-linearlayout-v { flex-direction: column; }
-    
-    .component-textview { 
-        white-space: pre-wrap; /* Respect newlines */
-        word-wrap: break-word; /* Wrap long words */
-    }
-    
-    .component-button {
-        /* Use accent color defined above */
-        background-color: ${app.customColors?.colorAccent || '#2196F3'};
-        color: white;
-        padding: 10px 16px;
-        border: none;
-        border-radius: 4px;
-        font-weight: 500;
+    button {
         cursor: pointer;
-        text-align: center;
     }
     
-    .component-edittext {
-        padding: 10px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        width: 100%; /* Default */
+    /* Add specific styles for scrollviews */
+    .component-scrollview-v,
+    .component-scrollview-h {
+        overflow: auto;
     }
     
-    .component-imageview {
-        display: block; /* Prevents extra space below */
-        max-width: 100%;
-        height: auto;
-    }
-    
-    .component-checkbox, .component-radiobutton, .component-switch {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 8px; /* Basic spacing */
-    }
-    .component-checkbox input, .component-radiobutton input {
-         margin-right: 5px;
-    }
-
-    /* Add more component styles here */
-
   </style>
 </head>
 <body>
-  <div class="android-device">
-    <div class="device-screen">
-      <div class="status-bar">
-        <span>${currentTime}</span>
-        <div class="status-bar-icons">
-          <i class="material-icons">signal_cellular_alt</i>
-          <i class="material-icons">wifi</i>
-          <i class="material-icons">battery_full</i>
-        </div>
-      </div>
-      <div class="app-bar">
-        <i class="material-icons">menu</i> ${currentScreen?.name || app.name}
-      </div>
-      <div class="app-content">
-        ${componentsHtml}
-      </div>
-      <div class="navigation-bar">
-        <i class="material-icons nav-button">arrow_back_ios</i>
-        <i class="material-icons nav-button home">radio_button_unchecked</i>
-        <i class="material-icons nav-button">check_box_outline_blank</i>
-      </div>
-    </div>
+  <div class="app-content-container" id="app-root">
+    ${componentsHtml}
   </div>
   
-  <!-- Inject the generated JavaScript -->
   <script>
-    // Helper function for toasts (if not provided by blocks code)
-    function showToast(message, duration = 3000) {
-        console.log("Toast:", message); // Basic console log toast
-        const toast = document.createElement('div');
-        toast.style.position = 'fixed';
-        toast.style.bottom = '20px';
-        toast.style.left = '50%';
-        toast.style.transform = 'translateX(-50%)';
-        toast.style.backgroundColor = 'rgba(0,0,0,0.7)';
-        toast.style.color = 'white';
-        toast.style.padding = '10px 20px';
-        toast.style.borderRadius = '5px';
-        toast.style.zIndex = '1000';
-        toast.textContent = message;
-        document.body.appendChild(toast);
-        setTimeout(() => { document.body.removeChild(toast); }, duration);
-    }
-    
-    // Add basic component interaction helpers (can be called by generated code)
-    const componentApi = {
-        setText: (id, text) => {
-            const element = document.getElementById(id);
-            if (element) { 
-                if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') element.value = text;
-                else element.textContent = text; 
-            }
-        },
-        getText: (id) => {
-            const element = document.getElementById(id);
-            if (element) { 
-                return element.tagName === 'INPUT' || element.tagName === 'TEXTAREA' ? element.value : element.textContent;
-            } 
-            return '';
-        },
-        // Add more API functions here (e.g., setVisibility, setEnabled, etc.)
-    };
-
-    // --- Sketchware API Runtime Environment ---
-    const sketchware_events = {
-        onAppStart: (callback) => {
-            // Execute app start event immediately
-            if (callback) setTimeout(callback, 100);
-        },
-        onScreenCreated: (callback) => {
-            // Execute screen created event after DOM is ready
-            if (callback) document.addEventListener('DOMContentLoaded', callback);
-        },
-        onButtonClick: (buttonId, callback) => {
-            // Add click listener to the button when DOM is ready
-            if (!buttonId || !callback) return;
-    document.addEventListener('DOMContentLoaded', () => {
-                const button = document.getElementById(buttonId);
-                if (button) button.addEventListener('click', callback);
-            });
-        }
-    };
-    
-    // Helper functions for component properties
-    function sketchware_setProp(componentId, propName, value) {
-        if (!componentId || !propName) return;
-        const element = document.getElementById(componentId);
-        if (!element) {
-            console.warn("Component not found: " + componentId);
-            return;
-        }
-        
-        switch(propName) {
-            case 'text':
-                if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') 
-                    element.value = value;
-                else 
-                    element.textContent = value;
-                break;
-            case 'backgroundColor':
-                element.style.backgroundColor = value;
-                break;
-            case 'textColor':
-                element.style.color = value;
-                break;
-            case 'visibility':
-                element.style.display = value === 'gone' ? 'none' : 
-                                       (value === 'invisible' ? 'hidden' : 'block');
-                break;
-            case 'enabled':
-                if (element.tagName === 'BUTTON' || element.tagName === 'INPUT')
-                    element.disabled = !value;
-                break;
-            // Add more property handlers as needed
-            default:
-                console.warn("Property not implemented: " + propName);
-        }
-    }
-    
-    function sketchware_getProp(componentId, propName) {
-        if (!componentId || !propName) return null;
-        const element = document.getElementById(componentId);
-        if (!element) {
-            console.warn("Component not found: " + componentId);
-            return null;
-        }
-        
-        switch(propName) {
-            case 'text':
-                return element.tagName === 'INPUT' || element.tagName === 'TEXTAREA' ? 
-                    element.value : element.textContent;
-            case 'backgroundColor':
-                return getComputedStyle(element).backgroundColor;
-            case 'textColor':
-                return getComputedStyle(element).color;
-            case 'visibility':
-                const display = getComputedStyle(element).display;
-                return display === 'none' ? 'gone' : 'visible';
-            case 'enabled':
-                return !(element.disabled);
-            // Add more property handlers as needed
-            default:
-                console.warn("Property getter not implemented: " + propName);
-                return null;
-        }
-    }
-    
-    function sketchware_showToast(message) {
-        showToast(message);
-    }
-    // --- End Sketchware API ---
-
-    // Execute the generated code within a try-catch block
-    try {
-      ${generatedJs}
-    } catch (e) {
-      console.error("Error executing generated code:", e);
-      alert("Error in generated code: " + e.message);
-    }
+    // Minimal JS, maybe for block code execution if re-enabled.
+    // Avoid complex simulation code.
+    ${generatedJs}
   </script>
 </body>
 </html>`;
   }
   
-  generateComponentHtml(component, componentMap) {
+  generateComponentHtml(component, componentMap, isTopLevel = false) {
     if (!component) return '';
     
     const props = component.properties || {};
-    let style = '';
+    let style = 'box-sizing: border-box; '; // Base style
     let classes = `component component-${component.type}`;
     let childrenHtml = '';
-    let attributes = `id="${component.id}"`; // Crucial for targeting with JS
-    let elementContent = '';
+    let attributes = `id="${component.id}"`;
+    let elementContent = props.text || ''; // Default content is text prop
 
-    // 1. Generate Style String from Properties
-    // Layout Params (Width/Height)
+    // --- Style Generation --- 
+
+    // 1. Layout Parameters (Width/Height)
     const layoutWidth = props.layout_width || 'wrap_content';
     const layoutHeight = props.layout_height || 'wrap_content';
+    
     if (layoutWidth === 'match_parent') style += 'width: 100%;';
-    else if (layoutWidth === 'wrap_content') style += 'width: auto; display: inline-block;'; // Or use flexbox sizing
-    else if (layoutWidth) style += `width: ${layoutWidth}px;`; // Assuming numeric value is px
+    else if (layoutWidth === 'wrap_content') style += 'width: auto;';
+    else if (layoutWidth) style += `width: ${this.parseSize(layoutWidth)};`;
 
-    if (layoutHeight === 'match_parent') style += 'height: 100%;'; // Needs parent context
+    if (layoutHeight === 'match_parent') style += 'height: 100%;';
     else if (layoutHeight === 'wrap_content') style += 'height: auto;';
-    else if (layoutHeight) style += `height: ${layoutHeight}px;`;
+    else if (layoutHeight) style += `height: ${this.parseSize(layoutHeight)};`;
 
-    // Margins (Example - needs parsing of margin property)
-    if (props.layout_margin) { 
-        const margin = parseInt(props.layout_margin) || 0;
-        style += `margin: ${margin}px;`; 
-    }
-    // Padding (Example)
-    if (props.padding) { 
-        const padding = parseInt(props.padding) || 0;
-        style += `padding: ${padding}px;`; 
-    }
-    
-    // Background Color
+    // 2. Margins & Padding
+    // Basic parsing - assumes single value or needs enhancement for individual sides
+    if (props.layout_margin) style += `margin: ${this.parseSize(props.layout_margin)};`;
+    if (props.padding) style += `padding: ${this.parseSize(props.padding)};`;
+    // TODO: Add support for layout_marginLeft, paddingStart, etc.
+
+    // 3. Background & Foreground Color
     if (props.backgroundColor) style += `background-color: ${props.backgroundColor};`;
-    
-    // Text Properties (for relevant components)
-    if (props.text) elementContent = props.text; // Default content is text prop
     if (props.textColor) style += `color: ${props.textColor};`;
-    if (props.textSize) style += `font-size: ${props.textSize}px;`; // Assuming px
-    // Add alignment, style (bold, italic) later
 
-    // 2. Handle Children (if layout component)
+    // 4. Text Properties
+    if (props.textSize) style += `font-size: ${this.parseSize(props.textSize)};`;
+    if (props.textStyle) {
+      if (props.textStyle.includes('bold')) style += 'font-weight: bold; ';
+      if (props.textStyle.includes('italic')) style += 'font-style: italic; ';
+    }
+    if (props.textAlignment) { // Basic mapping
+        const alignMap = { 'left': 'start', 'center': 'center', 'right': 'end' };
+        style += `text-align: ${alignMap[props.textAlignment] || 'start'};`;
+    }
+    style += 'white-space: pre-wrap; word-wrap: break-word; '; // Common text wrapping
+
+    // 5. Visibility
+    if (props.visibility === 'gone') style += 'display: none; ';
+    if (props.visibility === 'invisible') style += 'visibility: hidden; ';
+    
+    // --- Layout Specific Styles (Flexbox) --- 
+    if (component.type.startsWith('linearlayout') || isTopLevel) {
+        style += 'display: flex; ';
+        style += `flex-direction: ${component.type.includes('-h') ? 'row' : 'column'}; `;
+        
+        // Gravity (Align Items / Justify Content)
+        const gravity = props.gravity || 'top|start'; // Default if not set
+        const [verticalGravity, horizontalGravity] = gravity.split('|');
+        
+        // Map Android gravity to CSS Flexbox properties
+        const alignMap = { 'top': 'flex-start', 'center_vertical': 'center', 'bottom': 'flex-end', 'fill_vertical': 'stretch' };
+        const justifyMap = { 'start': 'flex-start', 'center_horizontal': 'center', 'end': 'flex-end', 'space-between': 'space-between', 'space-around': 'space-around' };
+
+        if (component.type.includes('-v')) { // Vertical LinearLayout
+            style += `align-items: ${justifyMap[horizontalGravity] || 'flex-start'}; `;
+            style += `justify-content: ${alignMap[verticalGravity] || 'flex-start'}; `;
+        } else { // Horizontal LinearLayout
+            style += `align-items: ${alignMap[verticalGravity] || 'flex-start'}; `;
+            style += `justify-content: ${justifyMap[horizontalGravity] || 'flex-start'}; `;
+        }
+    }
+
+    // --- Child Layout Properties (Applied to the child element's style) ---
+    // These are set by the PARENT layout
+    if (props.layout_gravity) { // Gravity of this component within its parent
+        const [vg, hg] = (props.layout_gravity || 'top|start').split('|');
+        const alignSelfMap = {
+            'top': 'flex-start', 'center_vertical': 'center', 'bottom': 'flex-end', 'fill_vertical': 'stretch',
+            'start': 'flex-start', 'center_horizontal': 'center', 'end': 'flex-end', 'fill_horizontal': 'stretch'
+        };
+        // Note: align-self depends on the parent's flex-direction
+        // This simplified version might need adjustment based on parent type
+        style += `align-self: ${alignSelfMap[vg] || alignSelfMap[hg] || 'auto'}; `;
+        if (props.layout_gravity.includes('center')) style += 'margin-left: auto; margin-right: auto; '; // Basic centering helper
+    }
+    if (props.layout_weight && parseFloat(props.layout_weight) > 0) {
+        style += `flex-grow: ${props.layout_weight}; flex-basis: 0; `; // Allow growing
+    }
+    
+    // --- Handle Children Recursively --- 
     if (component.children && component.children.length > 0) {
         childrenHtml = component.children
             .map(childId => componentMap.get(childId))
-            .filter(child => child) // Filter out potential undefined children
-            .map(child => this.generateComponentHtml(child, componentMap))
+            .filter(child => child)
+            .map(child => this.generateComponentHtml(child, componentMap)) // isTopLevel is false for children
             .join('');
-
-        // Apply layout-specific styles (Flexbox for LinearLayout)
-        if (component.type === 'linearlayout-v') {
-            style += 'display: flex; flex-direction: column;';
-            // Add gravity/alignment later
-        }
-        if (component.type === 'linearlayout-h') {
-            style += 'display: flex; flex-direction: row;';
-             // Add gravity/alignment later
-        }
     }
     
-    // 3. Generate Specific Element HTML
+    // --- Generate Specific Element HTML --- 
     let html = '';
     switch (component.type) {
       case 'linearlayout-h':
       case 'linearlayout-v':
-      case 'scrollview-h': // Basic ScrollView - needs overflow style
+      case 'scrollview-h':
       case 'scrollview-v':
-          style += component.type.includes('scroll') ? ' overflow: auto;': '';
           html = `<div ${attributes} class="${classes}" style="${style}">${childrenHtml}</div>`;
           break;
       case 'textview':
           html = `<div ${attributes} class="${classes}" style="${style}">${elementContent}</div>`;
           break;
       case 'button':
-          // Button uses <button> tag
+          attributes += props.enabled === false ? ' disabled' : '';
+          style += 'appearance: button; -webkit-appearance: button; '; // Basic button appearance
           html = `<button ${attributes} class="${classes}" style="${style}">${elementContent}</button>`;
           break;
       case 'edittext':
-          // EditText uses <input> or <textarea>
           attributes += ` placeholder="${props.hint || ''}"`;
-          html = `<input type="text" ${attributes} class="${classes}" style="${style}" value="${elementContent}">`;
-          // Add multiline support later (<textarea>)
+          attributes += props.enabled === false ? ' disabled' : '';
+          if (props.inputType === 'textMultiLine') {
+             html = `<textarea ${attributes} class="${classes}" style="${style} resize: vertical;">${elementContent}</textarea>`;
+          } else {
+             html = `<input type="${this.mapInputType(props.inputType)}" ${attributes} class="${classes}" style="${style}" value="${elementContent}">`;
+          }
           break;
       case 'imageview':
-          // ImageView uses <img> tag
-          attributes += ` src="${props.src || ''}" alt="${props.contentDescription || 'Image'}"`;
+          attributes += ` src="${props.src || 'img/placeholder.png'}" alt="${props.contentDescription || 'Image'}"`; // Use placeholder
+          // Map scaleType to object-fit
+          const scaleTypeMap = { 'fitXY': 'fill', 'fitStart': 'contain', 'fitCenter': 'contain', 'fitEnd': 'contain', 'center': 'none', 'centerCrop': 'cover', 'centerInside': 'contain' };
+          style += `object-fit: ${scaleTypeMap[props.scaleType || 'fitCenter'] || 'contain'}; `; 
+          if (props.scaleType === 'center' || props.scaleType === 'centerInside') style += 'object-position: center center; ';
+          // Ensure images don't exceed bounds by default if size is wrap_content
+          if (layoutWidth === 'wrap_content' || layoutHeight === 'wrap_content') {
+              style += 'max-width: 100%; max-height: 100%; ';
+          }
           html = `<img ${attributes} class="${classes}" style="${style}">`;
           break;
       case 'checkbox':
           attributes += props.checked ? ' checked' : '';
-          html = `<div class="${classes}" style="${style}"><label><input type="checkbox" ${attributes}> ${elementContent}</label></div>`;
+          attributes += props.enabled === false ? ' disabled' : '';
+          // Wrap in a label for better click handling
+          html = `<div class="${classes}-container" style="display: flex; align-items: center; ${style}">
+                    <input type="checkbox" ${attributes} style="margin-right: 8px;">
+                    <label for="${component.id}">${elementContent}</label>
+                  </div>`; // Note: label `for` needs input id if we want that connection
           break;
-      // Add other component types (RadioButton, Switch, ProgressBar, Spinner, etc.) here
+      case 'switch': // Basic switch rendering
+          attributes += props.checked ? ' checked' : '';
+          attributes += props.enabled === false ? ' disabled' : '';
+          html = `<div class="${classes}-container" style="display: flex; align-items: center; justify-content: space-between; ${style}">
+                    <span>${elementContent}</span>
+                    <input type="checkbox" role="switch" ${attributes}>
+                  </div>`; 
+          break;
+      // Add other component types here (ProgressBar, Spinner, etc.)
       default:
-          html = `<div ${attributes} class="${classes} component-unknown" style="${style}">[${component.type}] ${elementContent}${childrenHtml}</div>`;
+          html = `<div ${attributes} class="${classes} component-unknown" style="border: 1px dashed red; padding: 5px; ${style}">[${component.type}] ${elementContent}${childrenHtml}</div>`;
     }
 
     return html;
   }
   
+  // Helper to parse size values (e.g., "16dp", "16px", "16")
+  parseSize(value) {
+      if (typeof value === 'number') return `${value}px`;
+      if (typeof value === 'string') {
+          if (value.endsWith('dp') || value.endsWith('dip')) {
+              return `${parseInt(value)}px`; // Basic 1:1 mapping for preview
+          }
+          if (value.endsWith('px')) {
+              return value;
+          }
+          if (!isNaN(value)) { // If it's just a number string
+              return `${value}px`;
+          }
+      }
+      return value; // Return original if not parseable
+  }
+  
+  // Helper to map Android input types to HTML types
+  mapInputType(inputType) {
+      switch (inputType) {
+          case 'textPassword': return 'password';
+          case 'numberPassword': return 'password'; // No direct numeric password type
+          case 'number': return 'number';
+          case 'numberSigned': return 'number';
+          case 'numberDecimal': return 'number'; // Step attribute could be added
+          case 'phone': return 'tel';
+          case 'textEmailAddress': return 'email';
+          case 'textUri': return 'url';
+          default: return 'text';
+      }
+  }
+
   generateDemoComponents() {
     // Generate sample components for the app preview
     const app = this.editorView.currentApp; // Need app context for styles

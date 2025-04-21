@@ -8,11 +8,14 @@
   word-wrap: break-word;
   top: 0;
   left: 0;
+  border: 1px solid transparent;
+  min-width: 10px;
 }
 
 .preview-component.selected {
-  outline: 2px solid var(--primary-color);
-  z-index: 2;
+  border: 1px dashed #888888;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+  z-index: 10;
 }
 
 .preview-component:hover {
@@ -88,4 +91,48 @@
   height: 100%;
   width: 50%;
   background-color: var(--primary-color);
+}
+
+/* Styles for individual components within the preview */
+.preview-component[data-component-type="textview"] {
+  /* Specific styles if needed */
+}
+
+.preview-component[data-component-type="button"] {
+  /* Basic button styling */
+  padding: 4px 8px;
+  text-align: center;
+  background-color: #E0E0E0;
+  border: 1px solid #bdbdbd;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+.preview-component[data-component-type="edittext"] {
+  padding: 4px;
+  background-color: white;
+  border: 1px solid #bdbdbd;
+  min-width: 50px;
+}
+
+.preview-component[data-component-type="imageview"] {
+  background-color: #e0e0e0;
+  overflow: hidden; /* Important for image scaling */
+}
+
+.preview-component[data-component-type^="linearlayout"],
+.preview-component[data-component-type^="scrollview"] {
+  /* background-color: rgba(0, 0, 255, 0.05); */ /* Subtle background for layouts */
+  border: 1px dashed #cccccc;
+  overflow: visible; /* Allow content to overflow visually if needed */
+}
+
+/* Add more specific styles for other components as needed */
+
+/* Indicate when dragging */
+.preview-component.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+  border-style: solid; /* Change border during drag */
+  border-color: #f39c12; 
 } 

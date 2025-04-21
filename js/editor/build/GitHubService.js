@@ -1,328 +1,478 @@
-// Handles all interaction with the GitHub API
-
+/**
+ * Service to handle all GitHub API interactions
+ */
 class GitHubService {
-    constructor(config) {
-        this.owner = config.owner;
-        this.repo = config.repo;
-        this.token = config.token;
-        if (!this.owner || !this.repo || !this.token) {
-             throw new Error('GitHubService requires owner, repo, and token.');
+    constructor(config = null) {
+        if (config && config.token) {
+            this.accessToken = config.token;
+            // Store owner and repo if provided
+            this.owner = config.owner || null;
+            this.repo = config.repo || null;
+        } else {
+            this.accessToken = localStorage.getItem('github_token') || localStorage.getItem('githubToken');
+            this.owner = localStorage.getItem('githubOwner');
+            this.repo = localStorage.getItem('githubRepo');
         }
+        
+        this.username = localStorage.getItem('github_username');
+        this.baseApiUrl = 'https://api.github.com';
     }
-    
-    // --- GitHub API Interaction Methods ---
-    
-    async _fetchGitHubAPI(endpoint, options = {}) {
-        const url = `https://api.github.com/repos/${this.owner}/${this.repo}/${endpoint}`;
-        const defaultHeaders = {
-            'Authorization': `Bearer ${this.token}`,
-            'Accept': 'application/vnd.github.v3+json'
-        };
-        if (options.method === 'POST' || options.method === 'PUT' || options.method === 'PATCH') {
-            defaultHeaders['Content-Type'] = 'application/json';
+
+    // Singleton pattern
+    static getInstance() {
+        if (!GitHubService.instance) {
+            GitHubService.instance = new GitHubService();
         }
+        return GitHubService.instance;
+    }
 
-        const fetchOptions = {
-            ...options,
-            headers: {
-                ...defaultHeaders,
-                ...options.headers
-            }
-        };
+    getUsername() {
+        return this.username;
+    }
 
+    /**
+     * Makes a fetch request to GitHub API
+     */
+    async _fetchGitHubAPI(endpoint, method = 'GET', body = null, additionalHeaders = {}) {
         try {
-            const response = await fetch(url, fetchOptions);
-            // Handle rate limiting explicitly? (403 with specific message)
+            const headers = {
+                'Authorization': `token ${this.accessToken}`,
+                'Accept': 'application/vnd.github.v3+json',
+                ...additionalHeaders
+            };
+
+            if (body && method !== 'GET' && !headers['Content-Type']) {
+                headers['Content-Type'] = 'application/json';
+            }
+
+            const options = {
+                method,
+                headers,
+                body: body ? JSON.stringify(body) : null
+            };
+
+            const response = await fetch(`${this.baseApiUrl}${endpoint}`, options);
+            
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ message: response.statusText }));
-                const errorMessage = `GitHub API Error (${response.status}): ${errorData.message || 'Unknown error'} for ${options.method || 'GET'} ${url}`;
-                console.error(errorMessage, errorData);
-                throw new Error(errorMessage);
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(`GitHub API Error (${response.status}): ${errorData.message || response.statusText} for ${method} ${endpoint}`);
             }
-            // Handle 204 No Content for dispatch/cancel/rerun
+            
+            // Some endpoints return 204 No Content
             if (response.status === 204) {
-                 return null; // Or return true?
+                return {};
             }
+            
             return await response.json();
         } catch (error) {
-             console.error(`Network or Fetch Error calling GitHub API: ${error.message}`);
-             throw error; // Re-throw original error
-        }
-    }
-    
-    async _fetchGitHubRaw(url, options = {}) {
-         // Helper for downloading artifacts, might need different error handling
-         const fetchOptions = {
-             ...options,
-             headers: {
-                'Authorization': `Bearer ${this.token}`,
-                ...options.headers
-             }
-         };
-         try {
-             const response = await fetch(url, fetchOptions);
-              if (!response.ok) {
-                 const errorText = await response.text();
-                 console.error('GitHub Raw Fetch Error:', response.status, errorText);
-                 throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
-             }
-             return response; // Return the raw response (e.g., for blob())
-         } catch (error) {
-              console.error(`Network or Fetch Error on raw download: ${error.message}`);
-              throw error;
-         }
-    }
-
-    async checkAndPushWorkflowFile(workflowFileName, workflowContent) {
-        const workflowPath = `.github/workflows/${workflowFileName}`;
-        try {
-            let fileSha = null;
-            try {
-                const existingFileData = await this._fetchGitHubAPI(`contents/${workflowPath}`);
-                fileSha = existingFileData.sha;
-                const currentContent = atob(existingFileData.content);
-                if (currentContent === workflowContent) {
-                    console.log(`Workflow file ${workflowFileName} is up to date.`);
-                    return true; // No update needed
-                }
-                console.log(`Updating existing workflow file: ${workflowFileName}`);
-            } catch (error) {
-                 if (error.message.includes('404')) {
-                    console.log(`Workflow file ${workflowFileName} not found, creating...`);
-                     // Need to ensure directory exists first
-                     try {
-                         await this._fetchGitHubAPI('contents/.github/workflows');
-                     } catch (dirError) {
-                          if (dirError.message.includes('404')) {
-                              console.log('Creating .github/workflows directory...');
-                              await this._fetchGitHubAPI('contents/.github/workflows/.gitkeep', {
-                                  method: 'PUT',
-                                  body: JSON.stringify({
-                                      message: 'Create workflows directory',
-                                      content: btoa(''),
-                                      branch: 'main'
-                                  })
-                              });
-                               // Small delay after creating directory
-                               await new Promise(resolve => setTimeout(resolve, 1000));
-                          } else {
-                              throw dirError; // Re-throw other directory check errors
-                          }
-                     }
-                 } else {
-                     throw error; // Re-throw other errors during file check
-                 }
-            }
-
-            // Create or Update the file
-            await this._fetchGitHubAPI(`contents/${workflowPath}`, {
-                method: 'PUT',
-                body: JSON.stringify({
-                    message: fileSha ? `Update ${workflowFileName}` : `Create ${workflowFileName}`,
-                    content: btoa(workflowContent),
-                    sha: fileSha, // Required for update, ignored for create
-                    branch: 'main'
-                })
-            });
-            console.log(`Successfully ${fileSha ? 'updated' : 'created'} workflow file: ${workflowFileName}`);
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Delay after push
-            return true;
-        } catch (error) {
-             console.error(`Error checking/pushing workflow file ${workflowFileName}:`, error);
-             throw error; // Let BuildWorkflowManager handle user notification
-        }
-    }
-
-    async checkAndPushProjectFiles(projectFiles) {
-        if (!projectFiles || projectFiles.length === 0) {
-            throw new Error('No project files provided to push.');
-        }
-        console.log(`Preparing to push ${projectFiles.length} project files...`);
-        try {
-            // 1. Get Reference to main branch
-            const refData = await this._fetchGitHubAPI('git/refs/heads/main');
-            const latestCommitSha = refData.object.sha;
-            console.log(`Latest commit SHA: ${latestCommitSha}`);
-
-            // 2. Get the Tree of the latest commit
-            const commitData = await this._fetchGitHubAPI(`git/commits/${latestCommitSha}`);
-            const baseTreeSha = commitData.tree.sha;
-            console.log(`Base tree SHA: ${baseTreeSha}`);
-
-            // 3. Create Tree Items (Blobs)
-            const treeItems = projectFiles.map(file => ({
-                path: file.path,
-                mode: '100644', // File mode
-                type: 'blob',
-                content: file.encoding === 'base64' ? file.content : btoa(unescape(encodeURIComponent(file.content))) // Ensure proper encoding for non-ASCII
-            }));
-
-            // 4. Create a new Tree
-            const newTreeData = await this._fetchGitHubAPI('git/trees', {
-                method: 'POST',
-                body: JSON.stringify({
-                    base_tree: baseTreeSha, // Use base_tree for efficiency
-                    tree: treeItems
-                })
-            });
-            const newTreeSha = newTreeData.sha;
-            console.log(`Created new tree SHA: ${newTreeSha}`);
-
-            // 5. Create a new Commit
-            const newCommitData = await this._fetchGitHubAPI('git/commits', {
-                method: 'POST',
-                body: JSON.stringify({
-                    message: 'Update project files via ProBuild',
-                    tree: newTreeSha,
-                    parents: [latestCommitSha]
-                })
-            });
-            const newCommitSha = newCommitData.sha;
-            console.log(`Created new commit SHA: ${newCommitSha}`);
-
-            // 6. Update the Reference (fast-forward main branch)
-            await this._fetchGitHubAPI('git/refs/heads/main', {
-                method: 'PATCH',
-                body: JSON.stringify({
-                    sha: newCommitSha,
-                    force: false // Set to true only if absolutely necessary
-                })
-            });
-            console.log('Successfully pushed project files by updating main branch reference.');
-            return true;
-        } catch (error) {
-             console.error('Error pushing project files via Git Data API:', error);
-             throw error;
-        }
-    }
-
-    async triggerWorkflow(workflowFileName) {
-        console.log(`Triggering workflow: ${workflowFileName}`);
-        try {
-            await this._fetchGitHubAPI(`actions/workflows/${workflowFileName}/dispatches`, {
-                method: 'POST',
-                body: JSON.stringify({ ref: 'main', inputs: {} })
-            });
-            console.log(`Workflow ${workflowFileName} triggered successfully.`);
-             await new Promise(resolve => setTimeout(resolve, 2000)); // Delay after trigger
-            return true;
-        } catch (error) {
-            console.error(`Error triggering workflow ${workflowFileName}:`, error);
+            console.error('Network or Fetch Error calling GitHub API:', error);
             throw error;
         }
     }
     
-    async findLatestWorkflowRun(workflowFileName) {
-        console.log(`Finding latest run for workflow: ${workflowFileName}`);
-        const maxAttempts = 10;
-        const delay = 3000; // 3 seconds
-        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    /**
+     * Checks if a file exists in a repository
+     */
+    async checkFileExists(owner, repo, path) {
+        try {
+            await this._fetchGitHubAPI(`/repos/${owner}/${repo}/contents/${path}`);
+            return true;
+        } catch (error) {
+            if (error.message.includes('404')) {
+                return false;
+            }
+            throw error;
+        }
+    }
+
+    /**
+     * Creates or updates a workflow file in the .github/workflows directory
+     */
+    async createWorkflowFile(owner, repo, filename, content) {
+        const path = `.github/workflows/${filename}`;
+        
+        try {
+            console.log(`Creating workflow file: ${filename}`);
+            
+            // First ensure the workflows directory exists
+            await this._ensureDirectoryExists(owner, repo, '.github/workflows');
+            
+            // Then create the file
+            return await this._createOrUpdateFile(
+                owner, 
+                repo, 
+                path, 
+                content, 
+                `Add GitHub Actions workflow ${filename}`
+            );
+        } catch (error) {
+            console.error(`Error creating workflow file ${filename}:`, error);
+            throw error;
+        }
+    }
+    
+    /**
+     * Updates an existing workflow file
+     */
+    async updateWorkflowFile(owner, repo, filename, content) {
+        const path = `.github/workflows/${filename}`;
+        
+        try {
+            console.log(`Updating existing workflow file: ${filename}`);
+            
+            // Get the file's SHA (required for updating)
+            const fileData = await this._fetchGitHubAPI(`/repos/${owner}/${repo}/contents/${path}`);
+            
+            return await this._createOrUpdateFile(
+                owner, 
+                repo, 
+                path, 
+                content, 
+                `Update GitHub Actions workflow ${filename}`,
+                fileData.sha
+            );
+        } catch (error) {
+            console.error(`Error updating workflow file ${filename}:`, error);
+            // If the file doesn't exist, create it
+            if (error.message.includes('404')) {
+                return await this.createWorkflowFile(owner, repo, filename, content);
+            }
+            throw error;
+        }
+    }
+    
+    /**
+     * Ensures a directory exists in the repository
+     */
+    async _ensureDirectoryExists(owner, repo, path) {
+        try {
+            // Try to get the directory
+            await this._fetchGitHubAPI(`/repos/${owner}/${repo}/contents/${path}`);
+            // Directory exists, nothing to do
+            return true;
+        } catch (error) {
+            // If it's a 404, the directory doesn't exist
+            if (error.message.includes('404')) {
+                // Split the path to get parent directory
+                const parts = path.split('/');
+                const newDirName = parts.pop();
+                const parentDir = parts.join('/');
+                
+                // If there's a parent directory, ensure it exists first (recursive)
+                if (parentDir) {
+                    await this._ensureDirectoryExists(owner, repo, parentDir);
+                }
+                
+                // Create the directory with a placeholder file
+                await this._createOrUpdateFile(
+                    owner,
+                    repo,
+                    `${path}/.gitkeep`,
+                    '', // Empty file
+                    `Create directory: ${path}`
+                );
+                
+                return true;
+            }
+            
+            throw error;
+        }
+    }
+    
+    /**
+     * Creates or updates a file in the repository
+     */
+    async _createOrUpdateFile(owner, repo, path, content, message, sha = null) {
+        const endpoint = `/repos/${owner}/${repo}/contents/${path}`;
+        const method = sha ? 'PUT' : 'POST';
+        const body = {
+            message,
+            content: typeof content === 'string' ? btoa(unescape(encodeURIComponent(content))) : content,
+            branch: 'main'
+        };
+        
+        if (sha) {
+            body.sha = sha;
+        }
+        
+        return await this._fetchGitHubAPI(endpoint, method, body);
+    }
+    
+    /**
+     * Pushes multiple files to a repository in a single commit
+     */
+    async pushProjectFiles(owner, repo, files) {
+        try {
+            console.log(`Preparing to push ${files.length} project files...`);
+            
+            // Get the latest commit SHA
+            const masterRef = await this._fetchGitHubAPI(`/repos/${owner}/${repo}/git/refs/heads/main`);
+            const latestCommitSha = masterRef.object.sha;
+            console.log(`Latest commit SHA: ${latestCommitSha}`);
+            
+            // Get the tree SHA from the commit
+            const latestCommit = await this._fetchGitHubAPI(`/repos/${owner}/${repo}/git/commits/${latestCommitSha}`);
+            const baseTreeSha = latestCommit.tree.sha;
+            console.log(`Base tree SHA: ${baseTreeSha}`);
+            
+            // Create a new tree with all the files
+            const tree = files.map(file => {
+                const item = {
+                    path: file.path,
+                    mode: '100644', // Regular file
+                    type: 'blob'
+                };
+                
+                if (file.encoding === 'base64') {
+                    // Already Base64 encoded
+                    item.content = file.content;
+                } else {
+                    // Regular content, needs encoding
+                    item.content = file.content;
+                }
+                
+                return item;
+            });
+            
+            const newTree = await this._fetchGitHubAPI(`/repos/${owner}/${repo}/git/trees`, 'POST', {
+                base_tree: baseTreeSha,
+                tree
+            });
+            console.log(`Created new tree SHA: ${newTree.sha}`);
+            
+            // Create a new commit
+            const newCommit = await this._fetchGitHubAPI(`/repos/${owner}/${repo}/git/commits`, 'POST', {
+                message: 'Update Android project files',
+                tree: newTree.sha,
+                parents: [latestCommitSha]
+            });
+            console.log(`Created new commit SHA: ${newCommit.sha}`);
+            
+            // Update the reference to point to the new commit
+            await this._fetchGitHubAPI(`/repos/${owner}/${repo}/git/refs/heads/main`, 'PATCH', {
+                sha: newCommit.sha,
+                force: true
+            });
+            console.log('Successfully pushed project files by updating main branch reference.');
+            
+            return true;
+        } catch (error) {
+            console.error('Error pushing project files:', error);
+            throw error;
+        }
+    }
+    
+    /**
+     * Checks if a workflow file exists and creates or updates it accordingly
+     */
+    async checkAndPushWorkflowFile(filename, content) {
+        if (!this.accessToken) {
+            throw new Error('GitHub access token is not configured');
+        }
+        
+        try {
+            if (!this.owner || !this.repo) {
+                throw new Error('GitHub repository owner or name is not configured');
+            }
+            
+            console.log(`Checking and pushing workflow file: ${filename}`);
+            const path = `.github/workflows/${filename}`;
+            
+            // Check if the file exists
+            const fileExists = await this.checkFileExists(this.owner, this.repo, path);
+            
+            if (fileExists) {
+                // Update existing file
+                return await this.updateWorkflowFile(this.owner, this.repo, filename, content);
+            } else {
+                // Create new file
+                return await this.createWorkflowFile(this.owner, this.repo, filename, content);
+            }
+        } catch (error) {
+            console.error(`Error in checkAndPushWorkflowFile for ${filename}:`, error);
+            throw error;
+        }
+    }
+    
+    /**
+     * Checks and pushes project files to the repository
+     */
+    async checkAndPushProjectFiles(files) {
+        if (!this.accessToken) {
+            throw new Error('GitHub access token is not configured');
+        }
+        
+        try {
+            if (!this.owner || !this.repo) {
+                throw new Error('GitHub repository owner or name is not configured');
+            }
+            
+            return await this.pushProjectFiles(this.owner, this.repo, files);
+        } catch (error) {
+            console.error('Error in checkAndPushProjectFiles:', error);
+            throw error;
+        }
+    }
+    
+    /**
+     * Triggers a workflow dispatch event to run a workflow
+     */
+    async triggerWorkflow(owner, repo, workflow_id) {
+        try {
+            console.log(`Triggering workflow: ${workflow_id}`);
+            
+            await this._fetchGitHubAPI(
+                `/repos/${owner}/${repo}/actions/workflows/${workflow_id}/dispatches`,
+                'POST',
+                { ref: 'main' }
+            );
+            
+            return true;
+        } catch (error) {
+            console.error(`Error triggering workflow ${workflow_id}:`, error);
+            throw error;
+        }
+    }
+    
+    /**
+     * Finds the latest workflow run after triggering a workflow
+     * This method will wait for a new run to appear after triggering
+     */
+    async findLatestWorkflowRun(owner, repo, workflow_id) {
+        console.log(`Finding latest workflow run for ${workflow_id}...`);
+        
+        // First get the timestamp before we triggered the workflow
+        const beforeTime = new Date().toISOString();
+        
+        // Wait a few seconds to allow the workflow to start
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        
+        // Try to find the new run, with retry logic
+        const maxRetries = 10;
+        const retryDelay = 3000; // 3 seconds
+        
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
             try {
-                 // Query specifically for workflow_dispatch events, sorted by creation time
-                 // GitHub API sorts descending by created_at by default
-                const runsData = await this._fetchGitHubAPI(`actions/workflows/${workflowFileName}/runs?event=workflow_dispatch&per_page=1`); 
-                if (runsData && runsData.workflow_runs && runsData.workflow_runs.length > 0) {
-                    console.log("Found latest workflow run:", runsData.workflow_runs[0].id);
-                    return runsData.workflow_runs[0]; 
+                console.log(`Attempt ${attempt} to find new workflow run...`);
+                
+                // Get all runs for this workflow
+                const runs = await this.getWorkflowRuns(owner, repo, workflow_id);
+                
+                if (runs && runs.length > 0) {
+                    // Look for runs created after we triggered the workflow
+                    const newRuns = runs.filter(run => {
+                        const runCreatedAt = new Date(run.created_at).toISOString();
+                        return runCreatedAt > beforeTime;
+                    });
+                    
+                    if (newRuns.length > 0) {
+                        console.log(`Found ${newRuns.length} new workflow run(s), using the most recent one`);
+                        return newRuns[0]; // Return the most recent run
+                    }
+                }
+                
+                // If we didn't find a new run yet, wait and retry
+                if (attempt < maxRetries) {
+                    console.log(`No new runs found yet, waiting ${retryDelay/1000} seconds to retry...`);
+                    await new Promise(resolve => setTimeout(resolve, retryDelay));
                 }
             } catch (error) {
-                 console.error(`Attempt ${attempt}: Error fetching workflow runs for ${workflowFileName}:`, error);
-                 // Don't throw here, allow retries
-            }
-            if (attempt < maxAttempts) {
-                console.log(`Workflow run not found yet, retrying in ${delay / 1000}s...`);
-                await new Promise(resolve => setTimeout(resolve, delay));
+                console.error(`Error finding workflow run (attempt ${attempt}):`, error);
+                if (attempt >= maxRetries) {
+                    throw error;
+                }
+                await new Promise(resolve => setTimeout(resolve, retryDelay));
             }
         }
-        throw new Error(`Could not find triggered workflow run for ${workflowFileName} after ${maxAttempts} attempts.`);
-    }
-
-    async getWorkflowRunStatus(runId) {
-        console.log(`Getting status for run: ${runId}`);
-        return this._fetchGitHubAPI(`actions/runs/${runId}`);
+        
+        // If we reach here, we couldn't find a new run
+        throw new Error(`Could not find a new workflow run for ${workflow_id} after ${maxRetries} attempts`);
     }
     
-    async getWorkflowJobs(jobsUrl) {
-         // Need to fetch from the absolute URL provided by GitHub
-         console.log(`Fetching jobs from: ${jobsUrl}`);
-          try {
-            const response = await fetch(jobsUrl, {
-                 headers: { 
-                    'Authorization': `Bearer ${this.token}`,
+    /**
+     * Gets the workflow runs for a specific workflow
+     */
+    async getWorkflowRuns(owner, repo, workflow_id) {
+        try {
+            const result = await this._fetchGitHubAPI(
+                `/repos/${owner}/${repo}/actions/workflows/${workflow_id}/runs`
+            );
+            
+            return result.workflow_runs || [];
+        } catch (error) {
+            console.error(`Error getting workflow runs for ${workflow_id}:`, error);
+            throw error;
+        }
+    }
+    
+    /**
+     * Gets the status of a specific workflow run
+     */
+    async getWorkflowRunStatus(owner, repo, run_id) {
+        try {
+            const result = await this._fetchGitHubAPI(
+                `/repos/${owner}/${repo}/actions/runs/${run_id}`
+            );
+            
+            return result.status;
+        } catch (error) {
+            console.error(`Error getting workflow run status for ${run_id}:`, error);
+            throw error;
+        }
+    }
+    
+    /**
+     * Gets the artifacts for a specific workflow run
+     */
+    async getWorkflowRunArtifacts(owner, repo, run_id) {
+        try {
+            const result = await this._fetchGitHubAPI(
+                `/repos/${owner}/${repo}/actions/runs/${run_id}/artifacts`
+            );
+            
+            return result.artifacts || [];
+        } catch (error) {
+            console.error(`Error getting workflow run artifacts for ${run_id}:`, error);
+            throw error;
+        }
+    }
+    
+    /**
+     * Downloads an artifact from the given URL
+     */
+    async downloadArtifact(url) {
+        try {
+            console.log(`Downloading artifact from URL: ${url}`);
+            
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': `token ${this.accessToken}`,
                     'Accept': 'application/vnd.github.v3+json'
-                 }
+                }
             });
-             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ message: response.statusText }));
-                const errorMessage = `GitHub API Error (${response.status}) fetching jobs: ${errorData.message || 'Unknown error'}`;
-                console.error(errorMessage, errorData);
-                throw new Error(errorMessage);
+            
+            if (!response.ok) {
+                throw new Error(`Failed to download artifact: ${response.status} ${response.statusText}`);
             }
-            return await response.json();
+            
+            return await response.blob();
         } catch (error) {
-             console.error(`Network or Fetch Error calling GitHub Jobs API: ${error.message}`);
-             throw error; // Re-throw original error
-        }
-    }
-
-    async cancelWorkflowRun(runId) {
-        console.log(`Requesting cancellation for run: ${runId}`);
-        try {
-             await this._fetchGitHubAPI(`actions/runs/${runId}/cancel`, { method: 'POST' });
-             console.log(`Cancellation requested for run ${runId}.`);
-             return true;
-        } catch (error) {
-             console.error(`Error cancelling workflow run ${runId}:`, error);
-             // Check if it was already cancelled or completed?
-             // API might return 409 Conflict if already stopped.
-             if (!error.message.includes('409')) {
-                throw error; // Re-throw if not a 409
-             }
-             console.log(`Run ${runId} likely already stopped.`);
-             return false; // Indicate it wasn't actively cancelled by this call
+            console.error('Error downloading artifact:', error);
+            throw error;
         }
     }
     
-    async getArtifactDownloadUrl(runId, artifactName) {
-        console.log(`Getting download URL for artifact: ${artifactName} from run: ${runId}`);
+    /**
+     * Gets the download URL for a specific artifact
+     */
+    async getArtifactDownloadUrl(owner, repo, artifact_id) {
         try {
-             const artifactsData = await this._fetchGitHubAPI(`actions/runs/${runId}/artifacts`);
-             if (artifactsData && artifactsData.artifacts && artifactsData.artifacts.length > 0) {
-                 const targetArtifact = artifactsData.artifacts.find(artifact => artifact.name === artifactName);
-                 if (targetArtifact) {
-                     console.log("Found artifact:", targetArtifact.name, "URL:", targetArtifact.archive_download_url);
-                     return { name: targetArtifact.name, url: targetArtifact.archive_download_url };
-                 }
-             }
-             console.log(`Artifact '${artifactName}' not found for run ${runId}`);
-             return null; // Artifact not found
+            // GitHub doesn't provide a direct download URL via the API
+            // Instead, we construct a URL to the GitHub website
+            return `https://github.com/${owner}/${repo}/actions/artifacts/${artifact_id}/zip`;
         } catch (error) {
-             console.error(`Error fetching artifacts for run ${runId}:`, error);
-             throw error;
-        }
-    }
-
-    async downloadArtifact(artifactUrl) {
-        // Uses the _fetchGitHubRaw helper
-        console.log(`Downloading artifact from: ${artifactUrl}`);
-        try {
-            const response = await this._fetchGitHubRaw(artifactUrl); // Gets raw response
-            return await response.blob(); // Return the Blob
-        } catch(error) {
-             console.error(`Error downloading artifact blob from ${artifactUrl}:`, error);
-             throw error;
-        }
-    }
-    
-    async rerunWorkflow(runId) {
-        console.log(`Requesting re-run for workflow run: ${runId}`);
-         try {
-             await this._fetchGitHubAPI(`actions/runs/${runId}/rerun`, { method: 'POST' });
-             console.log(`Re-run requested successfully for run ${runId}.`);
-             return true;
-        } catch (error) {
-             console.error(`Error re-running workflow run ${runId}:`, error);
-             throw error;
+            console.error(`Error getting artifact download URL for ${artifact_id}:`, error);
+            throw error;
         }
     }
 }

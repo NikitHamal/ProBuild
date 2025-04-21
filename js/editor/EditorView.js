@@ -10,18 +10,42 @@ import RunManager from './utils/RunManager.js';
 import PreviewManager from './utils/PreviewManager.js';
 import BuildWorkflowManager from './build/BuildWorkflowManager.js';
 
+// --- New Modular Managers ---
+import EditorLayoutManager from './managers/EditorLayoutManager.js';
+import EditorTabManager from './managers/EditorTabManager.js';
+import EditorSidebarManager from './managers/EditorSidebarManager.js';
+import DevicePreviewManager from './managers/DevicePreviewManager.js';
+import UndoRedoManager from './managers/UndoRedoManager.js';
+
 class EditorView {
   constructor() {
+    console.log("EditorView constructing...");
     this.appService = AppService;
     this.currentApp = null;
     this.currentScreen = null;
     this.selectedComponent = null;
-    this.propertyPanelVisible = false;
+    this.activeTab = 'design'; // Initial tab state
     
-    // --- Undo/Redo History ---
-    this.undoStack = [];
-    this.redoStack = [];
-    // -------------------------
+    // --- Instantiate Managers ---
+    // Core functionality managers (might be further refactored later)
+    this.notificationManager = new NotificationManager();
+    this.dialogManager = new DialogManager(this); // Likely needs access to view
+    this.propertyPanel = new PropertyPanel(this); // Needs access to view/selected component
+    this.screenManager = new ScreenManager(this); // Needed for screen dialogs
+    this.componentManager = new ComponentManager(this); // Manages design canvas interactions
+    this.blocksManager = new BlocksManager(this); // Manages blocks tab
+    this.codeManager = new CodeManager(this); // Manages code tab
+    this.previewManager = new PreviewManager(this); // Manages preview window
+    this.buildWorkflowManager = new BuildWorkflowManager(this); // Manages build process
+    
+    // New UI/State Managers
+    this.layoutManager = new EditorLayoutManager(this);
+    this.tabManager = new EditorTabManager(this);
+    this.sidebarManager = new EditorSidebarManager(this);
+    this.devicePreviewManager = new DevicePreviewManager(this);
+    this.undoRedoManager = new UndoRedoManager(this);
+    
+    console.log("EditorView managers instantiated.");
     
     this.devices = [
         { name: 'Phone (Default)', width: 320, height: 600 },
@@ -35,504 +59,287 @@ class EditorView {
   }
 
   init() {
-    // Get app ID from URL
+    console.log("EditorView initializing...");
+    // 1. Get App ID and Load App Data
     const urlParams = new URLSearchParams(window.location.search);
     const appId = urlParams.get('id');
     
     if (!appId) {
-      // Redirect to home if no app ID
-      window.location.href = 'index.html';
+      console.error("No App ID found in URL. Redirecting to home.");
+      this.redirectToHome();
       return;
     }
     
     this.currentApp = this.appService.getAppById(appId);
     
-    if (!this.currentApp) {
-      // Redirect to home if app not found
-      window.location.href = 'index.html';
+    if (!this.currentApp || !this.currentApp.screens || this.currentApp.screens.length === 0) {
+      console.error("App data not found or invalid for ID:", appId, ". Redirecting to home.");
+      this.notificationManager.showNotification('Error loading app data.', 'error');
+      this.redirectToHome();
       return;
     }
     
     // Set the first screen as active by default
     this.currentScreen = this.currentApp.screens[0];
-    
-    // Initialize managers
-    this.componentManager = new ComponentManager(this);
-    this.propertyPanel = new PropertyPanel(this);
-    this.screenManager = new ScreenManager(this);
-    this.dialogManager = new DialogManager(this);
-    this.notificationManager = new NotificationManager();
-    this.blocksManager = new BlocksManager(this);
-    this.codeManager = new CodeManager(this);
-    this.runManager = new RunManager(this);
-    this.previewManager = new PreviewManager(this);
-    this.buildWorkflowManager = new BuildWorkflowManager(this);
-    
-    this.renderEditor();
-    this.setupEventListeners();
-    this.updateUndoRedoButtons(); // Initial state
+    console.log(`Initial app loaded: ${this.currentApp.name}, screen: ${this.currentScreen.name}`);
+
+    // 2. Render the main editor layout
+    // This will also trigger the .init() methods of managers that depend on the DOM
+    this.layoutManager.renderInitialLayout();
+
+    // 3. Setup remaining global event listeners (like keyboard shortcuts)
+    this.setupGlobalEventListeners();
+
+    console.log("EditorView initialization complete.");
   }
 
-  renderEditor() {
-    // Main render method now calls helper methods
-    document.body.innerHTML = `
-      <div class="editor-container">
-        ${this._renderComponentsSidebar()}
-        <div class="editor-workspace">
-          ${this._renderEditorHeader()}
-          ${this._renderEditorWorkspaceContent()}
-        </div>
-        ${this._renderEditorSidebar()}
-        ${this.propertyPanel.renderPropertyPanel()}
-      </div>
-    `;
-    // Apply initial device size after rendering
-    this.updateDevicePreviewSize();
+  redirectToHome() {
+     // Abstracted redirection
+     window.location.href = 'index.html';
   }
 
-  // --- Refactored Rendering Methods ---
-
-  _renderComponentsSidebar() {
-    // Added search input
-    return `
-      <div class="components-sidebar">
-        <div class="sidebar-section" style="padding: 8px;">
-          <input type="search" id="component-search" placeholder="Search components..." class="property-input" style="width: 100%; font-size: 0.9rem; padding: 4px 6px;">
-        </div>
-        <div class="components-list">
-          <div class="sidebar-title" style="padding: 8px 12px;">Layouts</div>
-          <div class="component-item" data-type="linearlayout-h" draggable="true"><i class="material-icons">view_week</i><div class="component-name">LinearLayout (H)</div></div>
-          <div class="component-item" data-type="linearlayout-v" draggable="true"><i class="material-icons">view_day</i><div class="component-name">LinearLayout (V)</div></div>
-          <div class="component-item" data-type="scrollview-h" draggable="true"><i class="material-icons">swap_horiz</i><div class="component-name">ScrollView (H)</div></div>
-          <div class="component-item" data-type="scrollview-v" draggable="true"><i class="material-icons">swap_vert</i><div class="component-name">ScrollView (V)</div></div>
-          <div class="component-item" data-type="cardview" draggable="true"><i class="material-icons">crop_square</i><div class="component-name">CardView</div></div>
-          
-          <div class="sidebar-title" style="padding: 8px 12px; margin-top: 10px;">Widgets</div>
-          <div class="component-item" data-type="textview" draggable="true"><i class="material-icons">text_fields</i><div class="component-name">TextView</div></div>
-          <div class="component-item" data-type="button" draggable="true"><i class="material-icons">smart_button</i><div class="component-name">Button</div></div>
-          <div class="component-item" data-type="edittext" draggable="true"><i class="material-icons">edit</i><div class="component-name">EditText</div></div>
-          <div class="component-item" data-type="imageview" draggable="true"><i class="material-icons">image</i><div class="component-name">ImageView</div></div>
-          <div class="component-item" data-type="checkbox" draggable="true"><i class="material-icons">check_box</i><div class="component-name">CheckBox</div></div>
-          <div class="component-item" data-type="radiobutton" draggable="true"><i class="material-icons">radio_button_checked</i><div class="component-name">RadioButton</div></div>
-          <div class="component-item" data-type="switch" draggable="true"><i class="material-icons">toggle_on</i><div class="component-name">Switch</div></div>
-          <div class="component-item" data-type="progressbar" draggable="true"><i class="material-icons">linear_scale</i><div class="component-name">ProgressBar</div></div>
-          <div class="component-item" data-type="seekbar" draggable="true"><i class="material-icons">tune</i><div class="component-name">SeekBar</div></div>
-          <div class="component-item" data-type="spinner" draggable="true"><i class="material-icons">arrow_drop_down_circle</i><div class="component-name">Spinner</div></div>
-          <div class="component-item" data-type="listview" draggable="true"><i class="material-icons">list</i><div class="component-name">ListView</div></div>
-          <div class="component-item" data-type="webview" draggable="true"><i class="material-icons">web</i><div class="component-name">WebView</div></div>
-        </div>
-      </div>
-    `;
-  }
-
-  _renderEditorHeader() {
-    const deviceOptionsHtml = this.devices.map(device =>
-        `<option value="${device.name}"${device.name === this.selectedDevice.name ? ' selected' : ''}>${device.name}</option>`
-    ).join('');
-
-    // Changed Run button to Build button
-    return `
-      <div class="editor-header">
-        <div class="editor-title">
-          <i class="material-icons">edit</i>
-          ${this.currentScreen.name}
-        </div>
-        <div class="editor-actions">
-          <select id="device-selector">${deviceOptionsHtml}</select>
-          <button id="undo-btn" class="editor-action-btn" title="Undo"><i class="material-icons">undo</i></button>
-          <button id="redo-btn" class="editor-action-btn" title="Redo"><i class="material-icons">redo</i></button>
-          <button class="editor-action-btn primary save-app-btn"><i class="material-icons">save</i>Save</button>
-          <button class="editor-action-btn preview-app-btn" style="background-color: #2196F3; color: white;"><i class="material-icons">visibility</i>Preview</button>
-          <button class="editor-action-btn build-app-btn" style="background-color: #4CAF50; color: white;"><i class="material-icons">build</i>Build</button>
-        </div>
-      </div>
-    `;
-  }
-
-  _renderEditorWorkspaceContent() {
-    return `
-      <div class="editor-content">
-        <div class="editor-main">
-          <div class="editor-tabs">
-            <div class="editor-tab active" data-tab="design">Design</div>
-            <div class="editor-tab" data-tab="blocks">Blocks</div>
-            <div class="editor-tab" data-tab="code">Code</div>
-          </div>
-          <div class="editor-panel" id="editor-panel">
-            ${this.renderTabPanel('design')}
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  _renderEditorSidebar() {
-    // The sidebar now has tabs for PROJECT/SCREENS and PROPERTIES
-    return `
-      <div class="editor-sidebar">
-        <div class="sidebar-tabs">
-          <div class="sidebar-tab active" data-sidebar-tab="project">PROJECT</div>
-          <div class="sidebar-tab" data-sidebar-tab="properties">PROPERTIES</div>
-        </div>
-        
-        <div class="sidebar-panel active" id="project-panel">
-          <div class="sidebar-section">
-            <div class="sidebar-title">PROJECT</div>
-            <div class="sidebar-item active"><i class="material-icons">phone_android</i><span>${this.currentApp.name}</span></div>
-            <div class="sidebar-item edit-app-details"><i class="material-icons">settings</i><span>App Details</span></div>
-          </div>
-          <div class="sidebar-section">
-            <div class="sidebar-title">SCREENS</div>
-            <div class="screens-list">
-              ${this.currentApp.screens.map(screen => {
-                const isActive = screen.id === this.currentScreen.id;
-                return `
-                  <div class="sidebar-item screen-item ${isActive ? 'active' : ''}" data-screen-id="${screen.id}">
-                    <div class="screen-item-info">
-                      <i class="material-icons">phone_android</i>
-                      <span>${screen.name}</span>
-                    </div>
-                    <div class="screen-item-actions">
-                      ${screen.name !== 'MainActivity' ? `
-                      <button class="screen-action-btn edit-screen-btn" data-screen-id="${screen.id}" title="Edit Screen">
-                        <i class="material-icons">edit</i>
-                      </button>
-                      ${this.currentApp.screens.length > 1 ? 
-                        `<button class="screen-action-btn delete-screen-btn" data-screen-id="${screen.id}" title="Delete Screen">
-                          <i class="material-icons">delete</i>
-                        </button>` : 
-                        ''
-                      }
-                      ` : '' }
-                    </div>
-                  </div>
-                `;
-              }).join('')}
-            </div>
-            <div class="sidebar-item add-screen"><i class="material-icons">add</i><span>Add Screen</span></div>
-          </div>
-        </div>
-        
-        <div class="sidebar-panel" id="properties-panel">
-          ${this.propertyPanel.renderSidebarPropertyPanel()}
-        </div>
-      </div>
-    `;
-  }
-
-  renderTabPanel(tab) {
-    if (tab === 'design') {
-      return `
-        <div class="canvas-container">
-          <div class="phone-preview">
-            <div class="phone-status-bar"></div>
-            <div class="phone-content" id="preview-container">
-              <div id="alignment-guides"></div> 
-              <div id="dimension-overlay"></div> 
-            </div>
-          </div>
-        </div>
-      `;
-    } else if (tab === 'blocks') {
-      return this.blocksManager.renderBlocksTab();
-    } else if (tab === 'code') {
-      return this.codeManager.renderCodeTab();
-    }
-    return '';
-  }
-
-  setupEventListeners() {
-    document.querySelectorAll('.editor-tab').forEach(tab => {
-      tab.addEventListener('click', (e) => {
-        document.querySelectorAll('.editor-tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        const tabName = tab.dataset.tab;
-        const panel = document.getElementById('editor-panel');
-        if (panel) {
-          panel.innerHTML = this.renderTabPanel(tabName);
-        }
-        
-        if (tabName === 'design') {
-          this.componentManager.setupDesignTabEvents();
-        } else if (tabName === 'blocks') {
-          this.blocksManager.initializeBlockly();
-        } else if (tabName === 'code') {
-          this.codeManager.initCodeEditor();
-        }
+  // --- Global Event Listeners (e.g., Keyboard) ---
+  setupGlobalEventListeners() {
+      document.addEventListener('keydown', (e) => {
+          this.handleKeyDown(e);
       });
-    });
-    
-    document.querySelectorAll('.sidebar-tab').forEach(tab => {
-      tab.addEventListener('click', (e) => {
-        const currentActive = document.querySelector('.sidebar-tab.active');
-        if (currentActive) {
-          currentActive.classList.remove('active');
-          const activePanel = document.querySelector('.sidebar-panel.active');
-          if (activePanel) activePanel.classList.remove('active');
-        }
-        
-        tab.classList.add('active');
-        const panelId = tab.dataset.sidebarTab + '-panel';
-        const panel = document.getElementById(panelId);
-        if (panel) panel.classList.add('active');
-      });
-    });
-    
-    // Device selector
-    const deviceSelector = document.getElementById('device-selector');
-    if (deviceSelector) {
-      deviceSelector.addEventListener('change', (e) => {
-        const deviceName = e.target.value;
-        this.changeDevicePreview(deviceName);
-      });
-    }
-    
-    // Screen selection
-    document.querySelectorAll('.screen-item').forEach(screenItem => {
-      screenItem.addEventListener('click', (e) => {
-        if (e.target.closest('.screen-action-btn')) return;
-        const screenId = screenItem.dataset.screenId;
-        this.onScreenChanged(screenId);
-      });
-    });
-    
-    // Edit screen
-    document.querySelectorAll('.edit-screen-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const screenId = btn.dataset.screenId;
-        const screen = this.currentApp.screens.find(s => s.id === screenId);
-        if (screen) {
-          this.screenManager.showEditScreenDialog(screen);
-        }
-      });
-    });
-    
-    // Delete screen
-    document.querySelectorAll('.delete-screen-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const screenId = btn.dataset.screenId;
-        const screen = this.currentApp.screens.find(s => s.id === screenId);
-        if (screen) {
-          this.screenManager.showDeleteScreenDialog(screen);
-        }
-      });
-    });
-    
-    // Add screen
-    const addScreenBtn = document.querySelector('.add-screen');
-    if (addScreenBtn) {
-      addScreenBtn.addEventListener('click', () => {
-        this.screenManager.showAddScreenDialog();
-      });
-    }
-    
-    // Edit app details
-    const editAppDetailsBtn = document.querySelector('.edit-app-details');
-    if (editAppDetailsBtn) {
-      editAppDetailsBtn.addEventListener('click', () => {
-        this.screenManager.showEditAppDialog(this.currentApp);
-      });
-    }
-    
-    // Save app button
-    const saveAppBtn = document.querySelector('.save-app-btn');
-    if (saveAppBtn) {
-      saveAppBtn.addEventListener('click', () => {
-        this.saveApp();
-      });
-    }
-    
-    // Preview button
-    const previewAppBtn = document.querySelector('.preview-app-btn');
-    if (previewAppBtn) {
-      previewAppBtn.addEventListener('click', () => {
-        this.previewManager.showPreviewDialog(this.currentApp);
-      });
-    }
-    
-    // Change Run button to Build button
-    const buildAppBtn = document.querySelector('.build-app-btn');
-    if (buildAppBtn) {
-      buildAppBtn.addEventListener('click', () => {
-        this.buildWorkflowManager.startBuildProcess();
-      });
-    }
-    
-    // Component search
-    const componentSearch = document.getElementById('component-search');
-    if (componentSearch) {
-      componentSearch.addEventListener('input', (e) => {
-        this.handleComponentSearch(e);
-      });
-    }
-    
-    // Keyboard shortcuts
-    document.addEventListener('keydown', (e) => {
-      this.handleKeyDown(e);
-    });
-    
-    // Initialize the components manager 
-    // (for drag & drop functionality and component selection)
-    this.componentManager.setupDesignTabEvents();
+      // Add other global listeners if needed
   }
 
   handleKeyDown(e) {
-    // Delegate to component manager, but also check for undo/redo shortcuts here
-    // (Already handled in setupEventListeners, but could be placed here too)
-    this.componentManager.handleKeyDown(e);
+      // Check for Ctrl+S or Cmd+S for saving (centralized handling)
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+          e.preventDefault();
+          console.log(`Ctrl+S detected in active tab: ${this.activeTab}`);
+          this.saveCurrentView();
+          return; // Handled
+      }
+
+       // Check for Ctrl+Z / Cmd+Z (Undo)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+          e.preventDefault();
+          this.undoRedoManager.undo();
+          return; // Handled
+      }
+
+      // Check for Ctrl+Y / Cmd+Shift+Z (Redo)
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) {
+          e.preventDefault();
+          this.undoRedoManager.redo();
+          return; // Handled
+      }
+      
+      // Delegate other keydown events based on the active tab
+      switch (this.activeTab) {
+          case 'design':
+              // Remove call to non-existent method
+              // this.componentManager?.handleKeyDown(e);
+              break;
+          case 'blocks':
+              // this.blocksManager?.handleKeyDown(e); // If needed
+              break;
+          case 'code':
+              // this.codeManager?.handleKeyDown(e); // If needed (CodeMirror might handle most)
+              break;
+      }
   }
 
-  // Added method for component search filtering
-  handleComponentSearch(e) {
-    const searchTerm = e.target.value.toLowerCase().trim();
-    const componentItems = document.querySelectorAll('.components-list .component-item');
-    componentItems.forEach(item => {
-      const nameElement = item.querySelector('.component-name');
-      const componentName = nameElement ? nameElement.textContent.toLowerCase() : '';
-      if (componentName.includes(searchTerm)) {
-        item.style.display = ''; // Show item
-      } else {
-        item.style.display = 'none'; // Hide item
+  saveCurrentView() {
+      switch (this.activeTab) {
+        case 'code':
+              // Assuming CodeManager might have its own specific save logic (e.g., for files)
+              this.codeManager?.saveCurrentChanges ? this.codeManager.saveCurrentChanges() : this.saveApp();
+              console.log("Triggering code save/app save...");
+          break;
+        case 'blocks':
+              // Saving blocks often implicitly saves the app state they generate
+              // Explicitly save blocks state into the app object here
+              this.blocksManager?.saveBlocks(); 
+              this.saveApp(); // Save the overall app state
+              console.log("Triggering blocks save/app save...");
+          break;
+        case 'design':
+          default:
+              // Saving design changes means saving the app state
+          this.saveApp(); 
+              console.log("Triggering app save (for design/default)...");
+          break;
       }
-    });
   }
+
+  // --- Core Actions / State Changes ---
 
   saveApp() {
-    // Improved save feedback using NotificationManager
-    try {
+      console.log("Saving app state...");
+      try {
+          // Ensure latest blocks state is saved to the currentApp object before persisting
+          this.blocksManager?.saveBlocks(); 
+          
+          // Ensure latest screen data is captured before saving
+          // If blocks/code generate component structure, ensure it's updated
+          // This might involve calling methods on blocksManager or codeManager if necessary
+          
       if (this.appService.updateApp(this.currentApp)) {
-        this.notificationManager.showNotification('App saved successfully!', 'success');
+        // this.notificationManager.showNotification('App saved successfully!', 'success'); // Commented out to reduce noise
+              // Maybe reset undo history on explicit save?
+              // this.undoRedoManager.clearHistory(); 
       } else {
-        // This case might happen if the app was deleted in another tab/window
         this.notificationManager.showNotification('Error: App not found. Could not save.', 'error');
       }
     } catch (error) {
       console.error("Error during save operation:", error);
       this.notificationManager.showNotification('Error saving app. Check console for details.', 'error');
     }
-    // Optionally clear undo/redo history on manual save? Or keep it? Keeping it for now.
   }
 
-  changeDevicePreview(deviceName) {
-    const newDevice = this.devices.find(d => d.name === deviceName);
-    if (newDevice) {
-      this.selectedDevice = newDevice;
-      this.updateDevicePreviewSize();
-    }
+  onScreenChanged(screenId) {
+      const newScreen = this.currentApp.screens.find(s => s.id === screenId);
+      if (newScreen && newScreen.id !== this.currentScreen?.id) {
+          console.log(`Screen changed TO: ${newScreen.name} (ID: ${screenId})`);
+          this.currentScreen = newScreen;
+          this.selectedComponent = null; // Clear selection when screen changes
+          
+          // Update UI elements managed directly or by specific managers
+          this.layoutManager.updateScreenTitle(newScreen.name);
+          this.sidebarManager.updateActiveScreen(screenId);
+          this.propertyPanel.clearPanel(); // Clear property panel
+          
+          // Notify relevant managers about the screen change
+          this.tabManager.handleScreenChange(); // Let TabManager update its current view
+          // ComponentManager is handled via tabManager calling renderComponentsPreview
+          // BlocksManager is handled via tabManager calling changeScreen
+          // CodeManager is handled via tabManager calling changeScreen
+          
+          // Clear undo/redo history when changing screens
+          this.undoRedoManager.clearHistory();
+          console.log(`Screen change processed for ${newScreen.name}.`);
+      } else if (!newScreen) {
+          console.error(`Attempted to change to non-existent screen ID: ${screenId}`);
+      } else {
+          console.log(`Attempted to change to the *same* screen: ${newScreen.name}`);
+      }
   }
 
-  updateDevicePreviewSize() {
-    const previewElement = document.querySelector('.phone-preview');
-    if (previewElement) {
-      previewElement.style.width = `${this.selectedDevice.width}px`;
-      previewElement.style.height = `${this.selectedDevice.height}px`;
-    }
+  setSelectedComponent(component) {
+      console.log("Setting selected component:", component?.id || null);
+      if (this.selectedComponent !== component) {
+        this.selectedComponent = component;
+        this.propertyPanel.displayComponentProperties(component); 
+         // Update UI to reflect selection (ComponentManager might handle visual selection)
+         this.componentManager?.highlightSelection(component ? component.id : null);
+         this.updatePropertyPanelVisibility(); // Update panel based on selection
+      }
   }
   
-  onScreenChanged(screenId) {
-    // Method to be called when screen is changed from any manager
-    const screen = this.currentApp.screens.find(s => s.id === screenId);
-    if (screen) {
-      this.currentScreen = screen;
+  // Centralized method to control property panel visibility
+  updatePropertyPanelVisibility(forceHide = null) {
+      const shouldBeVisible = forceHide === false || (forceHide === null && this.activeTab === 'design' && this.selectedComponent);
       
-      // Update UI
-      const screenTitle = document.querySelector('.editor-title');
-      if (screenTitle) {
-        screenTitle.innerHTML = `<i class="material-icons">edit</i> ${screen.name}`;
+      if (shouldBeVisible) {
+          this.propertyPanel?.showPropertyPanel();
+      } else {
+          this.propertyPanel?.hidePropertyPanel();
+      }
+  }
+
+  // Called by ComponentManager or PropertyPanel when a property changes
+  // Ensures changes trigger necessary updates (save, preview, undo)
+  handleComponentPropertyChange(component, propertyName, oldValue, newValue) {
+      console.log(`Property changed: ${component.id}.${propertyName} from ${oldValue} to ${newValue}`);
+      
+      // Create a Command pattern for property changes for Undo/Redo
+      const command = new UpdatePropertyCommand(
+        this, 
+        component.id, 
+        `properties.${propertyName}`, 
+        newValue, 
+        oldValue
+      );
+      
+      // Execute the command through the UndoRedoManager
+      this.undoRedoManager.executeCommand(command);
+      
+      // Update UI components immediately for a better user experience
+      
+      // 1. Update the preview if the component is visible
+      const componentElement = document.querySelector(`.preview-component[data-component-id="${component.id}"]`);
+      if (componentElement && this.propertyPanel) {
+        // Let property panel handle the direct DOM update for consistent behavior
+        this.propertyPanel.updateComponentPreview(component.id, propertyName, newValue);
       }
       
-      // Update active state in sidebar
-      document.querySelectorAll('.sidebar-item[data-screen-id]').forEach(item => {
-        if (item.dataset.screenId === screenId) {
-          item.classList.add('active');
-        } else {
-          item.classList.remove('active');
-        }
-      });
-      
-      // Notify other managers about screen change
-      const activeTab = document.querySelector('.editor-tab.active');
-      if (activeTab) {
-        const tabName = activeTab.dataset.tab;
-        if (tabName === 'design') {
-          this.componentManager.renderComponentsPreview();
-        } else if (tabName === 'blocks') {
-          this.blocksManager.changeScreen(screenId);
-        } else if (tabName === 'code') {
-          this.codeManager.changeScreen(screenId);
-        }
+      // 2. Update the property panel values if it's visible and showing this component
+      if (this.propertyPanelVisible && this.selectedComponent && this.selectedComponent.id === component.id) {
+        this.propertyPanel.updatePropertyValues();
       }
       
-      // Clear undo/redo history when changing screens
-      this.undoStack = [];
-      this.redoStack = [];
-      this.updateUndoRedoButtons();
+      // 3. Request a preview update for the live preview window if open
+      this.requestPreviewUpdate();
+      
+      // 4. Notify code/blocks managers about the change (for potential code generation)
+      this.notifyCodePotentiallyDirty(component.id, propertyName);
+      
+      // 5. Save the app state
+      this.saveApp();
+  }
+  
+  findComponentInApp(componentId) {
+      if (!this.currentScreen || !this.currentScreen.components) return null;
+      // First try a direct lookup in the current screen's components
+      const component = this.currentScreen.components.find(c => c.id === componentId);
+      if (component) return component;
+      
+      // If not found, try a recursive search (for nested components)
+      return this.findComponentRecursively(this.currentScreen.components, componentId);
+  }
+  
+  findComponentRecursively(components, componentId) {
+    if (!components || !components.length) return null;
+    
+    for (const component of components) {
+      if (component.id === componentId) return component;
+      
+      // Check children if this component has them
+      if (component.properties && component.properties.children) {
+        const found = this.findComponentRecursively(component.properties.children, componentId);
+        if (found) return found;
+      }
     }
+    
+    return null;
+  }
+
+  // Called by ComponentManager when component structure changes (add, delete, move)
+  handleComponentStructureChange(command) { // Expecting a Command object
+       console.log("Handling component structure change via command:", command);
+      this.undoRedoManager.executeCommand(command);
+      // Save and preview update are handled by executeCommand -> saveApp
   }
 
   requestPreviewUpdate() {
-    this.previewManager.updatePreview();
+      this.previewManager?.updatePreview();
   }
 
   notifyCodePotentiallyDirty(componentId, propertyName) {
-    // Potentially mark code as dirty or trigger analysis later
+      // This could later trigger analysis or warnings in Blocks/Code tabs
     // console.log(`Component ${componentId} property ${propertyName} changed.`);
+       // Removed call to non-existent blocksManager.markCodeDirty
+       // Removed call to non-existent codeManager.markCodeDirty
   }
-
-  // --- Undo/Redo Implementation ---
-
-  /**
-   * Executes a command, adds it to the undo stack, and updates UI.
-   * NOTE: Methods in ComponentManager, PropertyPanel etc. should call this.
-   * Example: this.editorView.executeCommand(new AddComponentCommand(...));
-   */
-  executeCommand(command) {
-    this.undoStack.push(command);
-    this.redoStack = []; // Clear redo stack when a new command is executed
-    command.execute();
-    this.updateUndoRedoButtons();
-  }
-
-  undo() {
-    if (this.undoStack.length === 0) {
-      return;
-    }
-    const command = this.undoStack.pop();
-    if (!command.undo()) {
-      // If undo fails, push it back onto the stack?
-      // Or notify the user?
-      // For now, let's assume undo can fail silently but log it
-    } else {
-      this.redoStack.push(command);
-    }
-    this.updateUndoRedoButtons();
-  }
-
-  redo() {
-    if (this.redoStack.length === 0) {
-      return;
-    }
-    const command = this.redoStack.pop();
-    if (!command.execute()) {
-      // If redo fails, push it back onto the stack?
-    } else {
-      this.undoStack.push(command);
-    }
-    this.updateUndoRedoButtons();
-  }
-
-  updateUndoRedoButtons() {
-    const undoBtn = document.getElementById('undo-btn');
-    const redoBtn = document.getElementById('redo-btn');
-    if (undoBtn) {
-      undoBtn.disabled = this.undoStack.length === 0;
-    }
-    if (redoBtn) {
-      redoBtn.disabled = this.redoStack.length === 0;
-    }
-  }
-
-  // --- End Undo/Redo Implementation ---
+  
+   // --- Delegated Methods from Old Implementation (ensure they exist or remove) ---
+   // executeCommand is now handled by UndoRedoManager
+   // undo / redo are handled by UndoRedoManager
+   // updateUndoRedoButtons is handled by UndoRedoManager
+   // renderEditor is replaced by LayoutManager.renderInitialLayout
+   // _render* methods are moved to LayoutManager or SidebarManager
+   // switchTab is handled by TabManager
+   // renderTabPanel is handled by TabManager
+   // switchSidebarTab is handled by SidebarManager
+   // setupEventListeners is split among managers and setupGlobalEventListeners
+   // changeDevicePreview is handled by DevicePreviewManager
+   // updateDevicePreviewSize is handled by DevicePreviewManager
+   // handleComponentSearch is handled by LayoutManager
 }
 
 export default EditorView; 

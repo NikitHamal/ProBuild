@@ -270,12 +270,17 @@ body, html {
 
 .dimension-indicator {
   position: absolute;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(13, 153, 255, 0.8);
   color: white;
   font-size: 10px;
-  padding: 1px 3px;
-  border-radius: 2px;
+  padding: 2px 4px;
+  border-radius: 3px;
   white-space: nowrap;
+  pointer-events: none;
+  z-index: 11;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 /* Right sidebar for project/screens */
@@ -333,26 +338,33 @@ body, html {
   flex-direction: column;
 }
 
-/* Properties panel - Figma style */
+/* Properties panel - Modern Figma style */
 .property-panel {
   overflow-y: auto;
   padding: 0;
   flex: 1;
-  font-size: 11px;
+  font-size: 12px;
   color: #333;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  scrollbar-width: thin;
+  -ms-overflow-style: thin;
+  background-color: #f9f9fa;
 }
 
 .property-panel::-webkit-scrollbar {
-  display: none;
+  width: 4px;
+}
+
+.property-panel::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
 }
 
 .property-group {
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #eaeaea;
   overflow: hidden;
   margin-bottom: 0;
+  transition: background-color 0.15s ease;
 }
 
 .property-group:last-child {
@@ -360,16 +372,21 @@ body, html {
 }
 
 .property-group-header {
-  padding: 8px 10px;
-  background: #f9f9f9;
+  padding: 10px 12px;
+  background: #f0f0f2;
   display: flex;
   align-items: center;
   justify-content: space-between;
   cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.property-group-header:hover {
+  background-color: #e8e8ea;
 }
 
 .property-group-title {
-  font-weight: 600;
+  font-weight: 500;
   font-size: 11px;
   color: #333;
   text-transform: none;
@@ -377,8 +394,9 @@ body, html {
 }
 
 .property-group-toggle {
-  color: #888;
+  color: #666;
   font-size: 18px;
+  transition: transform 0.2s ease;
 }
 
 .property-group.collapsed .property-group-toggle {
@@ -390,55 +408,128 @@ body, html {
 }
 
 .property-rows {
-  padding: 4px 8px 8px 8px;
+  padding: 8px 12px 10px 12px;
 }
 
 .property-row {
   display: flex;
   align-items: center;
-  padding: 3px 0;
+  padding: 5px 0;
   margin: 0;
 }
 
 .property-label {
   font-size: 11px;
-  color: #333;
+  color: #444;
   flex: 1;
   padding-right: 8px;
 }
 
 .property-input {
-  width: 110px;
+  width: 120px;
 }
 
 .property-input input,
 .property-input select {
   width: 100%;
-  border: 1px solid #dadada;
-  border-radius: 2px;
-  padding: 3px 6px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 4px 8px;
   font-size: 11px;
   background-color: white;
   color: #333;
-  height: 24px;
+  height: 26px;
+  transition: border-color 0.15s ease;
+  font-family: 'Poppins', sans-serif;
 }
 
 .property-input input:focus,
 .property-input select:focus {
   border-color: #0d99ff;
   outline: none;
+  box-shadow: 0 0 0 2px rgba(13, 153, 255, 0.15);
 }
 
 .property-input input[type="color"] {
   padding: 0;
   height: 24px;
+  width: 24px;
+  border: none;
+  border-radius: 4px;
   cursor: pointer;
+  background: none;
 }
 
 .property-input input[type="checkbox"] {
-  width: auto;
-  margin-right: 0;
-  height: auto;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+/* Slider container styles */
+.slider-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.slider-container input[type="range"] {
+  flex: 1;
+  height: 4px;
+  background-color: #e0e0e0;
+  border-radius: 2px;
+  outline: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+.slider-container input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  background: #0d99ff;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.slider-container input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: #0d99ff;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.slider-container input[type="number"] {
+  width: 40px;
+  text-align: center;
+  padding: 2px 4px;
+}
+
+/* Color input with preview */
+.color-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.color-preview {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  border: 1px solid #ddd;
+  position: absolute;
+  right: 8px;
+  pointer-events: none;
+}
+
+.color-input input[type="color"] {
+  opacity: 0;
+  width: 100%;
+  cursor: pointer;
 }
 
 .no-component-selected {
@@ -450,17 +541,29 @@ body, html {
   padding: 20px;
   color: #888;
   text-align: center;
+  background-color: #f9f9fa;
 }
 
 .no-component-selected i {
   font-size: 32px;
   margin-bottom: 16px;
   opacity: 0.4;
+  color: #666;
 }
 
 .no-component-selected p {
   font-size: 13px;
   line-height: 1.4;
+  font-weight: 300;
+  color: #666;
+}
+
+/* For the custom width/height inputs */
+#custom-width-row,
+#custom-height-row {
+  margin-top: -3px;
+  margin-bottom: 4px;
+  padding-left: 16px;
 }
 
 /* Remove the old property editor styles */
@@ -719,3 +822,97 @@ body, html {
 .property-input select#prop-font option[value="Fira Sans"] { font-family: 'Fira Sans', sans-serif; }
 .property-input select#prop-font option[value="Work Sans"] { font-family: 'Work Sans', sans-serif; }
 .property-input select#prop-font option[value="Quicksand"] { font-family: 'Quicksand', sans-serif; } 
+
+/* Resize Handles */
+.resize-handles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.resize-handle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background-color: #0d99ff;
+  border-radius: 50%;
+  pointer-events: all;
+  cursor: pointer;
+  opacity: 0;
+  z-index: 10;
+  border: 1px solid #fff;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
+  transition: opacity 0.2s ease;
+}
+
+.preview-component.selected .resize-handle {
+  opacity: 1;
+}
+
+/* Resize handle positions */
+.resize-n {
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: ns-resize;
+}
+
+.resize-s {
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: ns-resize;
+}
+
+.resize-e {
+  top: 50%;
+  right: -4px;
+  transform: translateY(-50%);
+  cursor: ew-resize;
+}
+
+.resize-w {
+  top: 50%;
+  left: -4px;
+  transform: translateY(-50%);
+  cursor: ew-resize;
+}
+
+.resize-ne {
+  top: -4px;
+  right: -4px;
+  cursor: nesw-resize;
+}
+
+.resize-nw {
+  top: -4px;
+  left: -4px;
+  cursor: nwse-resize;
+}
+
+.resize-se {
+  bottom: -4px;
+  right: -4px;
+  cursor: nwse-resize;
+}
+
+.resize-sw {
+  bottom: -4px;
+  left: -4px;
+  cursor: nesw-resize;
+}
+
+/* Component selection styling */
+.preview-component {
+  position: relative;
+  box-sizing: border-box;
+}
+
+.preview-component.selected {
+  outline: 2px solid #0d99ff;
+  outline-offset: 1px;
+} 
