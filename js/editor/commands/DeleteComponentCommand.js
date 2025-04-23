@@ -120,10 +120,10 @@ class DeleteComponentCommand extends Command {
       
       console.log(`DeleteComponentCommand: Updating code files for component ${this.componentId}`);
       
-      // Mark relevant files as dirty
+      // Mark relevant files as dirty directly using the dirtyFiles set
       const fileManager = this.editorView.codeManager.fileManager;
-      fileManager.markFileAsDirty(this.componentId, 'layout');
-      fileManager.markFileAsDirty(this.componentId, 'main');
+      fileManager.dirtyFiles.add('layout');
+      fileManager.dirtyFiles.add('main');
       
       // Regenerate affected files
       const affectedFiles = ['layout', 'main'];

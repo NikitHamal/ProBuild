@@ -104,8 +104,8 @@ class DragDropHandler {
                 setTimeout(() => {
                     // Mark files as dirty
                     const fileManager = this.editorView.codeManager.fileManager;
-                    fileManager.markFileAsDirty('layout_component', 'layout');
-                    fileManager.markFileAsDirty('layout_component', 'main');
+                    fileManager.dirtyFiles.add('layout');
+                    fileManager.dirtyFiles.add('main');
                     
                     // Regenerate affected files
                     const affectedFiles = ['layout', 'main'];

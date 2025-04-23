@@ -107,7 +107,7 @@ class ComponentRenderer {
             this.componentManager.selectComponent(component.id, false);
             // Then delete it with a slight delay to avoid any race conditions
             setTimeout(() => {
-                this.componentManager.deleteComponent(component.id);
+            this.componentManager.deleteComponent(component.id);
             }, 10);
         });
         

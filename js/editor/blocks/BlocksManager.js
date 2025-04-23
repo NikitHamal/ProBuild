@@ -30,8 +30,8 @@ class BlocksManager {
   renderBlocksTab() {
     // Simple structure: a div for Blockly. Toolbox is passed during initialization.
     return `
-      <div class="blocks-editor" style="display: flex; height: 100%;">
-        <div id="blockly-div" style="flex-grow: 1; height: 100%;"></div>
+      <div class="blocks-editor-container" style="width:100%; height:100%;">
+        <div id="blockly-div" class="blockly-workspace" style="width:100%; height:100%;"></div>
       </div>
     `;
   }
@@ -43,12 +43,25 @@ class BlocksManager {
       const blocklyDiv = document.getElementById('blockly-div');
       if (!blocklyDiv) {
           console.error("Cannot initialize Blockly: #blockly-div not found!");
+          
+          // Additional debugging information
+          console.log("Available divs with IDs:", Array.from(document.querySelectorAll('[id]')).map(el => el.id));
+          console.log("DOM structure for blocks-editor-container:", document.querySelector('.blocks-editor-container')?.innerHTML || 'blocks-editor-container not found');
+          console.log("DOM structure for blocks-editor:", document.querySelector('.blocks-editor')?.innerHTML || 'blocks-editor not found');
+          
+          // Try another way to find the container
+          const editorPanel = document.getElementById('editor-panel');
+          console.log("Editor panel exists:", !!editorPanel);
+          console.log("Editor panel content:", editorPanel?.innerHTML || 'editor-panel not found');
+          
           this.notificationManager.showNotification('Error initializing blocks editor container.', 'error');
           return;
       }
+      
+      console.log("Blockly div found, initializing workspace...");
       // Delegate initialization to the WorkspaceManager
       this.workspaceManager.initialize(blocklyDiv, toolboxXml, this.dropdownHelper);
-    }, 100); // Short delay to ensure DOM is updated
+    }, 150); // Longer delay to ensure DOM is fully updated
   }
   
   // Method called by WorkspaceManager on block changes to update CodeManager
