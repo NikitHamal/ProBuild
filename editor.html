@@ -38,6 +38,25 @@
       } else {
         console.log('Blockly successfully loaded:', Blockly.VERSION);
       }
+      
+      // Handle undefined URLs causing 404 errors
+      window.addEventListener('error', function(e) {
+        const target = e.target;
+        // Check if it's a resource load error
+        if (target && (target.nodeName === 'IMG' || target.nodeName === 'SCRIPT' || target.nodeName === 'LINK')) {
+          const url = target.src || target.href;
+          if (url && url.includes('undefined')) {
+            console.warn('Prevented load of resource with undefined URL:', url);
+            e.preventDefault();
+            e.stopPropagation();
+            // Fix the element
+            if (target.nodeName === 'IMG') {
+              target.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+            }
+            return true;
+          }
+        }
+      }, true);
     });
   </script>
 </head>

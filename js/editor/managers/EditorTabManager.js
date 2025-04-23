@@ -83,9 +83,10 @@ class EditorTabManager {
                 break;
             case 'blocks':
                 // Make sure the blockly-div ID is included with the proper class and structure
+                // Use a simpler structure and absolute positioning to avoid layout issues
                 content = `
-                    <div class="blocks-editor-container" style="width:100%; height:100%;">
-                        <div id="blockly-div" class="blockly-workspace" style="width:100%; height:100%;"></div>
+                    <div class="blocks-editor-container" id="blocks-container" style="position: relative; width: 100%; height: 100%;">
+                        <div id="blockly-div" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0;"></div>
                     </div>
                 `;
                 break;
@@ -131,34 +132,9 @@ class EditorTabManager {
                 hidePropertyPanel = false; // Show property panel (conditionally)
                 break;
             case 'blocks':
-                // Give the DOM time to render before initializing Blockly
-                setTimeout(() => {
-                    const blocklyDiv = document.getElementById('blockly-div');
-                    if (blocklyDiv) {
-                        console.log("Blockly div found, initializing...");
-                        // Verify div has dimensions before initialization
-                        const width = blocklyDiv.offsetWidth;
-                        const height = blocklyDiv.offsetHeight;
-                        console.log(`Blockly container dimensions: ${width}x${height}px`);
-                        
-                        if (width > 0 && height > 0) {
-                            if (this.editorView.blocksManager && typeof this.editorView.blocksManager.initializeBlockly === 'function') {
-                                this.editorView.blocksManager.initializeBlockly();
-                            } else {
-                                console.error("Cannot initialize Blockly, BlocksManager or initializeBlockly missing.");
-                            }
-                        } else {
-                            console.error("Blockly container has zero dimensions, may cause rendering issues");
-                            // Force layout recalculation
-                            document.body.offsetHeight;
-                            // Try initialization anyway
-                            this.editorView.blocksManager?.initializeBlockly();
-                        }
-                    } else {
-                        console.error("Blockly div not found in DOM after rendering blocks tab.");
-                    }
-                }, 250); // Longer timeout to ensure DOM is fully rendered
-                
+                // Handle Blockly initialization in a completely different way
+                // First make sure the container exists and has size
+                this.initializeBlocklyWithRetry(5); // Try up to 5 times with increasing delays
                 hidePropertyPanel = true;
                 break;
             case 'code':
@@ -188,6 +164,57 @@ class EditorTabManager {
         this.editorView.updatePropertyPanelVisibility(hidePropertyPanel);
     }
     
+    // New method to handle Blockly initialization with retries
+    initializeBlocklyWithRetry(maxRetries, currentRetry = 0) {
+        // Force a repaint/reflow to ensure DOM is ready
+        document.body.offsetHeight;
+        
+        const blocklyDiv = document.getElementById('blockly-div');
+        
+        if (blocklyDiv) {
+            const container = document.getElementById('blocks-container');
+            if (container) {
+                // Force container to take up space 
+                container.style.minHeight = '300px';
+                container.style.minWidth = '300px';
+            }
+            
+            const rect = blocklyDiv.getBoundingClientRect();
+            console.log(`Blockly div found, size: ${rect.width}x${rect.height}px`);
+            
+            if (rect.width > 0 && rect.height > 0) {
+                console.log("Blockly container has dimensions, initializing now...");
+                // Allow a small delay for final layout before initialization 
+                setTimeout(() => {
+                    if (this.editorView.blocksManager && typeof this.editorView.blocksManager.initializeBlockly === 'function') {
+                        this.editorView.blocksManager.initializeBlockly();
+                    } else {
+                        console.error("BlocksManager or initializeBlockly method missing!");
+                    }
+                }, 50);
+                return;
+            }
+        }
+        
+        // If we reach here, either blocklyDiv wasn't found or it had zero dimensions
+        if (currentRetry < maxRetries) {
+            const nextRetry = currentRetry + 1;
+            const delay = 200 * Math.pow(2, currentRetry); // Exponential backoff: 200, 400, 800, 1600, 3200ms
+            
+            console.log(`Blockly initialization failed, retrying in ${delay}ms (attempt ${nextRetry}/${maxRetries})`);
+            
+            setTimeout(() => {
+                this.initializeBlocklyWithRetry(maxRetries, nextRetry);
+            }, delay);
+        } else {
+            console.error(`Failed to initialize Blockly after ${maxRetries} attempts`);
+            // Last resort: try direct initialization anyway
+            if (this.editorView.blocksManager) {
+                this.editorView.blocksManager.initializeBlockly();
+            }
+        }
+    }
+
     // Called by EditorView when the screen changes
     handleScreenChange() {
         console.log(`TabManager handling screen change for active tab: ${this.activeTabId}`);

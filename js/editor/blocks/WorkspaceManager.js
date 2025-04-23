@@ -11,14 +11,14 @@ class WorkspaceManager {
     initialize(blocklyDiv, toolboxXml, dropdownHelper) {
         if (!blocklyDiv) {
             console.error("Blockly container div not found for initialization!");
-            return null;
+            return false;
         }
         
         // Check if Blockly is loaded properly
         if (typeof Blockly === 'undefined') {
             console.error("Blockly not loaded! Make sure the script tags are properly included.");
             this.notificationManager.showNotification('Blockly library not loaded correctly.', 'error');
-            return null;
+            return false;
         }
         
         if (this.workspace) {
@@ -45,7 +45,7 @@ class WorkspaceManager {
             if (!document.body.contains(blocklyDiv)) {
                 console.error("Blockly div exists but is not attached to the document!");
                 this.notificationManager.showNotification('Error: Blockly container not in document.', 'error');
-                return null;
+                return false;
             }
 
             console.log("Initializing Blockly workspace with dimensions:", 
@@ -55,26 +55,31 @@ class WorkspaceManager {
             this.overrideDialogs();
 
             // Inject Blockly workspace
-            this.workspace = Blockly.inject(blocklyDiv, {
-                toolbox: toolboxXml,
-                renderer: 'geras',
-                theme: Blockly.Themes.Zelos,
-                grid: {
-                    spacing: 25,
-                    length: 3,
-                    colour: '#ccc',
-                    snap: true
-                },
-                zoom: {
-                    controls: true,
-                    wheel: true,
-                    startScale: 1.0,
-                    maxScale: 3,
-                    minScale: 0.3,
-                    scaleSpeed: 1.2
-                },
-                trashcan: true
-            });
+            try {
+                this.workspace = Blockly.inject(blocklyDiv, {
+                    toolbox: toolboxXml,
+                    renderer: 'geras',
+                    theme: Blockly.Themes.Zelos,
+                    grid: {
+                        spacing: 25,
+                        length: 3,
+                        colour: '#ccc',
+                        snap: true
+                    },
+                    zoom: {
+                        controls: true,
+                        wheel: true,
+                        startScale: 1.0,
+                        maxScale: 3,
+                        minScale: 0.3,
+                        scaleSpeed: 1.2
+                    },
+                    trashcan: true
+                });
+            } catch (injectError) {
+                console.error("Error during Blockly.inject:", injectError);
+                throw injectError; // Re-throw to be caught by the outer handler
+            }
 
             // Initialize JavaScript Generator for this Workspace
             Blockly.JavaScript.init(this.workspace);
@@ -86,12 +91,12 @@ class WorkspaceManager {
             this.workspace.addChangeListener((event) => this.onWorkspaceChange(event));
             
             console.log("Blockly workspace initialized successfully.");
-            return this.workspace;
+            return true; // Successfully initialized
 
         } catch (e) {
             console.error("Error initializing Blockly workspace:", e);
             this.notificationManager.showNotification("Failed to initialize blocks editor.", "error");
-            return null;
+            return false; // Failed to initialize
         }
     }
     

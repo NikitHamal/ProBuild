@@ -38,30 +38,56 @@ class BlocksManager {
 
   // Main initialization point, called by EditorView after the tab is rendered
   initializeBlockly() {
-    // Wait for the DOM to be ready
-    setTimeout(() => {
-      const blocklyDiv = document.getElementById('blockly-div');
-      if (!blocklyDiv) {
-          console.error("Cannot initialize Blockly: #blockly-div not found!");
-          
-          // Additional debugging information
-          console.log("Available divs with IDs:", Array.from(document.querySelectorAll('[id]')).map(el => el.id));
-          console.log("DOM structure for blocks-editor-container:", document.querySelector('.blocks-editor-container')?.innerHTML || 'blocks-editor-container not found');
-          console.log("DOM structure for blocks-editor:", document.querySelector('.blocks-editor')?.innerHTML || 'blocks-editor not found');
-          
-          // Try another way to find the container
-          const editorPanel = document.getElementById('editor-panel');
-          console.log("Editor panel exists:", !!editorPanel);
-          console.log("Editor panel content:", editorPanel?.innerHTML || 'editor-panel not found');
-          
-          this.notificationManager.showNotification('Error initializing blocks editor container.', 'error');
-          return;
-      }
-      
-      console.log("Blockly div found, initializing workspace...");
-      // Delegate initialization to the WorkspaceManager
-      this.workspaceManager.initialize(blocklyDiv, toolboxXml, this.dropdownHelper);
-    }, 150); // Longer delay to ensure DOM is fully updated
+    console.log("BlocksManager.initializeBlockly() called");
+    
+    // Ensure the blockly div exists and has dimensions
+    const blocklyDiv = document.getElementById('blockly-div');
+    if (!blocklyDiv) {
+        console.error("Cannot initialize Blockly: #blockly-div not found!");
+        
+        // Additional debugging information
+        console.log("Available divs with IDs:", Array.from(document.querySelectorAll('[id]')).map(el => el.id));
+        console.log("DOM structure for blocks-editor-container:", document.querySelector('.blocks-editor-container')?.innerHTML || 'blocks-editor-container not found');
+        console.log("DOM structure for blocks-editor:", document.querySelector('.blocks-editor')?.innerHTML || 'blocks-editor not found');
+        
+        // Try another way to find the container
+        const editorPanel = document.getElementById('editor-panel');
+        console.log("Editor panel exists:", !!editorPanel);
+        console.log("Editor panel content:", editorPanel?.innerHTML || 'editor-panel not found');
+        
+        this.notificationManager.showNotification('Error initializing blocks editor container.', 'error');
+        return;
+    }
+    
+    // Ensure Blockly is properly loaded
+    if (typeof Blockly === 'undefined') {
+        console.error("Blockly library is not defined! Cannot initialize workspace.");
+        this.notificationManager.showNotification('Blockly library not loaded. Try reloading the page.', 'error');
+        return; 
+    }
+    
+    const rect = blocklyDiv.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) {
+        console.warn("Blockly div has zero dimensions, may cause rendering issues:", rect);
+    }
+
+    console.log(`BlocksManager: Initializing Blockly in div with dimensions ${rect.width}x${rect.height}px`);
+    
+    // Clear any previous workspace
+    if (this.workspaceManager.getWorkspace()) {
+        console.log("Disposing existing workspace before re-initialization");
+        this.workspaceManager.dispose();
+    }
+    
+    // Delegate initialization to the WorkspaceManager
+    const success = this.workspaceManager.initialize(blocklyDiv, toolboxXml, this.dropdownHelper);
+    
+    if (success) {
+        console.log("BlocksManager: Blockly initialization succeeded");
+    } else {
+        console.error("BlocksManager: Blockly initialization failed");
+        this.notificationManager.showNotification('Failed to initialize blocks editor. Try switching tabs.', 'error');
+    }
   }
   
   // Method called by WorkspaceManager on block changes to update CodeManager
@@ -127,14 +153,32 @@ class BlocksManager {
 
   // Ensures the workspace is initialized, called by EditorView
   ensureWorkspaceReady() {
+    console.log("BlocksManager.ensureWorkspaceReady() called");
+    
     if (!this.workspaceManager.getWorkspace()) {
-      console.log('BlocksManager: Workspace not ready via ensureWorkspaceReady, calling initializeBlockly.');
-      this.initializeBlockly(); 
+      console.log('BlocksManager: Workspace not ready, initializing now...');
+      
+      // Check if blockly-div exists before attempting initialization
+      if (document.getElementById('blockly-div')) {
+        this.initializeBlockly();
+      } else {
+        console.error('BlocksManager: Cannot initialize, blockly-div not found in DOM.');
+        
+        // We're likely being called from the Code tab, so don't show a notification
+        // that would confuse the user since they're not on the Blocks tab
+        console.log('Blocks workspace not ready when requested from another tab.');
+        
+        // Return false to indicate the workspace is not ready
+        return false;
+      }
     } else {
        // Workspace exists, ensure blocks are loaded for the current screen
-       // This might be needed if ensureWorkspaceReady is called after a screen switch but before block init
+       console.log('BlocksManager: Workspace already exists, loading state...');
        this.workspaceManager.loadState();
-       console.log('BlocksManager: Workspace already exists, ensured state loaded.');
+       console.log('BlocksManager: State loaded.');
+       
+       // Return true to indicate the workspace is ready
+       return true;
     }
   }
   
