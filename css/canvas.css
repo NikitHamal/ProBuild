@@ -74,6 +74,48 @@
   overflow: hidden;
 }
 
+/* Dimension text styling */
+.dimension-text {
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.75);
+  color: white;
+  font-size: 11px;
+  padding: 3px 6px;
+  border-radius: 3px;
+  transform: translateY(-100%);
+  white-space: nowrap;
+  font-weight: 500;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  z-index: 7;
+  letter-spacing: 0.5px;
+  opacity: 0.95;
+}
+
+/* When dimension text appears below the component */
+.dimension-text.below {
+  transform: translateY(0); /* Reset the Y transform */
+}
+
+/* Corner markers for selection */
+.corner-marker {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background-color: #0d99ff;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 7;
+  pointer-events: none;
+  border: 1px solid white;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Position corner markers slightly inward to avoid overlapping with resize handles */
+.corner-marker.top-left { transform: translate(-25%, -25%); }
+.corner-marker.top-right { transform: translate(25%, -25%); }
+.corner-marker.bottom-left { transform: translate(-25%, 25%); }
+.corner-marker.bottom-right { transform: translate(25%, 25%); }
+
 /* Resize Handles */
 .resize-handles {
   position: absolute;
@@ -164,6 +206,8 @@
 }
 
 .preview-component.selected {
-  outline: 2px solid #0d99ff;
-  outline-offset: 1px;
+  outline: 2px dashed #0d99ff;
+  outline-offset: 2px;
+  box-shadow: 0 0 8px rgba(13, 153, 255, 0.3);
+  z-index: 5; /* Ensure it's above other components but below the overlay elements */
 } 

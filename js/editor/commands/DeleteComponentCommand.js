@@ -53,6 +53,12 @@ class DeleteComponentCommand extends Command {
           if (this.editorView.propertyPanel) {
             this.editorView.propertyPanel.hidePropertyPanel();
           }
+          
+          // Clear dimension overlay immediately on deletion
+          if (this.editorView.componentManager && 
+              this.editorView.componentManager.alignmentOverlayHandler) {
+            this.editorView.componentManager.alignmentOverlayHandler.clearDimensionOverlay();
+          }
         }
         
         return true;

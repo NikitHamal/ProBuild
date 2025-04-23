@@ -205,6 +205,7 @@ class ComponentInteractionHandler {
             // Clear any guides
             if (this.componentManager && this.componentManager.alignmentOverlayHandler) {
                 this.componentManager.alignmentOverlayHandler.clearAlignmentGuides();
+                this.componentManager.alignmentOverlayHandler.clearDimensionOverlay();
             }
             
             return; // Exit early

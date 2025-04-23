@@ -196,21 +196,46 @@ class AlignmentOverlayHandler {
         // Create text element for dimensions
         const dimensionText = document.createElement('div');
         dimensionText.className = 'dimension-text';
-        dimensionText.textContent = `${Math.round(width)} x ${Math.round(height)}`;
-
-        // Position the text near the bottom-right corner of the element
-        dimensionText.style.left = `${relativeX + width + 5}px`; // Offset slightly
-        dimensionText.style.top = `${relativeY + height + 5}px`;
-
+        dimensionText.textContent = `${Math.round(width)} × ${Math.round(height)}`;
+        
+        // Determine best position for dimension text to avoid overlap
+        // Position at the left corner instead of centered
+        let textY = Math.max(5, relativeY - 22); // Default to above
+        
+        // If too close to top, place it below the component instead
+        if (relativeY < 30) {
+            textY = relativeY + height + 16;
+            dimensionText.classList.add('below');
+        }
+        
+        // Position at left corner instead of center
+        const textX = relativeX + 5; // 5px offset from left edge
+        dimensionText.style.left = `${textX}px`;
+        dimensionText.style.top = `${textY}px`;
+        
         overlay.appendChild(dimensionText);
 
-        // Optional: Add position text (X, Y)
-        // const positionText = document.createElement('div');
-        // positionText.className = 'position-text';
-        // positionText.textContent = `X: ${Math.round(relativeX)}, Y: ${Math.round(relativeY)}`;
-        // positionText.style.left = `${relativeX}px`;
-        // positionText.style.top = `${relativeY - 20}px`; // Position above
-        // overlay.appendChild(positionText);
+        // Check if resize handles exist for this component
+        const hasResizeHandles = targetElement.querySelector('.resize-handle') !== null;
+        
+        // Only add corner markers if resize handles don't exist
+        if (!hasResizeHandles) {
+            // Add position indicators at corners (non-intrusive)
+            const corners = [
+                { name: 'top-left', x: relativeX, y: relativeY },
+                { name: 'top-right', x: relativeX + width, y: relativeY },
+                { name: 'bottom-left', x: relativeX, y: relativeY + height },
+                { name: 'bottom-right', x: relativeX + width, y: relativeY + height }
+            ];
+            
+            corners.forEach(corner => {
+                const cornerMarker = document.createElement('div');
+                cornerMarker.className = `corner-marker ${corner.name}`;
+                cornerMarker.style.left = `${corner.x}px`;
+                cornerMarker.style.top = `${corner.y}px`;
+                overlay.appendChild(cornerMarker);
+            });
+        }
     }
 
     /**

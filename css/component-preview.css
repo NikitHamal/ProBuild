@@ -2,7 +2,7 @@
   position: absolute;
   min-height: 20px;
   cursor: pointer;
-  transition: outline 0.2s;
+  transition: outline 0.2s, box-shadow 0.2s;
   box-sizing: border-box;
   overflow: hidden;
   word-wrap: break-word;
@@ -12,11 +12,12 @@
   min-width: 10px;
 }
 
-.preview-component.selected {
+/* Selected styling is now defined in canvas.css for consistency */
+/* .preview-component.selected {
   border: 1px dashed #888888;
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
   z-index: 10;
-}
+} */
 
 .preview-component:hover {
   outline: 1px dashed #aaa;

@@ -1,6 +1,6 @@
-# ProBuild (Frontend)
+# ProBuild
 
-A modern web-based UI/UX for a visual app creation platform, inspired by Sketchware, built with HTML, CSS, and vanilla JavaScript. This project focuses on providing the frontend interface for designing and managing app projects.
+A modern web-based visual app creation platform, inspired by Sketchware, built with HTML, CSS, and vanilla JavaScript. This project provides both frontend and backend capabilities for designing, managing, and building mobile applications.
 
 ## Features
 
@@ -11,11 +11,20 @@ A modern web-based UI/UX for a visual app creation platform, inspired by Sketchw
     *   Property editor panel to customize component attributes.
     *   Support for multiple screens within a single project.
     *   Block-based logic editor (using Blockly).
-    *   Basic code editor view.
+    *   Advanced code editor with syntax highlighting.
 *   **Home Page (`index.html`)**: Dashboard to view and access existing projects.
-*   **Local Storage**: Project data is saved directly in the browser's `localStorage`.
-*   **(Experimental) Build System**: Includes logic for preparing project files for a potential build process (details in `js/editor/build/`).
-*   **(Experimental) GitHub Integration**: Basic functionality for saving/loading projects to GitHub repos (details in `js/editor/build/GitHubService.js`).
+*   **Storage Solutions**:
+    *   **Local Storage**: Basic project data stored in browser's `localStorage`.
+    *   **IndexedDB**: Advanced storage for images and larger project assets.
+*   **Build System**: Complete Android application build pipeline via GitHub Actions:
+    *   Generates full Android Studio project structure.
+    *   Creates all necessary Java files, layouts, and resources.
+    *   Prepares Gradle build scripts and configuration.
+    *   Produces APK files ready for installation.
+*   **GitHub Integration**: Fully functional GitHub repository management:
+    *   Project saving/loading to GitHub repositories.
+    *   Automated workflows for building apps in the cloud.
+    *   APK artifact management and download capabilities.
 
 ## Project Structure
 
@@ -33,15 +42,31 @@ A modern web-based UI/UX for a visual app creation platform, inspired by Sketchw
 │   ├── code-editor.css  # Code editor styles
 │   └── build-manager.css # Build manager styles
 ├── js/                  # JavaScript Logic
-│   ├── config/          # Configuration files (e.g., component definitions)
-│   ├── editor/          # Core editor logic (views, components, events, build)
+│   ├── editor/          # Core editor logic
+│   │   ├── build/       # Build system and GitHub integration
+│   │   │   ├── ProjectBuilder.js       # Android project generator
+│   │   │   ├── GitHubService.js        # GitHub API integration
+│   │   │   ├── BuildUIManager.js       # Build UI controller
+│   │   │   └── BuildWorkflowManager.js # Orchestrates build process
+│   │   ├── blocks/      # Block programming components
+│   │   ├── code/        # Code editor functionality
+│   │   ├── components/  # UI component definitions
+│   │   ├── dialogs/     # Modal dialog controllers
+│   │   ├── handlers/    # Event handlers
+│   │   ├── managers/    # Feature managers
+│   │   ├── panels/      # Panel UI controllers
+│   │   ├── services/    # Backend services
+│   │   └── utils/       # Editor utilities
 │   ├── utils/           # Utility functions
-│   ├── app-service.js   # Service for app data management (localStorage)
-│   ├── home-view.js     # Logic for the home page (project listing)
-│   └── editor-view.js   # Main entry point for the editor (likely deprecated/simple loader)
-├── components/          # Reusable UI Web Components (e.g., navbar, dialogs)
-├── index.html           # Home page / Project dashboard entry point
-├── editor.html          # Main visual editor entry point
+│   │   └── IndexedDBManager.js # Image and asset storage
+│   ├── ui/              # UI utilities
+│   │   └── NotificationManager.js # Toast notifications
+│   ├── app-service.js   # Service for app data management
+│   ├── home-view.js     # Logic for the home page
+│   └── editor-view.js   # Main entry point for the editor
+├── components/          # Reusable UI Web Components
+├── index.html           # Home page / Project dashboard
+├── editor.html          # Main visual editor
 └── README.md            # This file
 ```
 
@@ -50,17 +75,38 @@ A modern web-based UI/UX for a visual app creation platform, inspired by Sketchw
 1.  **Clone the repository:**
     ```bash
     git clone <repository-url>
-    cd ProBuild # Or your renamed directory
+    cd ProBuild
     ```
 2.  **Open in Browser:** Simply open the `index.html` file in your web browser. No build step is required for basic usage.
+
+3.  **GitHub Integration Setup (Optional):**
+    * Create a GitHub personal access token with appropriate permissions.
+    * Enter your GitHub credentials in the build panel of the editor.
 
 ## Development Notes
 
 *   **Frameworks**: Built with vanilla HTML, CSS, and JavaScript (ES6 Modules).
-*   **Dependencies**: Uses Blockly for the blocks editor (loaded via CDN).
-*   **Styling**: Primarily custom CSS, potentially utility classes (inspect `styles.css`).
-*   **State Management**: Simple state management through classes and potentially `localStorage`.
+*   **Dependencies**: 
+    * Blockly for the blocks editor (loaded via CDN).
+    * IndexedDB for client-side storage of images and assets.
+    * GitHub API for repository management and workflow triggering.
+*   **Styling**: Primarily custom CSS with utility classes.
+*   **Data Storage**: 
+    * Projects stored in localStorage (basic data) and IndexedDB (images).
+    * Option to persist projects to GitHub repositories.
+*   **Build System**: 
+    * Generates complete Android Studio projects.
+    * Uses GitHub Actions workflows for cloud-based builds.
+    * Produces installable APK files with appropriate Android manifests.
+
+## Building Apps
+
+1. Create and design your app in the visual editor.
+2. Navigate to the Build tab in the editor.
+3. Connect your GitHub account.
+4. Click "Build APK" to initiate the build process.
+5. Download the compiled APK from the GitHub repository's Actions tab.
 
 ## Disclaimer
 
-This is a frontend-only implementation for demonstrating the UI/UX of a visual app builder. The build system and GitHub integration are experimental and may require a separate backend or further development to be fully functional. 
+This project has evolved beyond a frontend-only implementation and now includes backend functionality for a more complete visual app builder experience. The build system and GitHub integration are fully functional parts of the application.
