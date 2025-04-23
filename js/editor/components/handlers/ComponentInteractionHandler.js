@@ -275,17 +275,14 @@ class ComponentInteractionHandler {
             component.properties.x = finalX;
             component.properties.y = finalY;
             
-            // Only show guides if Alt key is pressed (for alignment checking)
-            if (e.altKey && this.componentManager && this.componentManager.alignmentOverlayHandler) {
+            // Show alignment guides by default (but don't snap to them)
+            if (this.componentManager && this.componentManager.alignmentOverlayHandler) {
                 const snapResult = this.componentManager.alignmentOverlayHandler.calculateSnapPosition(
                     finalX, finalY, componentWidth, componentHeight, component.id
                 );
                 
-                // Just draw guides but don't snap (for reference)
+                // Draw guides but don't snap
                 this.componentManager.alignmentOverlayHandler.drawAlignmentGuides(snapResult.lines);
-            } else if (this.componentManager && this.componentManager.alignmentOverlayHandler) {
-                // Clear any existing guides
-                this.componentManager.alignmentOverlayHandler.clearAlignmentGuides();
             }
 
             // Create a move command for undo/redo functionality
