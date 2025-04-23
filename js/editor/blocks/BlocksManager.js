@@ -40,8 +40,22 @@ class BlocksManager {
   initializeBlockly() {
     console.log("BlocksManager.initializeBlockly() called");
     
+    // Check if we're running on GitHub Pages
+    const isGitHubPages = window.location.hostname.includes('github.io');
+    
     // Ensure the blockly div exists and has dimensions
-    const blocklyDiv = document.getElementById('blockly-div');
+    let blocklyDiv = document.getElementById('blockly-div');
+    
+    // Special handling for GitHub Pages
+    if (!blocklyDiv && isGitHubPages) {
+      console.warn("Primary blockly-div not found, checking for fallback on GitHub Pages");
+      blocklyDiv = document.getElementById('blockly-div-fallback');
+      
+      if (blocklyDiv) {
+        console.log("Using fallback blockly-div for GitHub Pages");
+      }
+    }
+    
     if (!blocklyDiv) {
         console.error("Cannot initialize Blockly: #blockly-div not found!");
         
@@ -55,8 +69,31 @@ class BlocksManager {
         console.log("Editor panel exists:", !!editorPanel);
         console.log("Editor panel content:", editorPanel?.innerHTML || 'editor-panel not found');
         
-        this.notificationManager.showNotification('Error initializing blocks editor container.', 'error');
-        return;
+        // If on GitHub Pages, create a dynamic blockly div as last resort
+        if (isGitHubPages) {
+          console.log("Creating emergency blockly-div for GitHub Pages");
+          blocklyDiv = document.createElement('div');
+          blocklyDiv.id = 'blockly-div-emergency';
+          blocklyDiv.style.width = '800px';
+          blocklyDiv.style.height = '600px';
+          blocklyDiv.style.position = 'absolute';
+          blocklyDiv.style.top = '50px';
+          blocklyDiv.style.left = '50px';
+          blocklyDiv.style.zIndex = '1000';
+          blocklyDiv.style.backgroundColor = '#f0f0f0';
+          blocklyDiv.style.border = '1px solid #ccc';
+          
+          // Find a suitable container
+          const container = document.getElementById('editor-panel') || 
+                           document.getElementById('app-root') || 
+                           document.body;
+          
+          container.appendChild(blocklyDiv);
+          console.log("Emergency blockly-div created and attached to:", container.id || 'body');
+        } else {
+          this.notificationManager.showNotification('Error initializing blocks editor container.', 'error');
+          return;
+        }
     }
     
     // Ensure Blockly is properly loaded
@@ -155,14 +192,27 @@ class BlocksManager {
   ensureWorkspaceReady() {
     console.log("BlocksManager.ensureWorkspaceReady() called");
     
+    // Check if we're running on GitHub Pages
+    const isGitHubPages = window.location.hostname.includes('github.io');
+    
     if (!this.workspaceManager.getWorkspace()) {
       console.log('BlocksManager: Workspace not ready, initializing now...');
       
-      // Check if blockly-div exists before attempting initialization
-      if (document.getElementById('blockly-div')) {
+      // Find an appropriate blockly div
+      let blocklyDiv = document.getElementById('blockly-div') || 
+                      (isGitHubPages ? document.getElementById('blockly-div-fallback') : null);
+      
+      if (blocklyDiv) {
         this.initializeBlockly();
       } else {
         console.error('BlocksManager: Cannot initialize, blockly-div not found in DOM.');
+        
+        // If on GitHub Pages, create the emergency div
+        if (isGitHubPages) {
+          console.log("Creating emergency blockly-div during ensureWorkspaceReady for GitHub Pages");
+          this.initializeBlockly(); // This will create the emergency div
+          return true; // Try to proceed
+        }
         
         // We're likely being called from the Code tab, so don't show a notification
         // that would confuse the user since they're not on the Blocks tab
