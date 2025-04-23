@@ -137,8 +137,8 @@ class CodeFileManager {
          this.dirtyFiles.add('main');
     }
 
-    // Refresh the file tabs UI via the UIManager
-    this.codeManager.uiManager?.refreshFileTabsUI();
+    // Refresh the file sidebar UI via the UIManager
+    this.codeManager.uiManager?.refreshFileSidebarUI();
   }
   
   clearDirtyFiles() {

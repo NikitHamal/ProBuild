@@ -120,11 +120,29 @@
   overflow: hidden; /* Important for image scaling */
 }
 
+/* Layout Components */
 .preview-component[data-component-type^="linearlayout"],
-.preview-component[data-component-type^="scrollview"] {
-  /* background-color: rgba(0, 0, 255, 0.05); */ /* Subtle background for layouts */
-  border: 1px dashed #cccccc;
+.preview-component[data-component-type^="scrollview"],
+.preview-component[data-component-type="cardview"] {
+  background-color: rgba(0, 0, 255, 0.05); /* Light blue background for layouts */
+  border: 1px dashed #aaaaaa !important;
   overflow: visible; /* Allow content to overflow visually if needed */
+  min-height: 40px;
+  min-width: 60px;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Layout labels */
+.layout-label {
+  color: #666;
+  font-size: 12px;
+  text-align: center;
+  width: 100%;
+  display: block;
+  pointer-events: none; /* Make sure clicks pass through to the layout */
 }
 
 /* Add more specific styles for other components as needed */
@@ -135,4 +153,41 @@
   cursor: grabbing;
   border-style: solid; /* Change border during drag */
   border-color: #f39c12; 
+}
+
+/* Component preview focus style */
+.preview-component:focus {
+  outline: 2px solid #007bff !important;
+  z-index: 10;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.3) !important;
+}
+
+/* Component selection outline */
+.preview-component.selected {
+  outline: 2px dashed #ff5722 !important;
+} 
+
+/* Delete button styles */
+.component-delete-btn {
+  position: absolute !important;
+  bottom: 5px !important;
+  right: 5px !important;
+  width: 24px !important;
+  height: 24px !important;
+  z-index: 100 !important; /* Make sure it's above everything */
+  border-radius: 4px !important;
+  opacity: 0.9;
+  background-color: rgba(244, 67, 54, 0.9) !important;
+}
+
+/* Ensure delete button is visible when component is selected */
+.preview-component.selected .component-delete-btn {
+  display: flex !important;
+}
+
+/* Make delete button more visible on hover */
+.component-delete-btn:hover {
+  transform: scale(1.1);
+  opacity: 1;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
 } 

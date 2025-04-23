@@ -1,6 +1,6 @@
 import { 
   AddComponentCommand,
-  // DeleteComponentCommand, // Now handled in InteractionHandler
+  DeleteComponentCommand,
   // UpdatePropertyCommand, // Now handled in specific handlers/commands
   // MoveComponentCommand // Now handled in specific handlers/commands
 } from '../commands/ComponentCommands.js';
@@ -247,6 +247,117 @@ class ComponentManager {
    get isResizingComponent() {
        return this.resizeHandler.isResizingComponent;
    }
+
+  /**
+   * Deletes a component by ID.
+   * @param {string} componentId - The ID of the component to delete.
+   * @returns {boolean} Whether the deletion was successful.
+   */
+  deleteComponent(componentId) {
+    console.log(`ComponentManager: Attempting to delete component ${componentId}`);
+    const component = this.findComponentById(componentId);
+    if (!component) {
+      console.warn(`Cannot delete component: ID ${componentId} not found.`);
+      return false;
+    }
+    
+    console.log(`ComponentManager: Deleting component ${componentId} of type ${component.type}`);
+    
+    try {
+      // For layout components, ensure we properly sync with code tab
+      const isLayout = component.type.startsWith('linearlayout') || 
+                      component.type.startsWith('scrollview') || 
+                      component.type === 'cardview';
+      
+      if (isLayout) {
+        console.log(`ComponentManager: Deleting layout component ${componentId}`);
+      }
+      
+      // Create the delete command
+      const deleteCommand = new DeleteComponentCommand(this.editorView, componentId);
+      const result = this.editorView.undoRedoManager.executeCommand(deleteCommand);
+      
+      // If this was the selected component, update selection state
+      if (this.editorView.selectedComponent?.id === componentId) {
+        this.interactionHandler.deselectComponent();
+      }
+      
+      // Clear any overlays
+      this.alignmentOverlayHandler.clearAlignmentGuides();
+      this.alignmentOverlayHandler.clearDimensionOverlay();
+      
+      // Re-render preview after deletion
+      if (result) {
+        // Small delay to ensure clean re-render
+        setTimeout(() => {
+          this.renderComponentsPreview();
+          
+          // If we're in code tab, request a code refresh
+          if (this.editorView.activeTab === 'code' && this.editorView.codeManager) {
+            // Ask code manager to refresh files
+            this.editorView.codeManager.fileManager.generateCodeForAllFiles();
+            
+            // Update editor content if needed
+            if (this.editorView.codeManager.uiManager) {
+              this.editorView.codeManager.uiManager.updateEditorContent();
+            }
+          }
+        }, 50);
+      }
+      
+      return result;
+    } catch (error) {
+      console.error("Error deleting component:", error);
+      // If an error occurs, try a direct deletion as fallback
+      try {
+        const app = this.editorView.currentApp;
+        const screen = this.editorView.currentScreen;
+        
+        if (app && screen) {
+          const success = this.editorView.appService.deleteComponent(
+            app.id,
+            screen.id,
+            componentId
+          );
+          
+          if (success) {
+            console.log("Component deleted using direct deletion");
+            // If this was the selected component, update selection state
+            if (this.editorView.selectedComponent?.id === componentId) {
+              this.interactionHandler.deselectComponent();
+            }
+            
+            // Re-render preview after deletion
+            setTimeout(() => {
+              this.renderComponentsPreview();
+              
+              // Also notify code manager
+              if (this.editorView.codeManager && this.editorView.codeManager.fileManager) {
+                // Mark files as needing update
+                this.editorView.codeManager.fileManager.markFileAsDirty(componentId, 'layout');
+                this.editorView.codeManager.fileManager.markFileAsDirty(componentId, 'main');
+                
+                // Force regeneration and save
+                const affectedFiles = ['layout', 'main'];
+                affectedFiles.forEach(fileId => {
+                  const newContent = this.editorView.codeManager.fileManager.generateFileContent(fileId);
+                  this.editorView.codeManager.fileManager.updateFileContent(fileId, newContent);
+                });
+                
+                this.editorView.codeManager.fileManager.triggerAutoSave(true);
+              }
+            }, 50);
+            
+            return true;
+          }
+        }
+      } catch (fallbackError) {
+        console.error("Fallback deletion also failed:", fallbackError);
+      }
+      
+      return false;
+    }
+  }
 }
 
 export default ComponentManager; 

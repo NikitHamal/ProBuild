@@ -40,6 +40,9 @@ class ComponentInteractionHandler {
             // Listen for keyboard events globally when the editor has focus
             document.addEventListener('keydown', this.handleKeyDown.bind(this));
             document.addEventListener('keyup', this.handleKeyUp.bind(this)); // Add keyup listener
+            
+            // Prevent default context menu and add our own
+            document.addEventListener('contextmenu', this.handleContextMenu.bind(this));
         }
 
         // Note: Mousedown/click listeners on individual components are added 
@@ -277,14 +280,9 @@ class ComponentInteractionHandler {
 
             case 'Delete':
             case 'Backspace':
-                // console.log(`[KeyDown] Delete/Backspace key pressed.`);
                 if (isInputFocused) return;
                 e.preventDefault();
-                const componentIdToDelete = component.id;
-                // console.log(`[KeyDown] Deleting component: ${componentIdToDelete}`);
-                const deleteCommand = new DeleteComponentCommand(this.editorView, componentIdToDelete);
-                this.editorView.undoRedoManager.executeCommand(deleteCommand);
-                this.componentManager.alignmentOverlayHandler.clearAlignmentGuides(); // Clear guides on delete
+                this.deleteSelectedComponent();
                 return; // Exit early
         }
 
@@ -373,6 +371,9 @@ class ComponentInteractionHandler {
         // Update state and UI
         this.editorView.selectedComponent = component;
         componentElement.classList.add('selected');
+        
+        // Update delete button visibility
+        this._updateDeleteButtonVisibility();
 
         // Scroll the element into view if needed
         // componentElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
@@ -415,6 +416,9 @@ class ComponentInteractionHandler {
         }
 
         this.editorView.selectedComponent = null;
+        
+        // Update delete button visibility (hide all buttons)
+        this._updateDeleteButtonVisibility();
 
         // Clear dimension overlay (delegated)
         this.componentManager.alignmentOverlayHandler.clearDimensionOverlay();
@@ -444,6 +448,124 @@ class ComponentInteractionHandler {
      */
     setOnComponentDeselectedCallback(callback) {
         this.onComponentDeselected = callback;
+    }
+
+    /**
+     * Handles context menu event to show custom menu for components
+     * @param {MouseEvent} e - The context menu event
+     */
+    handleContextMenu(e) {
+        // Only handle in design tab
+        if (this.editorView.activeTab !== 'design') return;
+        
+        // Check if clicked on a component
+        const componentElement = e.target.closest('.preview-component');
+        if (!componentElement) return;
+        
+        e.preventDefault(); // Prevent default context menu
+        
+        // Get component ID
+        const componentId = componentElement.dataset.componentId;
+        if (!componentId) return;
+        
+        // Select this component
+        this.selectComponent(componentId, true);
+        
+        // Create and show custom context menu
+        const contextMenu = document.createElement('div');
+        contextMenu.className = 'component-context-menu';
+        contextMenu.style.position = 'absolute';
+        contextMenu.style.left = `${e.clientX}px`;
+        contextMenu.style.top = `${e.clientY}px`;
+        contextMenu.style.backgroundColor = 'white';
+        contextMenu.style.border = '1px solid #ccc';
+        contextMenu.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+        contextMenu.style.padding = '4px 0';
+        contextMenu.style.zIndex = '9999';
+        
+        // Add menu items
+        const deleteItem = document.createElement('div');
+        deleteItem.className = 'context-menu-item';
+        deleteItem.textContent = 'Delete Component';
+        deleteItem.style.padding = '8px 12px';
+        deleteItem.style.cursor = 'pointer';
+        deleteItem.style.display = 'flex';
+        deleteItem.style.alignItems = 'center';
+        deleteItem.style.gap = '8px';
+        
+        // Add icon
+        const deleteIcon = document.createElement('i');
+        deleteIcon.className = 'material-icons';
+        deleteIcon.textContent = 'delete';
+        deleteIcon.style.fontSize = '16px';
+        deleteIcon.style.color = '#F44336';
+        
+        deleteItem.prepend(deleteIcon);
+        
+        // Hover effect
+        deleteItem.addEventListener('mouseover', () => {
+            deleteItem.style.backgroundColor = '#f5f5f5';
+        });
+        deleteItem.addEventListener('mouseout', () => {
+            deleteItem.style.backgroundColor = 'transparent';
+        });
+        
+        // Click handler
+        deleteItem.addEventListener('click', () => {
+            this.deleteSelectedComponent();
+            document.body.removeChild(contextMenu);
+        });
+        
+        contextMenu.appendChild(deleteItem);
+        document.body.appendChild(contextMenu);
+        
+        // Close menu when clicking outside
+        const closeMenu = (evt) => {
+            if (!contextMenu.contains(evt.target)) {
+                document.body.removeChild(contextMenu);
+                document.removeEventListener('click', closeMenu);
+            }
+        };
+        
+        // Slight delay to avoid immediate closing
+        setTimeout(() => {
+            document.addEventListener('click', closeMenu);
+        }, 100);
+    }
+    
+    /**
+     * Deletes the currently selected component
+     */
+    deleteSelectedComponent() {
+        if (!this.editorView.selectedComponent) return;
+        
+        const componentIdToDelete = this.editorView.selectedComponent.id;
+        console.log(`InteractionHandler: Requesting deletion of component: ${componentIdToDelete}`);
+        
+        // Delegate to ComponentManager for consistent deletion handling
+        this.componentManager.deleteComponent(componentIdToDelete);
+    }
+
+    /**
+     * Updates visibility of delete buttons on components based on selection state
+     * @private
+     */
+    _updateDeleteButtonVisibility() {
+        // Hide all delete buttons first
+        document.querySelectorAll('.component-delete-btn').forEach(btn => {
+            btn.style.display = 'none';
+        });
+        
+        // Show delete button only for selected component
+        if (this.editorView.selectedComponent) {
+            const selectedElement = document.querySelector(`.preview-component[data-component-id="${this.editorView.selectedComponent.id}"]`);
+            if (selectedElement) {
+                const deleteBtn = selectedElement.querySelector('.component-delete-btn');
+                if (deleteBtn) {
+                    deleteBtn.style.display = 'flex';
+                }
+            }
+        }
     }
 }
 

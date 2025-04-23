@@ -53,102 +53,112 @@ class ComponentRenderer {
     }
 
     /**
-     * Creates the DOM element for a given component configuration.
-     * @param {object} component - The component data object.
-     * @returns {HTMLElement|null} The created component element or null.
+     * Creates a DOM element for a component with all necessary properties and event listeners.
+     * @param {object} component - The component data.
+     * @returns {HTMLElement} The created component element.
      */
     createComponentElement(component) {
-        const element = document.createElement('div');
-        element.className = `preview-component preview-${component.type}`;
-        element.dataset.componentId = component.id;
-        const props = component.properties;
-
-        const parseDimension = (dimension) => {
-            if (!dimension) return null;
-            if (dimension === 'match_parent' || dimension === 'wrap_content') return dimension;
-            if (typeof dimension === 'number') return `${dimension}px`;
-            if (typeof dimension === 'string') {
-                if (dimension.endsWith('px')) return dimension;
-                const num = parseInt(dimension, 10);
-                if (!isNaN(num)) return `${num}px`;
+        // Base component element
+        const componentElem = document.createElement('div');
+        componentElem.className = `preview-component ${component.type}`;
+        componentElem.dataset.componentId = component.id;
+        componentElem.dataset.componentType = component.type;
+        
+        // Apply component-specific styling
+        this.applyComponentStyles(componentElem, component);
+        
+        // Add delete button that shows on selection
+        const deleteButton = document.createElement('button');
+        deleteButton.className = 'component-delete-btn';
+        deleteButton.innerHTML = '<i class="material-icons" style="font-size: 16px;">delete</i>';
+        deleteButton.title = 'Delete Component';
+        deleteButton.style.position = 'absolute';
+        deleteButton.style.bottom = '5px';
+        deleteButton.style.right = '5px';
+        deleteButton.style.width = '24px';
+        deleteButton.style.height = '24px';
+        deleteButton.style.borderRadius = '4px';
+        deleteButton.style.backgroundColor = 'rgba(244, 67, 54, 0.9)';
+        deleteButton.style.color = 'white';
+        deleteButton.style.border = 'none';
+        deleteButton.style.cursor = 'pointer';
+        deleteButton.style.display = 'none';
+        deleteButton.style.alignItems = 'center';
+        deleteButton.style.justifyContent = 'center';
+        deleteButton.style.zIndex = '100';
+        deleteButton.style.fontSize = '16px';
+        deleteButton.style.padding = '0';
+        deleteButton.style.opacity = '0.9';
+        
+        // Show/hide delete button based on selection
+        const showHideDeleteBtn = () => {
+            if (this.editorView.selectedComponent?.id === component.id) {
+                deleteButton.style.display = 'flex';
+            } else {
+                deleteButton.style.display = 'none';
             }
-            return null;
         };
-
-        const width = parseDimension(props.width);
-        const height = parseDimension(props.height);
-
-        if (width === 'match_parent') element.style.width = '100%';
-        else if (width === 'wrap_content') element.style.width = 'auto';
-        else if (width) element.style.width = width;
-
-        if (height === 'match_parent') element.style.height = '100%';
-        else if (height === 'wrap_content') element.style.height = 'auto';
-        else if (height) element.style.height = height;
-
-        element.style.position = 'absolute';
-        element.style.left = `${props.x || 0}px`;
-        element.style.top = `${props.y || 0}px`;
-        element.style.minWidth = '10px';
-        element.style.minHeight = '10px';
-        if (props.margin) element.style.margin = props.margin;
-        if (props.padding) element.style.padding = props.padding;
-        element.style.backgroundColor = props.bgColor || 'transparent';
-        element.style.opacity = (props.opacity || 100) / 100;
-        if (props.font) element.style.fontFamily = props.font;
-        element.style.fontSize = `${props.textSize || 14}px`;
-        element.style.color = props.textColor || '#000000';
-        element.style.borderColor = props.borderColor || 'transparent';
-        element.style.borderWidth = props.borderColor && props.borderColor !== 'transparent' ? '1px' : '0';
-        element.style.borderStyle = props.borderColor && props.borderColor !== 'transparent' ? 'solid' : 'none';
-        element.style.borderRadius = props.borderRadius || '0px';
-        element.style.boxShadow = props.boxShadow || 'none';
-
-        element.innerHTML = ''; // Clear default
-        element.style.display = 'flex';
-        element.style.alignItems = 'center';
-        element.style.justifyContent = 'flex-start';
-
-        this.renderComponentContent(element, component);
-
-        // Add resize handles (delegate to ResizeHandler or keep here if tightly coupled)
-        // Assuming ResizeHandler will add them later if selected
-        // this.componentManager.resizeHandler.addResizeHandles(element);
-        // OR, if ComponentManager calls this method and then adds handles:
-        this.componentManager.addResizeHandles(element); // Requires ComponentManager ref
-
-
-        // --- Event Listeners --- 
-        // These should ideally be handled by an InteractionHandler listening on the container
-        // But for direct attachment, we pass the componentManager reference
-
-        // Mouse down for potential drag start
-        element.addEventListener('mousedown', (e) => {
-            if (e.target.classList.contains('resize-handle')) return;
-            if (e.button !== 0) return;
-            e.stopPropagation();
-            this.componentManager.interactionHandler.handleComponentMouseDown(e, component);
-        });
-
-        // Click for selection
-        element.addEventListener('click', (e) => {
-            if (e.target.classList.contains('resize-handle')) return;
-            if (!this.componentManager.isDraggingComponent) { // Check flag on ComponentManager
-                e.stopPropagation();
-                 // Delegate selection to ComponentManager or InteractionHandler
-                this.componentManager.interactionHandler.selectComponent(component.id, true);
-            }
-        });
-
-        // Context menu (optional)
-        element.addEventListener('contextmenu', (e) => {
+        
+        // Add button click event
+        deleteButton.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            // Potentially delegate to InteractionHandler for context menu logic
-            // this.componentManager.interactionHandler.handleContextMenu(e, component);
+            // Ensure the component is selected before deleting
+            this.componentManager.selectComponent(component.id, false);
+            // Then delete it with a slight delay to avoid any race conditions
+            setTimeout(() => {
+            this.componentManager.deleteComponent(component.id);
+            }, 10);
         });
-
-        return element;
+        
+        componentElem.appendChild(deleteButton);
+        
+        // Add event listeners
+        // 1. Mouse down for drag operations
+        componentElem.addEventListener('mousedown', (e) => {
+            this.componentManager.interactionHandler.handleComponentMouseDown(e, component);
+            showHideDeleteBtn();
+        });
+        
+        // 2. Click for selection
+        componentElem.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent clicking through to container
+            this.componentManager.interactionHandler.selectComponent(component.id, true);
+            showHideDeleteBtn();
+        });
+        
+        // 3. Double-click for special actions - may depend on component type
+        componentElem.addEventListener('dblclick', (e) => {
+            e.stopPropagation();
+            this.handleComponentDoubleClick(e, component);
+        });
+        
+        // 4. Focus and blur events for keyboard navigation and deletion
+        componentElem.tabIndex = 0; // Make focusable
+        componentElem.addEventListener('keydown', (e) => {
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                e.preventDefault();
+                e.stopPropagation();
+                // First ensure this component is selected
+                this.componentManager.interactionHandler.selectComponent(component.id, false);
+                // Then delete it
+                this.componentManager.deleteComponent(component.id);
+            }
+        });
+        
+        // 5. Focus/blur events to show/hide delete button
+        componentElem.addEventListener('focus', () => {
+            this.componentManager.interactionHandler.selectComponent(component.id, true);
+            showHideDeleteBtn();
+        });
+        
+        // Add component-specific content based on type (delegated to specialized methods)
+        this.renderComponentContent(componentElem, component);
+        
+        // Initial check for selection state
+        showHideDeleteBtn();
+        
+        return componentElem;
     }
 
     /**
@@ -160,6 +170,12 @@ class ComponentRenderer {
         const props = component.properties;
         element.innerHTML = ''; // Clear first
 
+        // Make sure delete button was created and kept
+        const deleteButton = element.querySelector('.component-delete-btn');
+        if (deleteButton) {
+            element.appendChild(deleteButton);
+        }
+
         switch (component.type) {
              // Layouts
             case 'linearlayout-h':
@@ -167,18 +183,18 @@ class ComponentRenderer {
                 element.style.flexDirection = 'row';
                 element.style.justifyContent = 'flex-start';
                 element.style.alignItems = 'flex-start';
-                element.innerHTML = `<!-- H Layout (${props.children?.length || 0}) -->`; // Placeholder
+                element.innerHTML = `<div class="layout-label">H Layout (${props.children?.length || 0})</div>`;
                 break;
             case 'linearlayout-v':
             case 'scrollview-v':
                 element.style.flexDirection = 'column';
                 element.style.justifyContent = 'flex-start';
                 element.style.alignItems = 'flex-start';
-                element.innerHTML = `<!-- V Layout (${props.children?.length || 0}) -->`; // Placeholder
+                element.innerHTML = `<div class="layout-label">V Layout (${props.children?.length || 0})</div>`;
                 break;
             case 'cardview':
                 element.style.justifyContent = 'center';
-                element.innerHTML = `<!-- Card (${props.children?.length || 0}) -->`; // Placeholder
+                element.innerHTML = `<div class="layout-label">Card (${props.children?.length || 0})</div>`;
                 break;
 
             // Widgets
@@ -305,7 +321,50 @@ class ComponentRenderer {
                 element.style.border = '1px solid #ccc'; // Keep border
                 break;
             default:
-                element.textContent = component.type; // Fallback
+                element.textContent = `${component.type} ${component.id}`;
+                break;
+        }
+
+        // Re-append the delete button after content is set to make sure it's visible
+        if (deleteButton) {
+            element.appendChild(deleteButton);
+        } else {
+            // Create a new delete button if the original one was lost
+            const newDeleteButton = document.createElement('button');
+            newDeleteButton.className = 'component-delete-btn';
+            newDeleteButton.innerHTML = '<i class="material-icons" style="font-size: 16px;">delete</i>';
+            newDeleteButton.title = 'Delete Component';
+            newDeleteButton.style.position = 'absolute';
+            newDeleteButton.style.bottom = '5px';
+            newDeleteButton.style.right = '5px';
+            newDeleteButton.style.width = '24px';
+            newDeleteButton.style.height = '24px';
+            newDeleteButton.style.borderRadius = '4px';
+            newDeleteButton.style.backgroundColor = 'rgba(244, 67, 54, 0.9)';
+            newDeleteButton.style.color = 'white';
+            newDeleteButton.style.border = 'none';
+            newDeleteButton.style.cursor = 'pointer';
+            newDeleteButton.style.display = 'none';
+            newDeleteButton.style.alignItems = 'center';
+            newDeleteButton.style.justifyContent = 'center';
+            newDeleteButton.style.zIndex = '100';
+            newDeleteButton.style.fontSize = '16px';
+            newDeleteButton.style.padding = '0';
+            newDeleteButton.style.opacity = '0.9';
+            
+            // Add button click event
+            newDeleteButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                // Ensure the component is selected before deleting
+                this.componentManager.selectComponent(component.id, false);
+                // Then delete it with a slight delay to avoid any race conditions
+                setTimeout(() => {
+                    this.componentManager.deleteComponent(component.id);
+                }, 10);
+            });
+            
+            element.appendChild(newDeleteButton);
         }
     }
 
@@ -364,6 +423,75 @@ class ComponentRenderer {
             this.renderComponentContent(componentElement, { ...component, properties: { ...component.properties, ...properties } });
 
         }
+    }
+
+    /**
+     * Applies style properties to a component element based on component data
+     * @param {HTMLElement} element - The component element
+     * @param {object} component - The component data object
+     */
+    applyComponentStyles(element, component) {
+        const props = component.properties;
+        
+        const parseDimension = (dimension) => {
+            if (!dimension) return null;
+            if (dimension === 'match_parent' || dimension === 'wrap_content') return dimension;
+            if (typeof dimension === 'number') return `${dimension}px`;
+            if (typeof dimension === 'string') {
+                if (dimension.endsWith('px')) return dimension;
+                const num = parseInt(dimension, 10);
+                if (!isNaN(num)) return `${num}px`;
+            }
+            return null;
+        };
+
+        const width = parseDimension(props.width);
+        const height = parseDimension(props.height);
+
+        if (width === 'match_parent') element.style.width = '100%';
+        else if (width === 'wrap_content') element.style.width = 'auto';
+        else if (width) element.style.width = width;
+
+        if (height === 'match_parent') element.style.height = '100%';
+        else if (height === 'wrap_content') element.style.height = 'auto';
+        else if (height) element.style.height = height;
+
+        element.style.position = 'absolute';
+        element.style.left = `${props.x || 0}px`;
+        element.style.top = `${props.y || 0}px`;
+        element.style.minWidth = '10px';
+        element.style.minHeight = '10px';
+        if (props.margin) element.style.margin = props.margin;
+        if (props.padding) element.style.padding = props.padding;
+        element.style.backgroundColor = props.bgColor || 'transparent';
+        element.style.opacity = (props.opacity || 100) / 100;
+        if (props.font) element.style.fontFamily = props.font;
+        element.style.fontSize = `${props.textSize || 14}px`;
+        element.style.color = props.textColor || '#000000';
+        element.style.borderColor = props.borderColor || 'transparent';
+        element.style.borderWidth = props.borderColor && props.borderColor !== 'transparent' ? '1px' : '0';
+        element.style.borderStyle = props.borderColor && props.borderColor !== 'transparent' ? 'solid' : 'none';
+        element.style.borderRadius = props.borderRadius || '0px';
+        element.style.boxShadow = props.boxShadow || 'none';
+
+        element.innerHTML = ''; // Clear default
+        element.style.display = 'flex';
+        element.style.alignItems = 'center';
+        element.style.justifyContent = 'flex-start';
+        
+        // Add resize handles
+        this.componentManager.addResizeHandles(element);
+    }
+
+    /**
+     * Handles double-click event on a component
+     * @param {MouseEvent} e - The double-click event
+     * @param {object} component - The component data object
+     */
+    handleComponentDoubleClick(e, component) {
+        // Handle any special actions on double-click
+        // For example, text editing mode for TextViews
+        console.log(`Double-clicked component: ${component.id}`);
     }
 }
 

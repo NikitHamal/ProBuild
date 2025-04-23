@@ -73,7 +73,11 @@ function defineCustomBlocks(Blockly, dropdownHelper) {
                 .appendField("set")
                 .appendField(new Blockly.FieldDropdown(() => dropdownHelper.getComponentOptions()), "COMPONENT_ID")
                 .appendField(".")
-                .appendField(new Blockly.FieldDropdown((compId) => dropdownHelper.getPropertyOptions(compId || this.getSourceBlock()?.getFieldValue('COMPONENT_ID'))), "PROPERTY") // Pass compId directly
+                .appendField(new Blockly.FieldDropdown(function() {
+                    const block = this.getSourceBlock();
+                    const compId = block ? block.getFieldValue('COMPONENT_ID') : null;
+                    return dropdownHelper.getPropertyOptions(compId);
+                }), "PROPERTY")
                 .appendField("to");
             this.setPreviousStatement(true, null);
             this.setNextStatement(true, null);
@@ -137,7 +141,11 @@ function defineCustomBlocks(Blockly, dropdownHelper) {
                 .appendField("get")
                 .appendField(new Blockly.FieldDropdown(() => dropdownHelper.getComponentOptions()), "COMPONENT_ID")
                 .appendField(".")
-                .appendField(new Blockly.FieldDropdown((compId) => dropdownHelper.getPropertyOptions(compId || this.getSourceBlock()?.getFieldValue('COMPONENT_ID'))), "PROPERTY");
+                .appendField(new Blockly.FieldDropdown(function() {
+                    const block = this.getSourceBlock();
+                    const compId = block ? block.getFieldValue('COMPONENT_ID') : null;
+                    return dropdownHelper.getPropertyOptions(compId);
+                }), "PROPERTY");
             this.setOutput(true, null); 
             this.setColour("#4a6cd4");
             this.setTooltip("Get a property of a component.");

@@ -147,11 +147,20 @@ ${blockCodeSection}
       const xmlTag = this.getComponentXmlTag(type);
       if (!xmlTag) return;
       
+      // Check if this is a layout component
+      const isLayout = type.includes('linearlayout') || type.includes('scrollview') || type === 'cardview';
+      
       // Generate attributes
       let attributes = `
         android:id="@+id/${componentId}"
         android:layout_width="${properties.width || 'wrap_content'}"
         android:layout_height="${properties.height || 'wrap_content'}"`;
+      
+      // Layout-specific attributes
+      if (isLayout) {
+        attributes += `
+        android:orientation="${properties.orientation || 'vertical'}"`;
+      }
       
       // Add text attribute if applicable
       if (properties.text) {
@@ -191,10 +200,28 @@ ${blockCodeSection}
         android:background="${properties.bgColor}"`;
       }
       
-      // Add component XML
-      componentsXml += `
+      // For layout components, check if they have children
+      if (isLayout && properties.children && properties.children.length > 0) {
+        // This layout has children, create nested XML
+        let childrenXml = '';
+        
+        // TODO: Add nested component rendering
+        // In a full implementation, we would recursively render children here
+        childrenXml = `
+        <!-- Layout contains ${properties.children.length} child components -->`;
+        
+        // Add component with children XML
+        componentsXml += `
+    <${xmlTag}${attributes}>
+${childrenXml}
+    </${xmlTag}>
+`;
+      } else {
+        // No children or not a layout, add self-closing component XML
+        componentsXml += `
     <${xmlTag}${attributes} />
 `;
+      }
     });
     
     // If there are no components, add a TextView as a placeholder

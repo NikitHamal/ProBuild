@@ -13,6 +13,14 @@ class WorkspaceManager {
             console.error("Blockly container div not found for initialization!");
             return null;
         }
+        
+        // Check if Blockly is loaded properly
+        if (typeof Blockly === 'undefined') {
+            console.error("Blockly not loaded! Make sure the script tags are properly included.");
+            this.notificationManager.showNotification('Blockly library not loaded correctly.', 'error');
+            return null;
+        }
+        
         if (this.workspace) {
             console.warn("Disposing existing Blockly workspace before re-initialization.");
             this.dispose();
@@ -32,6 +40,16 @@ class WorkspaceManager {
             } else {
                 throw new Error('Blockly or Blockly.JavaScript not loaded!');
             }
+
+            // Verify the DOM element is attached to the document
+            if (!document.body.contains(blocklyDiv)) {
+                console.error("Blockly div exists but is not attached to the document!");
+                this.notificationManager.showNotification('Error: Blockly container not in document.', 'error');
+                return null;
+            }
+
+            console.log("Initializing Blockly workspace with dimensions:", 
+                        `Width: ${blocklyDiv.offsetWidth}px, Height: ${blocklyDiv.offsetHeight}px`);
 
             // Override default Blockly dialogs
             this.overrideDialogs();
