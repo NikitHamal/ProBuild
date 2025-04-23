@@ -32,6 +32,7 @@ class PropertyPanelRenderer {
                     ${this._renderEffectsGroup()}
                     ${this._renderComponentSpecificGroup()}
                     ${this._renderIdentityGroup()}
+                    ${this._renderDeleteGroup()}
                 </div>
             </div>
         `;
@@ -228,8 +229,25 @@ class PropertyPanelRenderer {
                     </div>
                     <!-- ImageView Specific -->
                     <div class="property-row" data-prop="src" style="display:none;">
-                        <div class="property-label">Image Source</div>
+                        <div class="property-label">Image URL</div>
                         <div class="property-input"><input type="text" id="prop-src" placeholder="Image URL"></div>
+                    </div>
+                    <div class="property-row" data-prop="imageUpload" style="display:none;">
+                        <div class="property-label">Local Image</div>
+                        <div class="property-input">
+                            <button type="button" id="upload-image-btn" class="image-upload-btn">
+                                <i class="material-icons">upload</i> Upload
+                            </button>
+                            <input type="file" id="image-file-input" accept="image/*" style="display:none;">
+                        </div>
+                    </div>
+                    <div class="property-row" data-prop="savedImages" style="display:none;">
+                        <div class="property-label">Saved Images</div>
+                        <div class="property-input">
+                            <button type="button" id="show-saved-images-btn" class="image-library-btn">
+                                <i class="material-icons">photo_library</i> Browse
+                            </button>
+                        </div>
                     </div>
                     <div class="property-row" data-prop="scaleType" style="display:none;">
                         <div class="property-label">Scale Type</div>
@@ -250,23 +268,23 @@ class PropertyPanelRenderer {
                     <!-- Progress Specific -->
                     <div class="property-row" data-prop="progress" style="display:none;">
                         <div class="property-label">Progress</div>
-                        <div class="property-input">
-                            <div class="slider-container">
-                                <input type="range" id="prop-progress-slider" min="0" max="100" value="0">
-                                <input type="number" id="prop-progress" min="0" max="100" value="0">
-                            </div>
-                        </div>
+                        <div class="property-input"><input type="number" id="prop-progress" min="0" max="100"></div>
                     </div>
                     <div class="property-row" data-prop="max" style="display:none;">
-                        <div class="property-label">Max</div>
-                        <div class="property-input"><input type="number" id="prop-max"></div>
+                        <div class="property-label">Max Value</div>
+                        <div class="property-input"><input type="number" id="prop-max" min="1"></div>
                     </div>
-                    <!-- List/Spinner Specific -->
+                    <!-- Spinner (Dropdown) Specific -->
                     <div class="property-row" data-prop="items" style="display:none;">
                         <div class="property-label">Items</div>
-                        <div class="property-input"><input type="text" id="prop-items" placeholder="Comma-separated"></div>
+                        <div class="property-input"><input type="text" id="prop-items" placeholder="Item1,Item2,Item3"></div>
                     </div>
-                    <!-- Layout Specific -->
+                    <!-- WebView Specific -->
+                    <div class="property-row" data-prop="url" style="display:none;">
+                        <div class="property-label">URL</div>
+                        <div class="property-input"><input type="text" id="prop-url" placeholder="https://..."></div>
+                    </div>
+                    <!-- Radio & Orientation Controls -->
                     <div class="property-row" data-prop="orientation" style="display:none;">
                         <div class="property-label">Orientation</div>
                         <div class="property-input">
@@ -275,11 +293,6 @@ class PropertyPanelRenderer {
                                 <option value="vertical">Vertical</option>
                             </select>
                         </div>
-                    </div>
-                    <!-- WebView Specific -->
-                    <div class="property-row" data-prop="url" style="display:none;">
-                        <div class="property-label">URL</div>
-                        <div class="property-input"><input type="text" id="prop-url" placeholder="https://..."></div>
                     </div>
                 </div>
             </div>
@@ -300,6 +313,20 @@ class PropertyPanelRenderer {
                         <div class="property-input"><input type="text" id="prop-type" placeholder="Component Type" readonly></div>
                     </div>
                 </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Renders the delete component button group
+     * @returns {string} The HTML string for the delete button
+     */
+    static _renderDeleteGroup() {
+        return `
+            <div class="property-group delete-group">
+                <button id="delete-component-btn" class="delete-component-btn">
+                    <i class="material-icons">delete</i> Delete Component
+                </button>
             </div>
         `;
     }

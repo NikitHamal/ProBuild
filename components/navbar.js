@@ -8,20 +8,19 @@ class Navbar {
   render() {
     this.element.innerHTML = `
       <div class="container">
-        <div class="flex justify-between items-center">
-          <div class="logo">
-            <h1>ProBuild</h1>
-          </div>
-          <div class="nav-links">
-            <button id="theme-toggle" class="theme-toggle">
-              <i class="material-icons">brightness_6</i>
-            </button>
-          </div>
+        <div class="logo">
+          <h1>ProBuild</h1>
+        </div>
+        <div class="nav-links">
+          <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
+            <i class="material-icons">brightness_4</i>
+          </button>
         </div>
       </div>
     `;
 
     this.setupEventListeners();
+    this.checkInitialTheme();
   }
 
   setupEventListeners() {
@@ -29,7 +28,19 @@ class Navbar {
     themeToggle.addEventListener('click', () => {
       document.body.classList.toggle('dark-theme');
       this.updateThemeIcon();
+      // Save theme preference
+      const isDarkTheme = document.body.classList.contains('dark-theme');
+      localStorage.setItem('darkTheme', isDarkTheme);
     });
+  }
+
+  checkInitialTheme() {
+    // Check for saved theme preference
+    const savedTheme = localStorage.getItem('darkTheme');
+    if (savedTheme === 'true') {
+      document.body.classList.add('dark-theme');
+      this.updateThemeIcon();
+    }
   }
 
   updateThemeIcon() {

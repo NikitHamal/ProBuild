@@ -30,6 +30,7 @@ class EditorView {
     // Core functionality managers (might be further refactored later)
     this.notificationManager = new NotificationManager();
     this.dialogManager = new DialogManager(this); // Likely needs access to view
+    this.dialogUtility = window.DialogUtility; // Reference to DialogUtility for other managers
     this.propertyPanel = new PropertyPanel(this); // Needs access to view/selected component
     this.screenManager = new ScreenManager(this); // Needed for screen dialogs
     this.componentManager = new ComponentManager(this); // Manages design canvas interactions
@@ -103,6 +104,12 @@ class EditorView {
       document.addEventListener('keydown', (e) => {
           this.handleKeyDown(e);
       });
+      
+      // Add keyup handler for cleaning up after key events
+      document.addEventListener('keyup', (e) => {
+          this.handleKeyUp(e);
+      });
+      
       // Add other global listeners if needed
   }
 
@@ -132,8 +139,10 @@ class EditorView {
       // Delegate other keydown events based on the active tab
       switch (this.activeTab) {
           case 'design':
-              // Remove call to non-existent method
-              // this.componentManager?.handleKeyDown(e);
+              // Delegate to ComponentInteractionHandler for component operations
+              if (this.componentManager && this.componentManager.interactionHandler) {
+                  this.componentManager.interactionHandler.handleKeyDown(e);
+              }
               break;
           case 'blocks':
               // this.blocksManager?.handleKeyDown(e); // If needed
@@ -141,6 +150,19 @@ class EditorView {
           case 'code':
               // this.codeManager?.handleKeyDown(e); // If needed (CodeMirror might handle most)
               break;
+      }
+  }
+
+  // Handle keyup events (primarily for cleaning up)
+  handleKeyUp(e) {
+      // Delegate keyup events based on the active tab
+      switch (this.activeTab) {
+          case 'design':
+              if (this.componentManager && this.componentManager.interactionHandler) {
+                  this.componentManager.interactionHandler.handleKeyUp(e);
+              }
+              break;
+          // Add other tab handlers if needed
       }
   }
 

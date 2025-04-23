@@ -52,7 +52,22 @@ class BlockDropdowns {
             'items', 
             'orientation',
             'url',
-            'id', 'visibility', 'enabled' // From component structure directly?
+            'id', 'visibility', 'enabled', // From component structure directly?
+            
+            // Additional properties for new components
+            'icon', 'textOn', 'textOff',
+            'rating', 'numStars', 'stepSize',
+            'source', 'autoPlay',
+            'calendarViewShown',
+            'is24HourView',
+            'layoutManager',
+            'tabs', 'tabMode', 'indicatorColor',
+            'activeColor', 'inactiveColor',
+            'title', 'subtitle', 'showBackButton',
+            'drawerWidth',
+            'chips', 'singleSelection',
+            'closable',
+            'value', 'min', 'thumbColor', 'trackColor'
         ];
         
         // Combine known properties from the component object and common list

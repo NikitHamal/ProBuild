@@ -129,16 +129,16 @@ class HomeView {
           
           <div class="color-selector">
             <div class="color-option colorAccent selected" data-color="colorAccent">
-              <div class="color-tooltip">Accent Color (Buttons, Links)</div>
+              <div class="color-tooltip">Accent Color</div>
             </div>
             <div class="color-option colorPrimary" data-color="colorPrimary">
-              <div class="color-tooltip">Primary Color (App Bar)</div>
+              <div class="color-tooltip">Primary Color</div>
             </div>
             <div class="color-option colorPrimaryDark" data-color="colorPrimaryDark">
-              <div class="color-tooltip">Primary Dark (Status Bar)</div>
+              <div class="color-tooltip">Dark Color</div>
             </div>
             <div class="color-option colorControlHighlight" data-color="colorControlHighlight">
-              <div class="color-tooltip">Control Highlight (Ripple)</div>
+              <div class="color-tooltip">Highlight Color</div>
             </div>
             <div class="color-selector-more" id="custom-color-btn">
               <i class="material-icons">palette</i>
@@ -320,10 +320,11 @@ class HomeView {
       });
     });
 
-    // Handle close
-    const closeDialog = () => dialog.remove();
-    cancelBtn.addEventListener('click', closeDialog);
-    backBtn.addEventListener('click', closeDialog);
+    // Define closeDialog function that can be reused
+    const closeDialog = () => {
+      document.body.style.overflow = ''; // Restore scrolling
+      dialog.remove();
+    };
 
     // Handle create
     createBtn.addEventListener('click', () => {
@@ -363,26 +364,45 @@ class HomeView {
     });
 
     nameInput.focus();
+    
+    // Return the closeDialog function to allow for external control
+    return { closeDialog };
   }
 
   showCreateAppDialog() {
     const dialogOverlay = document.createElement('div');
     dialogOverlay.className = 'dialog-overlay';
     dialogOverlay.innerHTML = this._buildCreateDialogHTML();
-
-    document.body.appendChild(dialogOverlay); // Append overlay to body for fullscreen effect
-
-    this._setupDialogInteractions(dialogOverlay);
+    
+    // Add to the body
+    document.body.appendChild(dialogOverlay);
+    
+    // Apply additional mobile-specific adjustments
+    if (window.innerWidth < 768) {
+      document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    }
+    
+    // Setup dialog interactions
+    const { closeDialog } = this._setupDialogInteractions(dialogOverlay);
+    
+    // Get dialog elements
+    const dialog = dialogOverlay.querySelector('.dialog');
+    const backBtn = dialog.querySelector('.back-btn');
+    const cancelBtn = dialog.querySelector('.cancel');
+    
+    // Add event listeners to buttons
+    backBtn.addEventListener('click', closeDialog);
+    cancelBtn.addEventListener('click', closeDialog);
   }
 
   showIconPicker(callback) {
     const materialIcons = [
-      'android', 'adb', 'brush', 'bug_report', 'build', 'camera',
-      'desktop_windows', 'devices', 'flash_on', 'games', 'group',
-      'home', 'language', 'phone_android', 'photo_camera', 'public',
-      'school', 'security', 'settings', 'shopping_cart', 'smartphone',
-      'speed', 'store', 'tag_faces', 'theaters', 'toys',
-      'videogame_asset', 'watch', 'wb_sunny', 'work'
+      'android', 'adb', 'smartphone', 'phone_android', 'devices',
+      'tablet_android', 'watch', 'tv', 'computer', 'desktop_windows',
+      'games', 'videogame_asset', 'sports_esports', 'camera', 'photo_camera',
+      'movie', 'music_note', 'headphones', 'brush', 'format_paint',
+      'favorite', 'star', 'school', 'public', 'explore',
+      'shopping_cart', 'store', 'restaurant', 'local_cafe', 'local_pizza'
     ];
     
     const picker = document.createElement('div');

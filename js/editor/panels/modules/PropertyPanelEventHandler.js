@@ -1,4 +1,6 @@
 import { UpdatePropertyCommand } from '../../commands/ComponentCommands.js';
+import { DeleteComponentCommand } from '../../commands/ComponentCommands.js';
+import IndexedDBManager from '../../../utils/IndexedDBManager.js';
 // PropertyValueUtils might be needed if value conversion is complex during event handling
 // import PropertyValueUtils from './PropertyValueUtils.js'; 
 
@@ -11,18 +13,18 @@ class PropertyPanelEventHandler {
     }
 
     /**
-     * Sets up all necessary event listeners for the property panel.
+     * Setup all event handlers for the property panel.
      */
     setupAllEventHandlers() {
-        if (!this.panel) return;
-        
         this._setupGroupToggleListeners();
         this._setupSliderSyncListeners();
         this._setupColorPreviewSyncListeners();
-        this._setupNoneColorButtons();
         this._setupWidthHeightListeners();
         this._setupPropertyInputListeners();
         this._setupIdChangeListener();
+        this._setupNoneColorButtons();
+        this._setupComponentDeletionListener();
+        this._setupImageUploadListeners();
     }
 
     /**
@@ -346,6 +348,167 @@ class PropertyPanelEventHandler {
                     previewEl.style.backgroundPosition = '0 0, 4px 4px';
                 }
             });
+        }
+    }
+
+    /**
+     * Sets up the event listener for the component delete button
+     */
+    _setupComponentDeletionListener() {
+        const deleteBtn = this.panel.querySelector('#delete-component-btn');
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', () => {
+                if (!this.editorView.selectedComponent) return;
+                
+                if (confirm('Are you sure you want to delete this component?')) {
+                    const componentId = this.editorView.selectedComponent.id;
+                    const deleteCommand = new DeleteComponentCommand(this.editorView, componentId);
+                    this.editorView.undoRedoManager.executeCommand(deleteCommand);
+                }
+            });
+        }
+    }
+
+    /**
+     * Sets up the image upload functionality for ImageView components
+     */
+    _setupImageUploadListeners() {
+        // Setup image upload button
+        const uploadBtn = this.panel.querySelector('#upload-image-btn');
+        const fileInput = this.panel.querySelector('#image-file-input');
+        
+        if (uploadBtn && fileInput) {
+            uploadBtn.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    this._handleImageUpload(e.target.files[0]);
+                }
+            });
+        }
+
+        // Setup image library button
+        const libraryBtn = this.panel.querySelector('#show-saved-images-btn');
+        if (libraryBtn) {
+            libraryBtn.addEventListener('click', () => {
+                this._showImageGallery();
+            });
+        }
+    }
+
+    /**
+     * Handles uploading and storing an image in IndexedDB
+     * @param {File} file - The image file to be uploaded
+     */
+    async _handleImageUpload(file) {
+        if (!this.editorView.selectedComponent || !this.editorView.currentApp) return;
+        
+        try {
+            const appId = this.editorView.currentApp.id;
+            const result = await IndexedDBManager.storeImage(file, appId);
+            
+            // Format URL using internal scheme: indexeddb://imageId
+            const internalUrl = `indexeddb://${result.id}`;
+            
+            // Set the src property for the component
+            this._createAndExecuteCommand('properties.src', internalUrl);
+            
+            // Update the src input field
+            const srcInput = this.panel.querySelector('#prop-src');
+            if (srcInput) srcInput.value = internalUrl;
+            
+        } catch (error) {
+            console.error('Failed to upload image:', error);
+            alert('Failed to upload image. Please try again.');
+        }
+    }
+
+    /**
+     * Shows a gallery of previously uploaded images for the current app
+     */
+    async _showImageGallery() {
+        if (!this.editorView.currentApp) return;
+        
+        const appId = this.editorView.currentApp.id;
+        
+        try {
+            const images = await IndexedDBManager.getAppImages(appId);
+            
+            // Create modal for image gallery
+            const modal = document.createElement('div');
+            modal.className = 'image-gallery-modal';
+            
+            let modalContent = `
+                <div class="image-gallery-content">
+                    <div class="image-gallery-header">
+                        <div class="image-gallery-title">Image Library</div>
+                        <button class="image-gallery-close">&times;</button>
+                    </div>
+            `;
+            
+            if (images.length === 0) {
+                modalContent += `
+                    <div class="image-gallery-empty">
+                        <p>No images have been uploaded yet.</p>
+                    </div>
+                `;
+            } else {
+                modalContent += `<div class="image-gallery-grid">`;
+                
+                images.forEach(image => {
+                    modalContent += `
+                        <div class="image-gallery-item" data-image-id="${image.id}">
+                            <img src="${image.data}" alt="${image.name}">
+                        </div>
+                    `;
+                });
+                
+                modalContent += `</div>`;
+            }
+            
+            modalContent += `</div>`;
+            modal.innerHTML = modalContent;
+            
+            document.body.appendChild(modal);
+            
+            // Setup event listeners for the gallery
+            const closeBtn = modal.querySelector('.image-gallery-close');
+            closeBtn.addEventListener('click', () => {
+                modal.remove();
+            });
+            
+            // Click outside to close
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+            
+            // Image selection
+            const imageItems = modal.querySelectorAll('.image-gallery-item');
+            imageItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    const imageId = item.dataset.imageId;
+                    // Format URL using internal scheme: indexeddb://imageId
+                    const internalUrl = `indexeddb://${imageId}`;
+                    
+                    // Set the src property
+                    this._createAndExecuteCommand('properties.src', internalUrl);
+                    
+                    // Update the src input field
+                    const srcInput = this.panel.querySelector('#prop-src');
+                    if (srcInput) srcInput.value = internalUrl;
+                    
+                    // Close modal
+                    modal.remove();
+                });
+            });
+            
+        } catch (error) {
+            console.error('Failed to load image gallery:', error);
+            alert('Failed to load images. Please try again.');
         }
     }
 }

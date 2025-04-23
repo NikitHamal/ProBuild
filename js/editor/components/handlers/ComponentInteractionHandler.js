@@ -37,9 +37,8 @@ class ComponentInteractionHandler {
                 }
             });
 
-            // Listen for keyboard events globally when the editor has focus
-            document.addEventListener('keydown', this.handleKeyDown.bind(this));
-            document.addEventListener('keyup', this.handleKeyUp.bind(this)); // Add keyup listener
+            // Note: We're not adding keydown listeners here anymore since EditorView is handling that
+            // and will delegate to our handleKeyDown method when appropriate
         }
 
         // Note: Mousedown/click listeners on individual components are added 
@@ -182,137 +181,135 @@ class ComponentInteractionHandler {
      * @param {KeyboardEvent} e - The keyboard event.
      */
     handleKeyDown(e) {
-        // console.log(`[KeyDown] Key: ${e.key}, Target:`, e.target);
+        console.log(`ComponentInteractionHandler.handleKeyDown: ${e.key}`);
+        
         if (!this.editorView.selectedComponent) {
-            // console.log('[KeyDown] No component selected.');
+            console.log('No component selected for keyboard operation');
             return;
         }
 
         const targetTagName = e.target.tagName.toUpperCase();
         const isInputFocused = targetTagName === 'INPUT' || targetTagName === 'SELECT' || targetTagName === 'TEXTAREA';
-        // console.log(`[KeyDown] Is input focused: ${isInputFocused}`);
-
-        let needsVisualUpdate = false;
-        let finalX = null;
-        let finalY = null;
-        const component = this.editorView.selectedComponent;
-        const originalPosition = { x: component.properties.x || 0, y: component.properties.y || 0 };
-        // console.log(`[KeyDown] Original Position:`, originalPosition);
-
-        switch (e.key) {
-            case 'ArrowUp':
-            case 'ArrowDown':
-            case 'ArrowLeft':
-            case 'ArrowRight':
-                console.log(`[KeyDown] Arrow key pressed: ${e.key}`);
-                if (isInputFocused) {
-                    console.log('[KeyDown] Input focused, ignoring arrow key for movement.');
-                    return;
-                }
-                e.preventDefault(); // Attempt to prevent scrolling
-                console.log('[KeyDown] preventDefault called.');
-                needsVisualUpdate = true;
-
-                const step = e.shiftKey ? 10 : 1;
-                let potentialX = originalPosition.x;
-                let potentialY = originalPosition.y;
-
-                if (e.key === 'ArrowUp') potentialY -= step;
-                if (e.key === 'ArrowDown') potentialY += step;
-                if (e.key === 'ArrowLeft') potentialX -= step;
-                if (e.key === 'ArrowRight') potentialX += step;
-                console.log(`[KeyDown] Potential Position: x=${potentialX}, y=${potentialY}`);
-
-                // --- Alignment and Direct Update --- 
-                const componentElement = document.querySelector(`.preview-component[data-component-id="${component.id}"]`);
-                const previewContainer = document.getElementById('preview-container');
-                if (!componentElement || !previewContainer) {
-                    console.error('[KeyDown] Component element or preview container not found!');
-                    return;
-                }
-
-                const componentWidth = componentElement.offsetWidth;
-                const componentHeight = componentElement.offsetHeight;
-                console.log(`[KeyDown] Component Dimensions: w=${componentWidth}, h=${componentHeight}`);
-
-                // Calculate snap position
-                console.log('[KeyDown] Calculating snap position...');
-                const snapResult = this.componentManager.alignmentOverlayHandler.calculateSnapPosition(
-                    potentialX, potentialY, componentWidth, componentHeight, component.id
-                );
-                let snappedX = snapResult.x;
-                let snappedY = snapResult.y;
-                const activeSnapLines = snapResult.lines;
-                console.log(`[KeyDown] Snap Result: x=${snappedX}, y=${snappedY}, lines:`, activeSnapLines);
-
-                // Boundary checks
-                const originalSnappedX = snappedX;
-                const originalSnappedY = snappedY;
-                snappedX = Math.max(0, snappedX);
-                snappedY = Math.max(0, snappedY);
-                if (snappedX + componentWidth > previewContainer.clientWidth) {
-                    snappedX = previewContainer.clientWidth - componentWidth;
-                }
-                if (snappedY + componentHeight > previewContainer.clientHeight) {
-                    snappedY = previewContainer.clientHeight - componentHeight;
-                }
-                if (snappedX !== originalSnappedX || snappedY !== originalSnappedY) {
-                    console.log(`[KeyDown] Boundary applied. Final Snapped: x=${snappedX}, y=${snappedY}`);
-                }
-
-                // Apply visual update directly
-                console.log(`[KeyDown] Applying style: left=${snappedX}px, top=${snappedY}px`);
-                componentElement.style.left = `${snappedX}px`;
-                componentElement.style.top = `${snappedY}px`;
-
-                // Store final position for command and property update
-                finalX = snappedX;
-                finalY = snappedY;
-
-                // Draw alignment guides
-                console.log('[KeyDown] Drawing alignment guides...');
-                this.componentManager.alignmentOverlayHandler.drawAlignmentGuides(activeSnapLines);
-
-                break; // End arrow key handling
-
-            case 'Delete':
-            case 'Backspace':
-                // console.log(`[KeyDown] Delete/Backspace key pressed.`);
-                if (isInputFocused) return;
-                e.preventDefault();
-                const componentIdToDelete = component.id;
-                // console.log(`[KeyDown] Deleting component: ${componentIdToDelete}`);
-                const deleteCommand = new DeleteComponentCommand(this.editorView, componentIdToDelete);
-                this.editorView.undoRedoManager.executeCommand(deleteCommand);
-                this.componentManager.alignmentOverlayHandler.clearAlignmentGuides(); // Clear guides on delete
-                return; // Exit early
-        }
-
-        if (needsVisualUpdate && finalX !== null && finalY !== null) {
-            console.log(`[KeyDown] Needs visual update block. finalX=${finalX}, finalY=${finalY}`);
-            // Update component properties with the final snapped position
-            component.properties.x = finalX;
-            component.properties.y = finalY;
-
-            // Create Move Command only if position actually changed from the start
-            if (originalPosition.x !== finalX || originalPosition.y !== finalY) {
-                 console.log('[KeyDown] Position changed, creating MoveComponentCommand.');
-                 // Create command using the original position *before* this key press sequence started
-                 // NOTE: This still creates a command per key press. Debouncing on keyup would be better for undo stack.
-                const moveCommand = new MoveComponentCommand(this.editorView, component.id, { x: finalX, y: finalY }, null, originalPosition);
-                this.editorView.undoRedoManager.executeCommand(moveCommand);
-            } else {
-                 console.log('[KeyDown] Position did not change, skipping command.');
+        
+        // Handle Delete/Backspace keys regardless of other checks
+        if (e.key === 'Delete' || e.key === 'Backspace') {
+            if (isInputFocused) return;
+            
+            e.preventDefault();
+            console.log('Deleting component via keyboard');
+            
+            const componentIdToDelete = this.editorView.selectedComponent.id;
+            const deleteCommand = new DeleteComponentCommand(this.editorView, componentIdToDelete);
+            this.editorView.undoRedoManager.executeCommand(deleteCommand);
+            
+            // Clear any guides
+            if (this.componentManager && this.componentManager.alignmentOverlayHandler) {
+                this.componentManager.alignmentOverlayHandler.clearAlignmentGuides();
             }
             
-            // Update property panel
-            console.log('[KeyDown] Updating property panel values...');
-            this.editorView.propertyPanel.updatePropertyValues();
-            // Update dimension overlay
-            console.log('[KeyDown] Updating dimension overlay...');
-            this.componentManager.alignmentOverlayHandler.updateDimensionOverlay(component, document.querySelector(`.preview-component[data-component-id="${component.id}"]`));
-        } else if (needsVisualUpdate) {
-            console.warn('[KeyDown] needsVisualUpdate was true, but finalX/Y were null.');
+            return; // Exit early
+        }
+
+        // Handle movement keys
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+            if (isInputFocused) return;
+            
+            e.preventDefault();
+            console.log(`Moving component with ${e.key}`);
+
+            const previewContainer = document.getElementById('preview-container');
+            if (!previewContainer) return;
+
+            const component = this.editorView.selectedComponent;
+            const componentElement = document.querySelector(`.preview-component[data-component-id="${component.id}"]`);
+            if (!componentElement) return;
+
+            const originalPosition = { 
+                x: parseInt(component.properties.x || 0), 
+                y: parseInt(component.properties.y || 0) 
+            };
+            
+            let moveDistance = e.shiftKey ? 10 : 1; // Move 10px with shift key, 1px normally
+            let deltaX = 0;
+            let deltaY = 0;
+
+            // Calculate the delta based on key
+            switch (e.key) {
+                case 'ArrowUp': deltaY = -moveDistance; break;
+                case 'ArrowDown': deltaY = moveDistance; break;
+                case 'ArrowLeft': deltaX = -moveDistance; break;
+                case 'ArrowRight': deltaX = moveDistance; break;
+            }
+
+            // Calculate new position
+            const newX = originalPosition.x + deltaX;
+            const newY = originalPosition.y + deltaY;
+            
+            console.log(`Moving from (${originalPosition.x},${originalPosition.y}) to (${newX},${newY})`);
+
+            // Get component dimensions
+            const componentWidth = componentElement.offsetWidth;
+            const componentHeight = componentElement.offsetHeight;
+
+            // Apply exact movement for arrow keys (no snapping)
+            let finalX = newX;
+            let finalY = newY;
+            
+            // Only apply boundary checks, no snapping
+            // Ensure within boundaries
+            finalX = Math.max(0, finalX);
+            finalY = Math.max(0, finalY);
+            
+            if (finalX + componentWidth > previewContainer.clientWidth) {
+                finalX = previewContainer.clientWidth - componentWidth;
+            }
+            if (finalY + componentHeight > previewContainer.clientHeight) {
+                finalY = previewContainer.clientHeight - componentHeight;
+            }
+
+            // Apply visual update
+            componentElement.style.left = `${finalX}px`;
+            componentElement.style.top = `${finalY}px`;
+
+            // Update component properties
+            component.properties.x = finalX;
+            component.properties.y = finalY;
+            
+            // Only show guides if Alt key is pressed (for alignment checking)
+            if (e.altKey && this.componentManager && this.componentManager.alignmentOverlayHandler) {
+                const snapResult = this.componentManager.alignmentOverlayHandler.calculateSnapPosition(
+                    finalX, finalY, componentWidth, componentHeight, component.id
+                );
+                
+                // Just draw guides but don't snap (for reference)
+                this.componentManager.alignmentOverlayHandler.drawAlignmentGuides(snapResult.lines);
+            } else if (this.componentManager && this.componentManager.alignmentOverlayHandler) {
+                // Clear any existing guides
+                this.componentManager.alignmentOverlayHandler.clearAlignmentGuides();
+            }
+
+            // Create a move command for undo/redo functionality
+            if (originalPosition.x !== finalX || originalPosition.y !== finalY) {
+                const moveCommand = new MoveComponentCommand(
+                    this.editorView, 
+                    component.id, 
+                    { 
+                        x: finalX, 
+                        y: finalY 
+                    }, 
+                    null, 
+                    originalPosition
+                );
+                this.editorView.undoRedoManager.executeCommand(moveCommand);
+            }
+
+            // Update property panel if visible
+            if (this.editorView.propertyPanelVisible && this.editorView.propertyPanel) {
+                const xInput = document.getElementById('prop-x');
+                const yInput = document.getElementById('prop-y');
+                if (xInput) xInput.value = finalX;
+                if (yInput) yInput.value = finalY;
+            }
         }
     }
     

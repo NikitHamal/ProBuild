@@ -1,3 +1,5 @@
+import IndexedDBManager from '../../utils/IndexedDBManager.js';
+
 class PreviewManager {
   constructor(editorView) {
     this.editorView = editorView;
@@ -339,7 +341,26 @@ ${code}
           }
           break;
       case 'imageview':
-          attributes += ` src="${props.src || 'img/placeholder.png'}" alt="${props.contentDescription || 'Image'}"`; // Use placeholder
+          let imgSrc = props.src || 'img/placeholder.png';
+          
+          // Check if this is an IndexedDB image URL
+          if (imgSrc && imgSrc.startsWith('indexeddb://')) {
+              const imageId = parseInt(imgSrc.replace('indexeddb://', ''));
+              attributes += ` data-indexeddb-image="${imageId}" src="img/placeholder.png" alt="${props.contentDescription || 'Image'}"`;
+              
+              // Set up async loading of the image from IndexedDB
+              this._loadIndexedDBImage(imageId).then(dataUrl => {
+                  const imgElements = document.querySelectorAll(`img[data-indexeddb-image="${imageId}"]`);
+                  imgElements.forEach(img => {
+                      img.src = dataUrl;
+                  });
+              }).catch(err => {
+                  console.error('Error loading image from IndexedDB:', err);
+              });
+          } else {
+              attributes += ` src="${imgSrc}" alt="${props.contentDescription || 'Image'}"`;
+          }
+          
           // Map scaleType to object-fit
           const scaleTypeMap = { 'fitXY': 'fill', 'fitStart': 'contain', 'fitCenter': 'contain', 'fitEnd': 'contain', 'center': 'none', 'centerCrop': 'cover', 'centerInside': 'contain' };
           style += `object-fit: ${scaleTypeMap[props.scaleType || 'fitCenter'] || 'contain'}; `; 
@@ -446,6 +467,22 @@ ${code}
         <div class="list-item">List Item 3</div>
       </div>
     `;
+  }
+
+  // Add this new helper method to load images from IndexedDB
+  /**
+   * Loads an image from IndexedDB
+   * @param {number} imageId - The ID of the image to load
+   * @returns {Promise<string>} - Promise that resolves to the data URL
+   */
+  async _loadIndexedDBImage(imageId) {
+    try {
+        const image = await IndexedDBManager.getImage(imageId);
+        return image.data;
+    } catch (error) {
+        console.error(`Failed to load image ${imageId} from IndexedDB:`, error);
+        return 'img/placeholder.png'; // Return placeholder on error
+    }
   }
 }
 

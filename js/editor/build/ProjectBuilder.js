@@ -143,7 +143,38 @@ class ProjectBuilder {
 
     // Add other moved generation methods here...
     getAppBuildGradle(appData) {
-      // Note: Dependencies are hardcoded here. Consider making them dynamic or configurable.
+      // Check if app has custom libraries defined
+      let dependenciesBlock = '';
+      
+      if (appData.libraries && Array.isArray(appData.libraries) && appData.libraries.length > 0) {
+        // Generate dependencies from the app's library configuration
+        dependenciesBlock = 'dependencies {\n';
+        
+        // Add selected libraries
+        appData.libraries.forEach(library => {
+            dependenciesBlock += `    implementation '${library.implementation}'\n`;
+            if (library.annotationProcessor) {
+                dependenciesBlock += `    annotationProcessor '${library.annotationProcessor}'\n`;
+            }
+        });
+        
+        // Add standard test dependencies
+        dependenciesBlock += "    testImplementation 'junit:junit:4.13.2'\n";
+        dependenciesBlock += "    androidTestImplementation 'androidx.test.ext:junit:1.1.5'\n";
+        dependenciesBlock += "    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'\n";
+        dependenciesBlock += '}';
+      } else {
+        // Use default dependencies
+        dependenciesBlock = `dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.10.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+}`;
+      }
+
       return `plugins {
     id 'com.android.application'
 }
@@ -175,14 +206,7 @@ android {
     }
 }
 
-dependencies {
-    implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'com.google.android.material:material:1.10.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
-}`;
+${dependenciesBlock}`;
     }
 
     generateAndroidManifest(appData) {
@@ -301,25 +325,62 @@ dependencies {
     }
 
     _generateImports(components) {
-        const imports = new Set([
-            'android.os.Bundle',
-            'androidx.appcompat.app.AppCompatActivity',
-            'android.view.View', // Needed for listeners
-            'android.util.Log',   // Often used in generated/default logic
-            'android.widget.Toast', // Often used for simple feedback
-            'android.content.Intent' // Often used for navigation
-        ]);
-
-        components.forEach(comp => {
-            const fullType = this._getComponentTypeMapping(comp.type);
-            if (fullType) {
-                imports.add(fullType);
-            }
-            // Add any other imports needed based on component *type* if necessary
-            // Example: if (comp.type === 'WebView') imports.add('android.webkit.WebView');
-        });
-
-        return Array.from(imports).map(imp => `import ${imp};`).join('\n');
+        const imports = new Set();
+        
+        // Add standard imports
+        imports.add("import android.os.Bundle;");
+        imports.add("import androidx.appcompat.app.AppCompatActivity;");
+        imports.add("import android.widget.*; // Basic widget imports");
+        imports.add("import android.view.View;");
+        imports.add("import android.util.Log;");
+        
+        // Add material design imports if material library is selected
+        if (this.appData.libraries && this.appData.libraries.some(lib => lib.id === 'material')) {
+            imports.add("import com.google.android.material.floatingactionbutton.FloatingActionButton;");
+            imports.add("import com.google.android.material.bottomnavigation.BottomNavigationView;");
+            imports.add("import com.google.android.material.tabs.TabLayout;");
+            imports.add("import com.google.android.material.textfield.TextInputLayout;");
+            imports.add("import com.google.android.material.textfield.TextInputEditText;");
+            imports.add("import com.google.android.material.button.MaterialButton;");
+            imports.add("import com.google.android.material.card.MaterialCardView;");
+        }
+        
+        // Add RecyclerView imports if recyclerView library is selected
+        if (this.appData.libraries && this.appData.libraries.some(lib => lib.id === 'recyclerview')) {
+            imports.add("import androidx.recyclerview.widget.RecyclerView;");
+            imports.add("import androidx.recyclerview.widget.LinearLayoutManager;");
+        }
+        
+        // Add CardView imports if cardview library is selected
+        if (this.appData.libraries && this.appData.libraries.some(lib => lib.id === 'cardview')) {
+            imports.add("import androidx.cardview.widget.CardView;");
+        }
+        
+        // Get additional imports based on component types
+        if (components && components.length > 0) {
+            components.forEach(comp => {
+                // Map component types to their required imports
+                switch (comp.type) {
+                    case 'ConstraintLayout':
+                    case 'constraintlayout':
+                        imports.add("import androidx.constraintlayout.widget.ConstraintLayout;");
+                        break;
+                    case 'ImageView':
+                        // Check if Glide is selected
+                        if (this.appData.libraries && this.appData.libraries.some(lib => lib.id === 'glide')) {
+                            imports.add("import com.bumptech.glide.Glide;");
+                        }
+                        // Check if Picasso is selected
+                        else if (this.appData.libraries && this.appData.libraries.some(lib => lib.id === 'picasso')) {
+                            imports.add("import com.squareup.picasso.Picasso;");
+                        }
+                        break;
+                    // Add other component-specific imports as needed
+                }
+            });
+        }
+        
+        return Array.from(imports).sort().join("\n");
     }
 
     _generateDeclarations(components) {

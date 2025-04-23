@@ -105,10 +105,6 @@ class AppCard {
             <i class="material-icons">phone_android</i>
             <h2 class="empty-state-title">No apps yet</h2>
             <p class="empty-state-text">Create your first app to get started</p>
-            <button class="new-app-btn">
-              <i class="material-icons">add</i>
-              Create New App
-            </button>
           `;
           
           appGrid.innerHTML = '';

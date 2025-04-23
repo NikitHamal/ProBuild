@@ -1,3 +1,5 @@
+import IndexedDBManager from '../../../utils/IndexedDBManager.js';
+
 class ComponentRenderer {
     constructor(editorView, componentManager) {
         this.editorView = editorView;
@@ -207,15 +209,38 @@ class ComponentRenderer {
                 break;
             case 'imageview':
                 element.style.justifyContent = 'center';
-                 if (props.src) {
-                    const img = document.createElement('img');
-                    img.src = props.src;
-                    img.style.width = '100%';
-                    img.style.height = '100%';
-                    img.style.objectFit = props.scaleType || 'contain';
-                    element.appendChild(img);
+                if (props.src) {
+                    // Check if this is an IndexedDB image URL
+                    if (props.src.startsWith('indexeddb://')) {
+                        const imageId = parseInt(props.src.replace('indexeddb://', ''));
+                        
+                        // Create a loading placeholder
+                        element.innerHTML = '<i class="material-icons" style="font-size: 48px; color: #888;">hourglass_empty</i>';
+                        
+                        // Load the image from IndexedDB
+                        this._loadIndexedDBImage(imageId).then(dataUrl => {
+                            element.innerHTML = ''; // Clear placeholder
+                            const img = document.createElement('img');
+                            img.src = dataUrl;
+                            img.style.width = '100%';
+                            img.style.height = '100%';
+                            img.style.objectFit = props.scaleType || 'contain';
+                            element.appendChild(img);
+                        }).catch(err => {
+                            console.error('Error loading image:', err);
+                            element.innerHTML = '<i class="material-icons" style="font-size: 48px; color: #888;">broken_image</i>';
+                        });
+                    } else {
+                        // Use direct URL
+                        const img = document.createElement('img');
+                        img.src = props.src;
+                        img.style.width = '100%';
+                        img.style.height = '100%';
+                        img.style.objectFit = props.scaleType || 'contain';
+                        element.appendChild(img);
+                    }
                 } else {
-                     element.innerHTML = '<i class="material-icons" style="font-size: 48px; color: #888;">image</i>';
+                    element.innerHTML = '<i class="material-icons" style="font-size: 48px; color: #888;">image</i>';
                 }
                 element.style.backgroundColor = props.bgColor || '#CCCCCC'; // Default background
                 break;
@@ -363,6 +388,21 @@ class ComponentRenderer {
             // Re-render the inner content based on potentially changed properties
             this.renderComponentContent(componentElement, { ...component, properties: { ...component.properties, ...properties } });
 
+        }
+    }
+
+    /**
+     * Loads an image from IndexedDB
+     * @param {number} imageId - The ID of the image to load
+     * @returns {Promise<string>} - Promise that resolves to the data URL
+     */
+    async _loadIndexedDBImage(imageId) {
+        try {
+            const image = await IndexedDBManager.getImage(imageId);
+            return image.data;
+        } catch (error) {
+            console.error(`Failed to load image ${imageId} from IndexedDB:`, error);
+            throw error;
         }
     }
 }

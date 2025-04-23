@@ -21,25 +21,28 @@ class EditorSidebarManager {
     setupEventListeners() {
         const sidebarTabsContainer = document.querySelector('.editor-sidebar .sidebar-tabs');
         if (sidebarTabsContainer) {
-             // Event delegation for sidebar tabs (Project/Properties)
             sidebarTabsContainer.addEventListener('click', (e) => {
-                const tabElement = e.target.closest('.sidebar-tab');
-                if (tabElement && tabElement.dataset.sidebarTab) {
-                    this.switchSidebarTab(tabElement.dataset.sidebarTab);
+                const sidebarTabBtn = e.target.closest('.sidebar-tab');
+                if (sidebarTabBtn) {
+                    const newTabId = sidebarTabBtn.dataset.sidebarTab;
+                    this.switchSidebarTab(newTabId);
                 }
             });
-        } else {
-             console.error("Sidebar tabs container not found.");
         }
-
-        // Event delegation for the project panel content (screens list, buttons)
+        
+        // Initialize panels
+        this.projectPanel = document.getElementById('project-panel');
+        this.propertiesPanel = document.getElementById('properties-panel');
+        
         if (this.projectPanel) {
+            // Delegate click events for project panel
             this.projectPanel.addEventListener('click', (e) => {
                 const screenItem = e.target.closest('.screen-item');
                 const addScreenBtn = e.target.closest('.add-screen');
                 const editAppBtn = e.target.closest('.edit-app-details');
                 const editScreenBtn = e.target.closest('.edit-screen-btn');
                 const deleteScreenBtn = e.target.closest('.delete-screen-btn');
+                const manageLibrariesBtn = e.target.closest('.manage-libraries');
 
                 if (screenItem && !editScreenBtn && !deleteScreenBtn) { // Click on screen item itself
                     const screenId = screenItem.dataset.screenId;
@@ -47,20 +50,28 @@ class EditorSidebarManager {
                         this.editorView.onScreenChanged(screenId);
                     }
                 } else if (addScreenBtn) {
-                    this.editorView.screenManager?.showAddScreenDialog();
+                    this.editorView.screenManager?.implementation?.showAddScreenDialog();
                 } else if (editAppBtn) {
-                    this.editorView.screenManager?.showEditAppDialog(this.editorView.currentApp);
+                    this.editorView.dialogManager?.showEditAppDetailsDialog();
+                } else if (manageLibrariesBtn) {
+                    // Show the library manager dialog
+                    if (!this.editorView.libraryManager) {
+                        // Lazy initialize the library manager if it doesn't exist
+                        const LibraryManager = window.LibraryManager;
+                        this.editorView.libraryManager = new LibraryManager(this.editorView);
+                    }
+                    this.editorView.libraryManager.showLibraryManagerDialog();
                 } else if (editScreenBtn) {
                     const screenId = editScreenBtn.dataset.screenId;
                     const screen = this.editorView.currentApp?.screens.find(s => s.id === screenId);
                     if (screen) {
-                        this.editorView.screenManager?.showEditScreenDialog(screen);
+                        this.editorView.dialogManager?.showEditScreenDialog(screenId);
                     }
                 } else if (deleteScreenBtn) {
                     const screenId = deleteScreenBtn.dataset.screenId;
                     const screen = this.editorView.currentApp?.screens.find(s => s.id === screenId);
                     if (screen) {
-                        this.editorView.screenManager?.showDeleteScreenDialog(screen);
+                        this.editorView.dialogManager?.showDeleteScreenDialog(screenId);
                     }
                 }
             });
@@ -127,6 +138,7 @@ class EditorSidebarManager {
               <div class="sidebar-title">PROJECT</div>
               <div class="sidebar-item active app-name-item"><i class="material-icons">phone_android</i><span>${app.name}</span></div>
               <div class="sidebar-item edit-app-details"><i class="material-icons">settings</i><span>App Settings</span></div>
+              <div class="sidebar-item manage-libraries"><i class="material-icons">extension</i><span>Libraries & Dependencies</span></div>
             </div>
             <div class="sidebar-section">
               <div class="sidebar-title">SCREENS</div>

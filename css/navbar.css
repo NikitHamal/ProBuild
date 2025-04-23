@@ -3,6 +3,16 @@
   color: white;
   padding: var(--spacing-md) 0;
   box-shadow: var(--shadow-md);
+  width: 100%;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.navbar .container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .navbar .logo h1 {
@@ -22,6 +32,7 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .theme-toggle:hover {
@@ -44,4 +55,26 @@ body.dark-theme {
 
 body.dark-theme .navbar {
   background-color: #000;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .navbar {
+    padding: var(--spacing-sm) 0;
+  }
+  
+  .navbar .logo h1 {
+    font-size: 1.1rem;
+  }
+  
+  .nav-links {
+    gap: var(--spacing-sm);
+  }
+}
+
+@media (max-width: 480px) {
+  .theme-toggle {
+    width: 32px;
+    height: 32px;
+  }
 } 

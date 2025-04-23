@@ -82,6 +82,25 @@ class EditorLayoutManager {
               <div class="component-item" data-type="spinner" draggable="true"><i class="material-icons">arrow_drop_down_circle</i><div class="component-name">Spinner</div></div>
               <div class="component-item" data-type="listview" draggable="true"><i class="material-icons">list</i><div class="component-name">ListView</div></div>
               <div class="component-item" data-type="webview" draggable="true"><i class="material-icons">web</i><div class="component-name">WebView</div></div>
+              
+              <div class="sidebar-title" style="padding: 8px 12px; margin-top: 10px;">Advanced Widgets</div>
+              <div class="component-item" data-type="floatingactionbutton" draggable="true"><i class="material-icons">add_circle</i><div class="component-name">FloatingActionButton</div></div>
+              <div class="component-item" data-type="togglebutton" draggable="true"><i class="material-icons">toggle_off</i><div class="component-name">ToggleButton</div></div>
+              <div class="component-item" data-type="ratingbar" draggable="true"><i class="material-icons">star_rate</i><div class="component-name">RatingBar</div></div>
+              <div class="component-item" data-type="videoview" draggable="true"><i class="material-icons">videocam</i><div class="component-name">VideoView</div></div>
+              <div class="component-item" data-type="datepicker" draggable="true"><i class="material-icons">date_range</i><div class="component-name">DatePicker</div></div>
+              <div class="component-item" data-type="timepicker" draggable="true"><i class="material-icons">access_time</i><div class="component-name">TimePicker</div></div>
+              <div class="component-item" data-type="chip" draggable="true"><i class="material-icons">label</i><div class="component-name">Chip</div></div>
+              <div class="component-item" data-type="chipgroup" draggable="true"><i class="material-icons">label_important</i><div class="component-name">ChipGroup</div></div>
+              <div class="component-item" data-type="slider" draggable="true"><i class="material-icons">tune</i><div class="component-name">Slider</div></div>
+              
+              <div class="sidebar-title" style="padding: 8px 12px; margin-top: 10px;">Material Design</div>
+              <div class="component-item" data-type="constraintlayout" draggable="true"><i class="material-icons">dashboard</i><div class="component-name">ConstraintLayout</div></div>
+              <div class="component-item" data-type="recyclerview" draggable="true"><i class="material-icons">view_list</i><div class="component-name">RecyclerView</div></div>
+              <div class="component-item" data-type="tablayout" draggable="true"><i class="material-icons">tab</i><div class="component-name">TabLayout</div></div>
+              <div class="component-item" data-type="bottomnavigation" draggable="true"><i class="material-icons">menu</i><div class="component-name">BottomNavigation</div></div>
+              <div class="component-item" data-type="toolbar" draggable="true"><i class="material-icons">web_asset</i><div class="component-name">Toolbar</div></div>
+              <div class="component-item" data-type="drawerlayout" draggable="true"><i class="material-icons">menu_open</i><div class="component-name">DrawerLayout</div></div>
             </div>
           </div>
         `;

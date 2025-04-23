@@ -336,7 +336,23 @@ ${componentsXml}
       'linearlayout-v': 'LinearLayout',
       'scrollview-h': 'HorizontalScrollView',
       'scrollview-v': 'ScrollView',
-      'cardview': 'CardView'
+      'cardview': 'CardView',
+      // New Component Mappings
+      'floatingactionbutton': 'FloatingActionButton',
+      'togglebutton': 'ToggleButton',
+      'ratingbar': 'RatingBar',
+      'videoview': 'VideoView',
+      'datepicker': 'DatePicker',
+      'timepicker': 'TimePicker',
+      'constraintlayout': 'ConstraintLayout',
+      'recyclerview': 'RecyclerView',
+      'tablayout': 'TabLayout',
+      'bottomnavigation': 'BottomNavigationView',
+      'toolbar': 'Toolbar',
+      'drawerlayout': 'DrawerLayout',
+      'chipgroup': 'ChipGroup',
+      'chip': 'Chip',
+      'slider': 'Slider'
     };
     
     return componentMap[type] || null;
@@ -361,7 +377,23 @@ ${componentsXml}
       'linearlayout-v': 'LinearLayout',
       'scrollview-h': 'HorizontalScrollView',
       'scrollview-v': 'ScrollView',
-      'cardview': 'androidx.cardview.widget.CardView'
+      'cardview': 'androidx.cardview.widget.CardView',
+      // New Component Mappings
+      'floatingactionbutton': 'com.google.android.material.floatingactionbutton.FloatingActionButton',
+      'togglebutton': 'ToggleButton',
+      'ratingbar': 'RatingBar',
+      'videoview': 'VideoView',
+      'datepicker': 'DatePicker',
+      'timepicker': 'TimePicker',
+      'constraintlayout': 'androidx.constraintlayout.widget.ConstraintLayout',
+      'recyclerview': 'androidx.recyclerview.widget.RecyclerView',
+      'tablayout': 'com.google.android.material.tabs.TabLayout',
+      'bottomnavigation': 'com.google.android.material.bottomnavigation.BottomNavigationView',
+      'toolbar': 'androidx.appcompat.widget.Toolbar',
+      'drawerlayout': 'androidx.drawerlayout.widget.DrawerLayout',
+      'chipgroup': 'com.google.android.material.chip.ChipGroup',
+      'chip': 'com.google.android.material.chip.Chip',
+      'slider': 'com.google.android.material.slider.Slider'
     };
     
     return componentMap[type] || null;

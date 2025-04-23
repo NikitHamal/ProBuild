@@ -142,7 +142,9 @@ class PropertyPanelUpdater {
         // --- Component Specific Group Visibility --- 
         const specificPropsToShow = [];
         if (type === 'edittext') specificPropsToShow.push('hint', 'hintColor');
-        if (type === 'imageview') specificPropsToShow.push('src', 'scaleType');
+        if (type === 'imageview') {
+            specificPropsToShow.push('src', 'imageUpload', 'savedImages', 'scaleType');
+        }
         if (['checkbox', 'radiobutton', 'switch'].includes(type)) specificPropsToShow.push('checked');
         if (['progressbar', 'seekbar'].includes(type)) specificPropsToShow.push('progress', 'max');
         if (['spinner', 'listview'].includes(type)) specificPropsToShow.push('items');

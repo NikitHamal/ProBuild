@@ -149,6 +149,53 @@ class ComponentManager {
             case 'webview':
                 componentProps.properties = { ...defaultProps, url: 'https://example.com', width: 'match_parent', height: 300, bgColor: '#ffffff', borderColor: '#cccccc' };
                 break;
+                
+            // Additional UI Components
+            case 'floatingactionbutton':
+                componentProps.properties = { ...defaultProps, icon: 'add', width: 56, height: 56, bgColor: '#2196F3', borderRadius: '28px', textColor: '#FFFFFF', boxShadow: '0 3px 5px rgba(0,0,0,0.3)' };
+                break;
+            case 'togglebutton':
+                componentProps.properties = { ...defaultProps, textOn: 'ON', textOff: 'OFF', checked: false, width: 'wrap_content', padding: '6px 12px' };
+                break;
+            case 'ratingbar':
+                componentProps.properties = { ...defaultProps, rating: 3, numStars: 5, stepSize: 0.5, width: 'wrap_content', height: 'wrap_content' };
+                break;
+            case 'videoview':
+                componentProps.properties = { ...defaultProps, source: '', autoPlay: false, width: 'match_parent', height: 200, bgColor: '#000000' };
+                break;
+            case 'datepicker':
+                componentProps.properties = { ...defaultProps, width: 'wrap_content', height: 'wrap_content', calendarViewShown: true, bgColor: '#FFFFFF' };
+                break;
+            case 'timepicker':
+                componentProps.properties = { ...defaultProps, width: 'wrap_content', height: 'wrap_content', is24HourView: false, bgColor: '#FFFFFF' };
+                break;
+            case 'constraintlayout':
+                componentProps.properties = { ...defaultProps, width: 'match_parent', height: 150, bgColor: '#f5f5f5', padding: '8px', children: [] };
+                break;
+            case 'recyclerview':
+                componentProps.properties = { ...defaultProps, width: 'match_parent', height: 200, layoutManager: 'linear', orientation: 'vertical', bgColor: '#ffffff', borderColor: '#cccccc' };
+                break;
+            case 'tablayout':
+                componentProps.properties = { ...defaultProps, width: 'match_parent', height: 'wrap_content', tabs: 'Tab 1,Tab 2,Tab 3', tabMode: 'fixed', bgColor: '#f0f0f0', textColor: '#333333', indicatorColor: '#2196F3' };
+                break;
+            case 'bottomnavigation':
+                componentProps.properties = { ...defaultProps, width: 'match_parent', height: 56, items: 'Home,Search,Profile', icons: 'home,search,person', activeColor: '#2196F3', inactiveColor: '#757575', bgColor: '#FFFFFF' };
+                break;
+            case 'toolbar':
+                componentProps.properties = { ...defaultProps, width: 'match_parent', height: 56, title: 'Toolbar', subtitle: '', showBackButton: false, bgColor: '#2196F3', textColor: '#FFFFFF' };
+                break;
+            case 'drawerlayout':
+                componentProps.properties = { ...defaultProps, width: 'match_parent', height: 'match_parent', drawerWidth: 280, bgColor: '#FFFFFF', children: [] };
+                break;
+            case 'chipgroup':
+                componentProps.properties = { ...defaultProps, width: 'wrap_content', height: 'wrap_content', chips: 'Chip 1,Chip 2,Chip 3', singleSelection: false };
+                break;
+            case 'chip':
+                componentProps.properties = { ...defaultProps, text: 'Chip', closable: false, width: 'wrap_content', height: 'wrap_content', bgColor: '#E0E0E0', textColor: '#333333', borderRadius: '16px', padding: '4px 12px' };
+                break;
+            case 'slider':
+                componentProps.properties = { ...defaultProps, value: 50, min: 0, max: 100, width: 'match_parent', height: 'wrap_content', thumbColor: '#2196F3', trackColor: '#BDBDBD' };
+                break;
 
             default:
                 componentProps.properties = defaultProps;

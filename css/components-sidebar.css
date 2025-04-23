@@ -1,0 +1,70 @@
+.components-sidebar {
+  width: 180px;
+  background: var(--surface-color);
+  border-right: 1px solid #ddd;
+  display: flex;
+  flex-direction: column;
+  padding: 4px 0;
+  z-index: 2;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.components-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  align-items: stretch;
+}
+
+.component-item {
+  width: auto;
+  height: auto;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background 0.1s;
+  padding: 10px 12px;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.component-item:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.component-item i {
+  font-size: 18px;
+  margin-right: 8px;
+  margin-bottom: 0;
+  color: var(--text-secondary);
+}
+
+.component-name {
+  font-size: 0.95rem;
+  text-align: left;
+  margin-top: 0;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+/* Added styles for component search input */
+.components-sidebar .sidebar-section {
+  padding: 8px;
+}
+.components-sidebar #component-search {
+  width: 100%;
+  font-size: 0.9rem;
+  padding: 4px 6px;
+  box-sizing: border-box; /* Include padding in width */
+  margin-bottom: 8px; /* Add some space below search */
+  border: 1px solid #ccc;
+  border-radius: 4px;
+} 
