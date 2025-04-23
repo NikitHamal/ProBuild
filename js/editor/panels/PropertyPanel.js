@@ -154,7 +154,7 @@ class PropertyPanel {
          // Trigger potential layout adjustments in parent (if applicable)
         break;
       case 'bgColor':
-        componentElement.style.backgroundColor = newValue;
+        componentElement.style.backgroundColor = newValue === 'transparent' || newValue === 'none' ? 'transparent' : newValue;
         break;
       case 'opacity':
         componentElement.style.opacity = (newValue !== null && newValue !== undefined ? newValue : 100) / 100;
@@ -172,12 +172,12 @@ class PropertyPanel {
         componentElement.style.borderRadius = newValue || '0px';
         break;
       case 'borderColor':
-        componentElement.style.borderColor = newValue === 'transparent' ? 'rgba(0,0,0,0)' : newValue || 'transparent';
+        componentElement.style.borderColor = newValue === 'transparent' || newValue === 'none' ? 'transparent' : newValue || 'transparent';
         // Add/remove border style based on color
-        if (newValue && newValue !== 'transparent' && newValue !== '#000000') { // Avoid adding border for default black if no border intended
+        if (newValue && newValue !== 'transparent' && newValue !== 'none' && newValue !== '#000000') { // Avoid adding border for default black if no border intended
              componentElement.style.borderWidth = componentElement.style.borderWidth || '1px'; // Keep existing width or default to 1px
              componentElement.style.borderStyle = 'solid';
-        } else if (newValue === 'transparent' || !newValue) {
+        } else if (newValue === 'transparent' || newValue === 'none' || !newValue) {
              componentElement.style.borderStyle = 'none';
              componentElement.style.borderWidth = '0';
         }

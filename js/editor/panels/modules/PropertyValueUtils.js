@@ -35,9 +35,16 @@ class PropertyValueUtils {
      * @returns {string} - The hex color string.
      */
     static formatColorForInput(value, fallback = '#FFFFFF') {
-        if (!value || value === 'transparent') {
-            return fallback; // Use fallback for transparent or empty
-        } 
+        if (!value) {
+            return fallback; // Use fallback for empty
+        }
+        
+        if (value === 'transparent' || value === 'none') {
+            // Return a light gray for none/transparent in the color picker
+            // The visual indicator is handled by the preview element's CSS
+            return '#F5F5F5'; 
+        }
+        
         if (value.startsWith('#')) {
             // Already hex
             return value;

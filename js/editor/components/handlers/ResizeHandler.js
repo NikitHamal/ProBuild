@@ -171,7 +171,7 @@ class ResizeHandler {
         properties.height = `${Math.round(newHeight)}px`;
 
         // Update property panel in real-time
-        this.editorView.propertyPanel.updatePropertyEditor();
+        this.editorView.propertyPanel.updatePropertyValues();
 
         // Update dimension overlay (delegated)
         this.componentManager.alignmentOverlayHandler.updateDimensionOverlay(this.editorView.selectedComponent, componentElement);

@@ -208,7 +208,25 @@ class PropertyPanelUpdater {
         // The input value is set in _updateInputValues
         const previewEl = this.panel.querySelector(`#${previewId}`);
         if (previewEl) {
-            previewEl.style.backgroundColor = hexColor;
+            const propertyName = inputId.replace('prop-', '');
+            const property = this.editorView.selectedComponent?.properties?.[propertyName];
+            
+            // Check if this is a none value
+            const isNone = hexColor === '#F5F5F5' && 
+                (inputId === 'prop-bgcolor' || inputId === 'prop-bordercolor') &&
+                (property === 'none' || property === 'transparent');
+                
+            if (isNone) {
+                // Set checkered pattern for none
+                previewEl.style.backgroundColor = 'transparent';
+                previewEl.style.backgroundImage = 'linear-gradient(45deg, #eaeaea 25%, transparent 25%, transparent 75%, #eaeaea 75%, #eaeaea), linear-gradient(45deg, #eaeaea 25%, transparent 25%, transparent 75%, #eaeaea 75%, #eaeaea)';
+                previewEl.style.backgroundSize = '8px 8px';
+                previewEl.style.backgroundPosition = '0 0, 4px 4px';
+            } else {
+                // Regular color
+                previewEl.style.backgroundColor = hexColor;
+                previewEl.style.backgroundImage = 'none';
+            }
         }
     }
     

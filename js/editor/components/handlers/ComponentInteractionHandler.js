@@ -38,8 +38,8 @@ class ComponentInteractionHandler {
             });
 
             // Listen for keyboard events globally when the editor has focus
-            // Consider adding focus management to the editor main area
             document.addEventListener('keydown', this.handleKeyDown.bind(this));
+            document.addEventListener('keyup', this.handleKeyUp.bind(this)); // Add keyup listener
         }
 
         // Note: Mousedown/click listeners on individual components are added 
@@ -53,6 +53,7 @@ class ComponentInteractionHandler {
      * @param {object} component - The component data object.
      */
     handleComponentMouseDown(e, component) {
+        e.preventDefault(); // Prevent default browser image drag
         if (e.button !== 0) return; // Only left click
 
         this.selectComponent(component.id, false); // Select but don't force panel show yet
@@ -123,9 +124,7 @@ class ComponentInteractionHandler {
         this.editorView.selectedComponent.properties.y = Math.round(newY);
 
         // Update property editor inputs in real-time
-        if (this.editorView.propertyPanel && typeof this.editorView.propertyPanel.updatePropertyEditor === 'function') {
-            this.editorView.propertyPanel.updatePropertyEditor();
-        }
+        this.editorView.propertyPanel.updatePropertyValues();
 
         // Draw alignment guides (delegated)
         this.componentManager.alignmentOverlayHandler.drawAlignmentGuides(activeSnapLines);
@@ -183,65 +182,150 @@ class ComponentInteractionHandler {
      * @param {KeyboardEvent} e - The keyboard event.
      */
     handleKeyDown(e) {
-        if (!this.editorView.selectedComponent) return;
+        // console.log(`[KeyDown] Key: ${e.key}, Target:`, e.target);
+        if (!this.editorView.selectedComponent) {
+            // console.log('[KeyDown] No component selected.');
+            return;
+        }
 
-        // Ignore key events if an input field is focused within the property panel or elsewhere
         const targetTagName = e.target.tagName.toUpperCase();
         const isInputFocused = targetTagName === 'INPUT' || targetTagName === 'SELECT' || targetTagName === 'TEXTAREA';
+        // console.log(`[KeyDown] Is input focused: ${isInputFocused}`);
 
-        let needsUpdate = false;
-        const step = e.shiftKey ? 10 : 1;
+        let needsVisualUpdate = false;
+        let finalX = null;
+        let finalY = null;
         const component = this.editorView.selectedComponent;
-        const originalPosition = { x: component.properties.x, y: component.properties.y };
+        const originalPosition = { x: component.properties.x || 0, y: component.properties.y || 0 };
+        // console.log(`[KeyDown] Original Position:`, originalPosition);
 
         switch (e.key) {
             case 'ArrowUp':
             case 'ArrowDown':
             case 'ArrowLeft':
             case 'ArrowRight':
-                if (isInputFocused) return;
-                e.preventDefault();
-                if (e.key === 'ArrowUp') component.properties.y -= step;
-                if (e.key === 'ArrowDown') component.properties.y += step;
-                if (e.key === 'ArrowLeft') component.properties.x -= step;
-                if (e.key === 'ArrowRight') component.properties.x += step;
-                needsUpdate = true;
-                break;
+                console.log(`[KeyDown] Arrow key pressed: ${e.key}`);
+                if (isInputFocused) {
+                    console.log('[KeyDown] Input focused, ignoring arrow key for movement.');
+                    return;
+                }
+                e.preventDefault(); // Attempt to prevent scrolling
+                console.log('[KeyDown] preventDefault called.');
+                needsVisualUpdate = true;
+
+                const step = e.shiftKey ? 10 : 1;
+                let potentialX = originalPosition.x;
+                let potentialY = originalPosition.y;
+
+                if (e.key === 'ArrowUp') potentialY -= step;
+                if (e.key === 'ArrowDown') potentialY += step;
+                if (e.key === 'ArrowLeft') potentialX -= step;
+                if (e.key === 'ArrowRight') potentialX += step;
+                console.log(`[KeyDown] Potential Position: x=${potentialX}, y=${potentialY}`);
+
+                // --- Alignment and Direct Update --- 
+                const componentElement = document.querySelector(`.preview-component[data-component-id="${component.id}"]`);
+                const previewContainer = document.getElementById('preview-container');
+                if (!componentElement || !previewContainer) {
+                    console.error('[KeyDown] Component element or preview container not found!');
+                    return;
+                }
+
+                const componentWidth = componentElement.offsetWidth;
+                const componentHeight = componentElement.offsetHeight;
+                console.log(`[KeyDown] Component Dimensions: w=${componentWidth}, h=${componentHeight}`);
+
+                // Calculate snap position
+                console.log('[KeyDown] Calculating snap position...');
+                const snapResult = this.componentManager.alignmentOverlayHandler.calculateSnapPosition(
+                    potentialX, potentialY, componentWidth, componentHeight, component.id
+                );
+                let snappedX = snapResult.x;
+                let snappedY = snapResult.y;
+                const activeSnapLines = snapResult.lines;
+                console.log(`[KeyDown] Snap Result: x=${snappedX}, y=${snappedY}, lines:`, activeSnapLines);
+
+                // Boundary checks
+                const originalSnappedX = snappedX;
+                const originalSnappedY = snappedY;
+                snappedX = Math.max(0, snappedX);
+                snappedY = Math.max(0, snappedY);
+                if (snappedX + componentWidth > previewContainer.clientWidth) {
+                    snappedX = previewContainer.clientWidth - componentWidth;
+                }
+                if (snappedY + componentHeight > previewContainer.clientHeight) {
+                    snappedY = previewContainer.clientHeight - componentHeight;
+                }
+                if (snappedX !== originalSnappedX || snappedY !== originalSnappedY) {
+                    console.log(`[KeyDown] Boundary applied. Final Snapped: x=${snappedX}, y=${snappedY}`);
+                }
+
+                // Apply visual update directly
+                console.log(`[KeyDown] Applying style: left=${snappedX}px, top=${snappedY}px`);
+                componentElement.style.left = `${snappedX}px`;
+                componentElement.style.top = `${snappedY}px`;
+
+                // Store final position for command and property update
+                finalX = snappedX;
+                finalY = snappedY;
+
+                // Draw alignment guides
+                console.log('[KeyDown] Drawing alignment guides...');
+                this.componentManager.alignmentOverlayHandler.drawAlignmentGuides(activeSnapLines);
+
+                break; // End arrow key handling
+
             case 'Delete':
             case 'Backspace':
+                // console.log(`[KeyDown] Delete/Backspace key pressed.`);
                 if (isInputFocused) return;
                 e.preventDefault();
                 const componentIdToDelete = component.id;
-                // Before deleting, deselect the component to avoid stale references
-                this.deselectComponent();
+                // console.log(`[KeyDown] Deleting component: ${componentIdToDelete}`);
                 const deleteCommand = new DeleteComponentCommand(this.editorView, componentIdToDelete);
                 this.editorView.undoRedoManager.executeCommand(deleteCommand);
-                // Ensure the property panel is hidden
-                if (this.editorView.propertyPanel && typeof this.editorView.propertyPanel.hidePropertyPanel === 'function') {
-                    this.editorView.propertyPanel.hidePropertyPanel();
-                }
-                // Re-render to ensure DOM is updated
-                this.componentManager.renderComponentsPreview();
-                return; // Exit early as the component is gone
+                this.componentManager.alignmentOverlayHandler.clearAlignmentGuides(); // Clear guides on delete
+                return; // Exit early
         }
 
-        if (needsUpdate) {
-            // Apply constraints
-            component.properties.x = Math.max(0, component.properties.x);
-            component.properties.y = Math.max(0, component.properties.y);
+        if (needsVisualUpdate && finalX !== null && finalY !== null) {
+            console.log(`[KeyDown] Needs visual update block. finalX=${finalX}, finalY=${finalY}`);
+            // Update component properties with the final snapped position
+            component.properties.x = finalX;
+            component.properties.y = finalY;
 
-            // Create Move Command
-            const newPosition = { x: component.properties.x, y: component.properties.y };
-            if (originalPosition.x !== newPosition.x || originalPosition.y !== newPosition.y) {
-                const moveCommand = new MoveComponentCommand(this.editorView, component.id, newPosition, null, originalPosition);
+            // Create Move Command only if position actually changed from the start
+            if (originalPosition.x !== finalX || originalPosition.y !== finalY) {
+                 console.log('[KeyDown] Position changed, creating MoveComponentCommand.');
+                 // Create command using the original position *before* this key press sequence started
+                 // NOTE: This still creates a command per key press. Debouncing on keyup would be better for undo stack.
+                const moveCommand = new MoveComponentCommand(this.editorView, component.id, { x: finalX, y: finalY }, null, originalPosition);
                 this.editorView.undoRedoManager.executeCommand(moveCommand);
-                // The command execution should trigger UI updates
+            } else {
+                 console.log('[KeyDown] Position did not change, skipping command.');
             }
             
-            // Update property panel directly for responsiveness (command might be async)
-             this.editorView.propertyPanel.updatePropertyEditor();
-             // Update overlays
-            this.componentManager.alignmentOverlayHandler.updateDimensionOverlay(component);
+            // Update property panel
+            console.log('[KeyDown] Updating property panel values...');
+            this.editorView.propertyPanel.updatePropertyValues();
+            // Update dimension overlay
+            console.log('[KeyDown] Updating dimension overlay...');
+            this.componentManager.alignmentOverlayHandler.updateDimensionOverlay(component, document.querySelector(`.preview-component[data-component-id="${component.id}"]`));
+        } else if (needsVisualUpdate) {
+            console.warn('[KeyDown] needsVisualUpdate was true, but finalX/Y were null.');
+        }
+    }
+    
+    /**
+     * Handles keyup events, primarily to clear alignment guides after movement.
+     * @param {KeyboardEvent} e - The keyboard event.
+     */
+    handleKeyUp(e) {
+        // Clear guides when an arrow key is released
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+             if (this.editorView.selectedComponent) {
+                 this.componentManager.alignmentOverlayHandler.clearAlignmentGuides();
+             }
         }
     }
 
@@ -360,24 +444,6 @@ class ComponentInteractionHandler {
      */
     setOnComponentDeselectedCallback(callback) {
         this.onComponentDeselected = callback;
-    }
-
-    /**
-     * Explicitly deletes a component by ID
-     * @param {string} componentId - The ID of the component to delete
-     */
-    deleteComponent(componentId) {
-        // Create and execute the delete command
-        const deleteCommand = new DeleteComponentCommand(this.editorView, componentId);
-        this.editorView.undoRedoManager.executeCommand(deleteCommand);
-        
-        // If this was the selected component, deselect it
-        if (this.editorView.selectedComponent && this.editorView.selectedComponent.id === componentId) {
-            this.deselectComponent();
-        }
-        
-        // Re-render the preview to ensure DOM is updated
-        this.componentManager.renderComponentsPreview();
     }
 }
 

@@ -207,30 +207,7 @@ class ComponentRenderer {
                 break;
             case 'imageview':
                 element.style.justifyContent = 'center';
-                
-                // Handle image source - URL or local file
-                const imageSource = props.imageSource || 'url';
-                const useLocalImage = imageSource === 'local' || props.useLocalImage === true;
-                
-                if (useLocalImage) {
-                    // Try to get local image from storage
-                    const localImage = this.componentManager.getLocalImage(component.id);
-                    if (localImage && localImage.dataUrl) {
-                        const img = document.createElement('img');
-                        img.src = localImage.dataUrl;
-                        img.style.width = '100%';
-                        img.style.height = '100%';
-                        img.style.objectFit = props.scaleType || 'contain';
-                        element.appendChild(img);
-                    } else {
-                        // No local image available, show placeholder
-                        element.innerHTML = '<div style="text-align: center; width: 100%;">' +
-                            '<i class="material-icons" style="font-size: 24px; color: #888;">image</i>' +
-                            '<div style="font-size: 12px; margin-top: 4px;">Local image</div>' +
-                            '</div>';
-                    }
-                } else if (props.src) {
-                    // Use remote URL
+                 if (props.src) {
                     const img = document.createElement('img');
                     img.src = props.src;
                     img.style.width = '100%';
@@ -238,59 +215,9 @@ class ComponentRenderer {
                     img.style.objectFit = props.scaleType || 'contain';
                     element.appendChild(img);
                 } else {
-                    // No image yet
-                    element.innerHTML = '<div style="text-align: center; width: 100%;">' +
-                        '<i class="material-icons" style="font-size: 48px; color: #888;">image</i>' +
-                        '<div style="font-size: 12px; margin-top: 4px;">No image</div>' +
-                        '</div>';
+                     element.innerHTML = '<i class="material-icons" style="font-size: 48px; color: #888;">image</i>';
                 }
-                
                 element.style.backgroundColor = props.bgColor || '#CCCCCC'; // Default background
-                
-                // Add a click handler to select image if the component is selected
-                if (this.editorView.selectedComponent && this.editorView.selectedComponent.id === component.id) {
-                    const selectImgBtn = document.createElement('button');
-                    selectImgBtn.textContent = 'Choose Image';
-                    selectImgBtn.className = 'image-select-btn';
-                    selectImgBtn.style.position = 'absolute';
-                    selectImgBtn.style.bottom = '4px';
-                    selectImgBtn.style.left = '50%';
-                    selectImgBtn.style.transform = 'translateX(-50%)';
-                    selectImgBtn.style.padding = '4px 8px';
-                    selectImgBtn.style.fontSize = '12px';
-                    selectImgBtn.style.backgroundColor = '#2196F3';
-                    selectImgBtn.style.color = 'white';
-                    selectImgBtn.style.border = 'none';
-                    selectImgBtn.style.borderRadius = '4px';
-                    selectImgBtn.style.cursor = 'pointer';
-                    selectImgBtn.style.zIndex = '10';
-                    
-                    selectImgBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        this.componentManager.openImageFilePicker(component.id, (dataUrl, fileName) => {
-                            // Update the component properties
-                            const updatedProps = {
-                                ...props,
-                                imageSource: 'local',
-                                useLocalImage: true,
-                                localImage: fileName
-                            };
-                            
-                            // Update the component with the new properties
-                            component.properties = updatedProps;
-                            
-                            // Re-render component visuals
-                            this.updateComponentVisuals(component.id, updatedProps);
-                            
-                            // Update property editor if it exists
-                            if (this.editorView.propertyPanel) {
-                                this.editorView.propertyPanel.updatePropertyEditor();
-                            }
-                        });
-                    });
-                    
-                    element.appendChild(selectImgBtn);
-                }
                 break;
             case 'checkbox':
             case 'radiobutton':

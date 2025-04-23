@@ -124,6 +124,12 @@ class PropertyPanelRenderer {
                             <div class="color-preview" id="bgcolor-preview"></div>
                         </div>
                     </div>
+                    <div class="property-row color-none-row">
+                        <div class="property-label"></div>
+                        <div class="property-input">
+                            <button type="button" id="bgcolor-none" class="none-btn">None</button>
+                        </div>
+                    </div>
                     <div class="property-row">
                         <div class="property-label">Opacity</div>
                         <div class="property-input">
@@ -186,6 +192,12 @@ class PropertyPanelRenderer {
                         <div class="property-input color-input">
                             <input type="color" id="prop-bordercolor">
                             <div class="color-preview" id="bordercolor-preview"></div>
+                        </div>
+                    </div>
+                    <div class="property-row color-none-row">
+                        <div class="property-label"></div>
+                        <div class="property-input">
+                            <button type="button" id="bordercolor-none" class="none-btn">None</button>
                         </div>
                     </div>
                     <div class="property-row">

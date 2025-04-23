@@ -15,9 +15,6 @@ import AlignmentOverlayHandler from './handlers/AlignmentOverlayHandler.js';
 class ComponentManager {
   constructor(editorView) {
     this.editorView = editorView;
-    
-    // In-memory storage for local images
-    this.localImageStorage = new Map();
 
     // Instantiate handlers, passing references
     this.dragDropHandler = new DragDropHandler(editorView, this);
@@ -126,17 +123,7 @@ class ComponentManager {
                 componentProps.properties = { ...defaultProps, text: '', hint: 'Enter text', hintColor: '#A0A0A0', width: 'match_parent', bgColor: '#FFFFFF', padding: '8px', borderColor: '#CCCCCC', borderRadius: '4px' };
                 break;
             case 'imageview':
-                componentProps.properties = { 
-                  ...defaultProps, 
-                  src: '', 
-                  localImage: '', 
-                  useLocalImage: false, 
-                  imageSource: 'url', // 'url' or 'local'
-                  scaleType: 'fitCenter', 
-                  width: 100, 
-                  height: 100, 
-                  bgColor: '#cccccc' 
-                };
+                componentProps.properties = { ...defaultProps, src: '', scaleType: 'fitCenter', width: 100, height: 100, bgColor: '#cccccc' };
                 break;
             case 'checkbox':
                 componentProps.properties = { ...defaultProps, text: 'CheckBox', checked: false };
@@ -237,20 +224,6 @@ class ComponentManager {
   }
 
   /**
-   * Deletes a component by delegating to the InteractionHandler.
-   * @param {string} componentId - The ID of the component to delete.
-   */
-  deleteComponent(componentId) {
-    // Clean up any stored local images if it's an imageview
-    const component = this.findComponentById(componentId);
-    if (component && component.type === 'imageview' && component.properties.localImage) {
-      this.removeLocalImage(componentId);
-    }
-    
-    this.interactionHandler.deleteComponent(componentId);
-  }
-
-  /**
    * Adds resize handles to an element (potentially called by the renderer).
    * @param {HTMLElement} element - The component's DOM element.
    */
@@ -264,83 +237,6 @@ class ComponentManager {
    */
    setOnComponentSelectedCallback(callback) {
        this.interactionHandler.setOnComponentSelectedCallback(callback);
-   }
-
-   // --- Local Image Management ---
-
-   /**
-    * Stores a local image for a component
-    * @param {string} componentId - The component ID
-    * @param {File} file - The image file to store
-    * @returns {Promise<string>} A promise that resolves to the data URL
-    */
-   storeLocalImage(componentId, file) {
-     return new Promise((resolve, reject) => {
-       const reader = new FileReader();
-       reader.onload = (e) => {
-         const dataUrl = e.target.result;
-         this.localImageStorage.set(componentId, {
-           dataUrl,
-           fileName: file.name,
-           fileType: file.type,
-           fileSize: file.size,
-           lastModified: file.lastModified
-         });
-         resolve(dataUrl);
-       };
-       reader.onerror = (e) => {
-         reject(e);
-       };
-       reader.readAsDataURL(file);
-     });
-   }
-
-   /**
-    * Gets a stored local image
-    * @param {string} componentId - The component ID
-    * @returns {object|null} The image data object or null
-    */
-   getLocalImage(componentId) {
-     return this.localImageStorage.get(componentId) || null;
-   }
-
-   /**
-    * Removes a stored local image
-    * @param {string} componentId - The component ID
-    */
-   removeLocalImage(componentId) {
-     this.localImageStorage.delete(componentId);
-   }
-
-   /**
-    * Creates file input for selecting local images
-    * @param {string} componentId - The component ID to associate with the image
-    * @param {Function} onImageSelected - Callback when image is selected
-    */
-   openImageFilePicker(componentId, onImageSelected) {
-     const input = document.createElement('input');
-     input.type = 'file';
-     input.accept = 'image/*';
-     input.style.display = 'none';
-     
-     input.onchange = async (e) => {
-       if (e.target.files && e.target.files[0]) {
-         const file = e.target.files[0];
-         try {
-           const dataUrl = await this.storeLocalImage(componentId, file);
-           if (typeof onImageSelected === 'function') {
-             onImageSelected(dataUrl, file.name);
-           }
-         } catch (error) {
-           console.error('Error loading image:', error);
-         }
-       }
-       // Remove the element once done
-       document.body.removeChild(input);
-     };
-     
-     document.body.appendChild(input);
-     input.click();
    }
 
    // --- Getters for handler states (if needed by external modules) ---

@@ -327,19 +327,6 @@ class EditorView {
        // Removed call to non-existent codeManager.markCodeDirty
   }
   
-   // --- Delegated Methods from Old Implementation (ensure they exist or remove) ---
-   // executeCommand is now handled by UndoRedoManager
-   // undo / redo are handled by UndoRedoManager
-   // updateUndoRedoButtons is handled by UndoRedoManager
-   // renderEditor is replaced by LayoutManager.renderInitialLayout
-   // _render* methods are moved to LayoutManager or SidebarManager
-   // switchTab is handled by TabManager
-   // renderTabPanel is handled by TabManager
-   // switchSidebarTab is handled by SidebarManager
-   // setupEventListeners is split among managers and setupGlobalEventListeners
-   // changeDevicePreview is handled by DevicePreviewManager
-   // updateDevicePreviewSize is handled by DevicePreviewManager
-   // handleComponentSearch is handled by LayoutManager
 }
 
 export default EditorView; 

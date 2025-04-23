@@ -19,6 +19,7 @@ class PropertyPanelEventHandler {
         this._setupGroupToggleListeners();
         this._setupSliderSyncListeners();
         this._setupColorPreviewSyncListeners();
+        this._setupNoneColorButtons();
         this._setupWidthHeightListeners();
         this._setupPropertyInputListeners();
         this._setupIdChangeListener();
@@ -304,6 +305,48 @@ class PropertyPanelEventHandler {
     _debounce(key, func, delay) {
         clearTimeout(this.debounceTimeouts[key]);
         this.debounceTimeouts[key] = setTimeout(func, delay);
+    }
+
+    /**
+     * Sets up listeners for the None color buttons.
+     */
+    _setupNoneColorButtons() {
+        // Setup the background color none button
+        const bgNoneBtn = this.panel.querySelector('#bgcolor-none');
+        if (bgNoneBtn) {
+            bgNoneBtn.addEventListener('click', (e) => {
+                // Set the background color to none
+                this._createAndExecuteCommand('properties.bgColor', 'none');
+                
+                // Update the color preview
+                const previewEl = this.panel.querySelector('#bgcolor-preview');
+                if (previewEl) {
+                    // Checkered pattern
+                    previewEl.style.backgroundColor = 'transparent';
+                    previewEl.style.backgroundImage = 'linear-gradient(45deg, #eaeaea 25%, transparent 25%, transparent 75%, #eaeaea 75%, #eaeaea), linear-gradient(45deg, #eaeaea 25%, transparent 25%, transparent 75%, #eaeaea 75%, #eaeaea)';
+                    previewEl.style.backgroundSize = '8px 8px';
+                    previewEl.style.backgroundPosition = '0 0, 4px 4px';
+                }
+            });
+        }
+        
+        // Setup the border color none button
+        const borderNoneBtn = this.panel.querySelector('#bordercolor-none');
+        if (borderNoneBtn) {
+            borderNoneBtn.addEventListener('click', (e) => {
+                // Set the border color to none
+                this._createAndExecuteCommand('properties.borderColor', 'none');
+                
+                // Update the color preview
+                const previewEl = this.panel.querySelector('#bordercolor-preview');
+                if (previewEl) {
+                    previewEl.style.backgroundColor = 'transparent';
+                    previewEl.style.backgroundImage = 'linear-gradient(45deg, #eaeaea 25%, transparent 25%, transparent 75%, #eaeaea 75%, #eaeaea), linear-gradient(45deg, #eaeaea 25%, transparent 25%, transparent 75%, #eaeaea 75%, #eaeaea)';
+                    previewEl.style.backgroundSize = '8px 8px';
+                    previewEl.style.backgroundPosition = '0 0, 4px 4px';
+                }
+            });
+        }
     }
 }
 
