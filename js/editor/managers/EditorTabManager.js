@@ -82,7 +82,12 @@ class EditorTabManager {
                 `;
                 break;
             case 'blocks':
-                content = this.editorView.blocksManager?.renderBlocksTab() || '<div class="error-message">Blocks Manager not available.</div>';
+                // Ensure the blockly-div ID is included properly
+                content = `
+                    <div class="blocks-editor" style="display: flex; height: 100%;">
+                        <div id="blockly-div" style="flex-grow: 1; height: 100%;"></div>
+                    </div>
+                `;
                 break;
             case 'code':
                 content = this.editorView.codeManager?.renderCodeTab() || '<div class="error-message">Code Manager not available.</div>';
@@ -101,7 +106,28 @@ class EditorTabManager {
         switch (tabId) {
             case 'design':
                 this.editorView.componentManager?.renderComponentsPreview(); // Render components into the preview container
-                this.editorView.devicePreviewManager?.updateDevicePreviewSize(); // Ensure preview size is correct
+                
+                // Ensure drag and drop is initialized after components are rendered
+                setTimeout(() => {
+                    if (this.editorView.componentManager?.dragDropHandler) {
+                        this.editorView.componentManager.dragDropHandler.setupDesignTabEvents();
+                        console.log("Re-initialized drag and drop handlers after tab switch");
+                    }
+                    this.editorView.devicePreviewManager?.updateDevicePreviewSize(); // Ensure preview size is correct
+                    
+                    // Add a dedicated keyboard listener for delete in design view
+                    const previewContainer = document.getElementById('preview-container');
+                    if (previewContainer) {
+                        // Remove any existing listener first
+                        previewContainer.removeEventListener('keydown', this._handleDesignKeyDown);
+                        // Add the event listener with proper binding
+                        this._handleDesignKeyDown = this._handleDesignKeyDown.bind(this);
+                        previewContainer.addEventListener('keydown', this._handleDesignKeyDown);
+                        // Make the container focusable
+                        previewContainer.tabIndex = 0;
+                    }
+                }, 100);
+                
                 hidePropertyPanel = false; // Show property panel (conditionally)
                 break;
             case 'blocks':
@@ -155,6 +181,28 @@ class EditorTabManager {
                  // Optionally regenerate and display code for the new screen immediately
                  // Or wait for user to switch back to tab? For now, let changeScreen handle it.
                 break;
+        }
+    }
+
+    /**
+     * Handles keydown events specifically in the design tab
+     * @param {KeyboardEvent} e - The keyboard event
+     * @private
+     */
+    _handleDesignKeyDown(e) {
+        // Handle Delete key for the selected component
+        if ((e.key === 'Delete' || e.key === 'Backspace') && this.editorView.selectedComponent) {
+            // Don't handle if an input is focused
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+                return;
+            }
+            
+            e.preventDefault();
+            e.stopPropagation();
+            
+            console.log('Design tab: Delete key pressed with component selected');
+            const componentId = this.editorView.selectedComponent.id;
+            this.editorView.componentManager.deleteComponent(componentId);
         }
     }
 }

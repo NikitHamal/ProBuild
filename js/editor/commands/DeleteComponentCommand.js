@@ -55,6 +55,9 @@ class DeleteComponentCommand extends Command {
           }
         }
         
+        // Update code files for the component deletion
+        this._updateCodeForComponentChange();
+        
         return true;
       }
       
@@ -92,6 +95,9 @@ class DeleteComponentCommand extends Command {
           this.editorView.componentManager.renderComponentsPreview();
         }
         
+        // Update code files for the component restoration
+        this._updateCodeForComponentChange();
+        
         return true;
       }
       
@@ -99,6 +105,37 @@ class DeleteComponentCommand extends Command {
     } catch (error) {
       console.error('Error undoing DeleteComponentCommand:', error);
       return false;
+    }
+  }
+  
+  /**
+   * Helper method to update code files when a component changes
+   * @private
+   */
+  _updateCodeForComponentChange() {
+    try {
+      if (!this.editorView.codeManager || !this.editorView.codeManager.fileManager) {
+        return;
+      }
+      
+      console.log(`DeleteComponentCommand: Updating code files for component ${this.componentId}`);
+      
+      // Mark relevant files as dirty
+      const fileManager = this.editorView.codeManager.fileManager;
+      fileManager.markFileAsDirty(this.componentId, 'layout');
+      fileManager.markFileAsDirty(this.componentId, 'main');
+      
+      // Regenerate affected files
+      const affectedFiles = ['layout', 'main'];
+      affectedFiles.forEach(fileId => {
+        const newContent = fileManager.generateFileContent(fileId);
+        fileManager.updateFileContent(fileId, newContent);
+      });
+      
+      // Force immediate save
+      fileManager.triggerAutoSave(true);
+    } catch (error) {
+      console.error('Error updating code for component change:', error);
     }
   }
   
@@ -117,6 +154,16 @@ class DeleteComponentCommand extends Command {
       // Check children if this is a container
       if (component.children && component.children.length > 0) {
         const found = this._findComponent(component.children, id);
+        if (found) {
+          return found;
+        }
+      }
+      
+      // Also check properties.children if component has them
+      if (component.properties && component.properties.children && 
+          Array.isArray(component.properties.children) && 
+          component.properties.children.length > 0) {
+        const found = this._findComponent(component.properties.children, id);
         if (found) {
           return found;
         }
@@ -142,6 +189,16 @@ class DeleteComponentCommand extends Command {
       // Check children if this is a container
       if (component.children && component.children.length > 0) {
         const found = this._findParentId(component.children, id, component.id);
+        if (found !== null) {
+          return found;
+        }
+      }
+      
+      // Also check properties.children if component has them
+      if (component.properties && component.properties.children && 
+          Array.isArray(component.properties.children) && 
+          component.properties.children.length > 0) {
+        const found = this._findParentId(component.properties.children, id, component.id);
         if (found !== null) {
           return found;
         }

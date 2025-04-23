@@ -38,14 +38,17 @@ class BlocksManager {
 
   // Main initialization point, called by EditorView after the tab is rendered
   initializeBlockly() {
-    const blocklyDiv = document.getElementById('blockly-div');
-    if (!blocklyDiv) {
-        console.error("Cannot initialize Blockly: #blockly-div not found!");
-        this.notificationManager.showNotification('Error initializing blocks editor container.', 'error');
-        return;
-    }
-    // Delegate initialization to the WorkspaceManager
-    this.workspaceManager.initialize(blocklyDiv, toolboxXml, this.dropdownHelper);
+    // Wait for the DOM to be ready
+    setTimeout(() => {
+      const blocklyDiv = document.getElementById('blockly-div');
+      if (!blocklyDiv) {
+          console.error("Cannot initialize Blockly: #blockly-div not found!");
+          this.notificationManager.showNotification('Error initializing blocks editor container.', 'error');
+          return;
+      }
+      // Delegate initialization to the WorkspaceManager
+      this.workspaceManager.initialize(blocklyDiv, toolboxXml, this.dropdownHelper);
+    }, 100); // Short delay to ensure DOM is updated
   }
   
   // Method called by WorkspaceManager on block changes to update CodeManager

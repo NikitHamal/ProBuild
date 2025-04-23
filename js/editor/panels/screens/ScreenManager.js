@@ -57,6 +57,76 @@ class ScreenManager {
     this.addScreenDialog.show();
   }
 
+  // Add the missing method for editing app details
+  showEditAppDialog(app) {
+    if (!app) return;
+    
+    // Create a simple modal for editing app details
+    const modalHtml = `
+      <div class="dialog-overlay">
+        <div class="dialog-content">
+          <h2>Edit App Details</h2>
+          <div class="form-group">
+            <label for="app-name">App Name</label>
+            <input type="text" id="app-name" value="${app.name || ''}">
+          </div>
+          <div class="form-group">
+            <label for="app-package">Package Name</label>
+            <input type="text" id="app-package" value="${app.packageName || 'com.example.app'}">
+          </div>
+          <div class="dialog-buttons">
+            <button class="btn btn-cancel">Cancel</button>
+            <button class="btn btn-save">Save</button>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // Append modal to body
+    const modalContainer = document.createElement('div');
+    modalContainer.innerHTML = modalHtml;
+    document.body.appendChild(modalContainer);
+    
+    // Setup event listeners
+    const saveBtn = modalContainer.querySelector('.btn-save');
+    const cancelBtn = modalContainer.querySelector('.btn-cancel');
+    
+    saveBtn.addEventListener('click', () => {
+      const newName = document.getElementById('app-name').value.trim();
+      const newPackage = document.getElementById('app-package').value.trim();
+      
+      if (newName) {
+        // Update app details
+        app.name = newName;
+        app.packageName = newPackage;
+        
+        // Save changes using app service
+        this.appService.updateApp(app);
+        
+        // Update UI
+        if (this.editorView.sidebarManager) {
+          this.editorView.sidebarManager.refreshProjectPanel();
+        }
+      }
+      
+      document.body.removeChild(modalContainer);
+    });
+    
+    cancelBtn.addEventListener('click', () => {
+      document.body.removeChild(modalContainer);
+    });
+  }
+
+  showDeleteScreenDialog(screen) {
+    if (!screen) return;
+    this.confirmDeleteScreen(screen.id);
+  }
+
+  showEditScreenDialog(screen) {
+    if (!screen) return;
+    this.editScreen(screen.id);
+  }
+
   // New implementation methods below
   initialize() {
     // Only call when using the new implementation

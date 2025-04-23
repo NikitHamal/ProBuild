@@ -21,6 +21,18 @@ class ScreenManager {
   showAddScreenDialog() {
     this.implementation.showAddScreenDialog();
   }
+  
+  showEditAppDialog(app) {
+    this.implementation.showEditAppDialog(app);
+  }
+  
+  showEditScreenDialog(screen) {
+    this.implementation.showEditScreenDialog(screen);
+  }
+  
+  showDeleteScreenDialog(screen) {
+    this.implementation.showDeleteScreenDialog(screen);
+  }
 }
 
 export default ScreenManager; 
