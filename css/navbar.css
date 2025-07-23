@@ -1,6 +1,6 @@
 .navbar {
-  background-color: var(--primary-color);
-  color: white;
+  background-color: var(--m3-sys-light-surface);
+  color: var(--m3-sys-light-on-surface);
   padding: var(--spacing-md) 0;
   box-shadow: var(--shadow-md);
   width: 100%;
@@ -23,20 +23,20 @@
 
 .theme-toggle {
   background: transparent;
-  color: white;
+  color: var(--m3-sys-light-on-surface);
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   -webkit-tap-highlight-color: transparent;
 }
 
 .theme-toggle:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(var(--m3-sys-light-on-surface-rgb), 0.08);
 }
 
 .nav-links {
@@ -54,7 +54,16 @@ body.dark-theme {
 }
 
 body.dark-theme .navbar {
-  background-color: #000;
+  background-color: var(--m3-sys-dark-surface);
+  color: var(--m3-sys-dark-on-surface);
+}
+
+body.dark-theme .theme-toggle {
+  color: var(--m3-sys-dark-on-surface);
+}
+
+body.dark-theme .theme-toggle:hover {
+  background-color: rgba(var(--m3-sys-dark-on-surface-rgb), 0.08);
 }
 
 /* Responsive adjustments */

@@ -12,8 +12,9 @@
 }
 
 .dialog {
-  background-color: white;
-  border-radius: 4px;
+  background-color: var(--m3-sys-light-surface);
+  color: var(--m3-sys-light-on-surface);
+  border-radius: 28px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
   max-height: 90vh;
   display: flex;
@@ -90,8 +91,8 @@
 
 .dialog-header {
   padding: 16px 20px;
-  border-bottom: 1px solid #e0e0e0;
-  background-color: #f5f5f5;
+  border-bottom: 1px solid var(--m3-sys-light-outline);
+  background-color: var(--m3-sys-light-surface);
   position: relative;
   display: flex;
   align-items: center;
@@ -100,7 +101,7 @@
 .dialog-title {
   font-size: 18px;
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--m3-sys-light-on-surface);
   margin-left: 32px;
 }
 
@@ -120,7 +121,7 @@
 .dialog-content {
   padding: 24px;
   overflow-y: auto;
-  background-color: white;
+  background-color: var(--m3-sys-light-surface);
 }
 
 .dialog-actions {
@@ -128,8 +129,8 @@
   display: flex;
   justify-content: space-between;
   gap: 10px;
-  border-top: 1px solid var(--border-color);
-  background-color: var(--surface-color);
+  border-top: 1px solid var(--m3-sys-light-outline);
+  background-color: var(--m3-sys-light-surface);
 }
 
 @media (max-width: 767px) {
@@ -143,32 +144,6 @@
   }
 }
 
-.dialog-btn {
-  padding: 10px 16px;
-  border-radius: 4px;
-  border: none;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  text-transform: uppercase;
-  min-width: 100px;
-  text-align: center;
-}
-
-.dialog-btn.primary {
-  background-color: #4285F4;
-  color: white;
-}
-
-.dialog-btn.cancel {
-  background-color: #7E5959;
-  color: white;
-}
-
-.dialog-btn.danger {
-  background-color: var(--error-color);
-  color: white;
-}
 
 .form-group {
   margin-bottom: 20px;

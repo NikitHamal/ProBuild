@@ -1,3 +1,12 @@
+@media (max-width: 1024px) {
+  .components-sidebar {
+    width: 200px;
+  }
+  .editor-sidebar {
+    width: 280px;
+  }
+}
+
 @media (max-width: 900px) {
   .phone-preview {
     width: 240px;
@@ -54,10 +63,10 @@
   
   .components-sidebar {
     width: 100%;
-    height: 56px;
+    height: 64px;
     flex-direction: row;
     border-right: none;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid var(--m3-sys-light-outline);
     padding: 0;
     position: fixed;
     top: 0;
@@ -68,26 +77,32 @@
     overflow-y: hidden;
     justify-content: flex-start;
     -webkit-overflow-scrolling: touch;
+    background-color: var(--m3-sys-light-surface);
   }
   
   .components-list {
     flex-direction: row;
-    padding: 0 4px;
+    padding: 0 8px;
     height: 100%;
     align-items: center;
     width: auto;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    gap: 0;
+    gap: 8px;
   }
   
   .component-item {
     flex-direction: column;
-    padding: 4px 8px;
-    gap: 2px;
+    padding: 8px;
+    gap: 4px;
     height: 100%;
     justify-content: center;
-    min-width: 56px;
+    min-width: 64px;
+    border-radius: 8px;
+  }
+
+  .component-item:hover {
+    background-color: rgba(var(--m3-sys-light-on-surface-variant-rgb), 0.08);
   }
   
   .component-item i {
@@ -104,39 +119,41 @@
   }
   
   .editor-workspace {
-    padding-top: 56px;
-    padding-bottom: 60px;
+    padding-top: 64px;
+    padding-bottom: 64px;
   }
   
   .editor-sidebar {
     width: 100%;
-    height: 56px;
+    height: 64px;
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
     top: auto;
     border-left: none;
-    border-top: 1px solid #ddd;
+    border-top: 1px solid var(--m3-sys-light-outline);
     display: flex;
     flex-direction: row;
     align-items: center;
     z-index: 1002;
     font-size: 0.9rem;
     padding-bottom: env(safe-area-inset-bottom, 0);
+    background-color: var(--m3-sys-light-surface);
   }
   
   .property-editor {
     position: fixed;
-    top: 56px;
+    top: 64px;
     left: 0;
     right: 0;
-    bottom: 56px;
+    bottom: 64px;
     width: 100%;
     height: auto;
     padding: 16px;
     z-index: 1001;
     -webkit-overflow-scrolling: touch;
+    background-color: var(--m3-sys-light-surface);
   }
   
   .editor-tabs {
@@ -181,9 +198,9 @@
   /* Improve touch targets */
   .property-input input,
   .property-input select {
-    height: 36px;
+    height: 48px;
     padding: 8px 12px;
-    font-size: 14px;
+    font-size: 16px;
   }
   
   .property-group-header {
@@ -195,14 +212,14 @@
   }
   
   .resize-handle {
-    width: 16px;
-    height: 16px;
+    width: 24px;
+    height: 24px;
   }
   
   /* Optimize header elements */
   .editor-header {
     padding: 8px 12px;
-    height: 56px;
+    height: 64px;
   }
   
   .editor-action-btn {
@@ -244,15 +261,16 @@
   /* Fix for safe areas */
   @media (max-width: 767px) {
     .editor-workspace {
-      padding-bottom: calc(56px + env(safe-area-inset-bottom, 0));
+      padding-bottom: calc(64px + env(safe-area-inset-bottom, 0));
     }
     
     .components-sidebar {
       padding-top: env(safe-area-inset-top, 0);
+      height: calc(64px + env(safe-area-inset-top, 0));
     }
     
     .editor-sidebar {
-      height: calc(56px + env(safe-area-inset-bottom, 0));
+      height: calc(64px + env(safe-area-inset-bottom, 0));
     }
     
     /* Touch optimizations for form elements */
@@ -267,7 +285,7 @@
     .property-group-header,
     .sidebar-item,
     .screen-action-btn {
-      min-height: 44px; /* Apple's recommended minimum tap target size */
+      min-height: 48px; /* Apple's recommended minimum tap target size */
     }
   }
 } 

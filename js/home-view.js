@@ -52,7 +52,7 @@ class HomeView {
     container.innerHTML = `
       <div class="app-list-header">
         <h2 class="app-list-title">My Apps</h2>
-        <button class="new-app-btn">
+        <button class="new-app-btn m3-button-filled">
           <i class="material-icons">add</i>
           Create New App
         </button>
@@ -99,7 +99,7 @@ class HomeView {
     return `
       <div class="dialog fullscreen new-project">
         <div class="dialog-header">
-          <button class="back-btn">
+          <button class="back-btn m3-icon-button">
             <i class="material-icons">arrow_back</i>
           </button>
           <div class="dialog-title">New Project</div>
@@ -114,17 +114,17 @@ class HomeView {
           </div>
           
           <div class="form-group">
-            <input type="text" id="app-name" placeholder="App Name" required>
+            <input type="text" id="app-name" placeholder="App Name" required class="m3-input">
             <div class="input-error-message"></div>
           </div>
           
           <div class="form-group">
-            <input type="text" id="package-name" placeholder="Package Name" required>
+            <input type="text" id="package-name" placeholder="Package Name" required class="m3-input">
             <div class="input-error-message"></div>
           </div>
           
           <div class="form-group">
-            <input type="text" id="project-name" placeholder="Project Name">
+            <input type="text" id="project-name" placeholder="Project Name" class="m3-input">
           </div>
           
           <div class="color-selector">
@@ -152,22 +152,22 @@ class HomeView {
             </div>
             <div class="form-group">
               <label for="color-type">Apply To</label>
-              <select id="color-type">
+              <select id="color-type" class="m3-select">
                 <option value="colorAccent">Accent Color</option>
                 <option value="colorPrimary">Primary Color</option>
                 <option value="colorPrimaryDark">Primary Dark</option>
                 <option value="colorControlHighlight">Control Highlight</option>
               </select>
             </div>
-            <button class="dialog-btn" id="apply-custom-color">Apply</button>
+            <button class="dialog-btn m3-button-text" id="apply-custom-color">Apply</button>
           </div>
           
           <div class="version-fields">
             <div class="form-group">
-              <input type="number" id="version-code" placeholder="Version code" min="1" value="1">
+              <input type="number" id="version-code" placeholder="Version code" min="1" value="1" class="m3-input">
             </div>
             <div class="form-group">
-              <input type="text" id="version-name" placeholder="Version name" value="1.0">
+              <input type="text" id="version-name" placeholder="Version name" value="1.0" class="m3-input">
             </div>
           </div>
           
@@ -188,8 +188,8 @@ class HomeView {
         </div>
         
         <div class="dialog-actions">
-          <button class="dialog-btn cancel">Cancel</button>
-          <button class="dialog-btn primary" type="submit">New Project</button>
+          <button class="dialog-btn cancel m3-button-text">Cancel</button>
+          <button class="dialog-btn primary m3-button-filled" type="submit">New Project</button>
         </div>
       </div>
     `;
