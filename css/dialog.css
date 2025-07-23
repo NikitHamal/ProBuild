@@ -135,12 +135,13 @@
 
 @media (max-width: 767px) {
   .dialog-actions {
-    position: sticky;
+    position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
     z-index: 10;
     box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.05);
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }
 
