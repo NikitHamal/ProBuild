@@ -1,18 +1,31 @@
-@media (max-width: 900px) {
+/* Material 3 Responsive Design System */
+
+/* Tablet and Medium Screens */
+@media (max-width: 1024px) {
   .phone-preview {
-    width: 240px;
-    height: 420px;
+    width: 280px;
+    height: 500px;
+    border-radius: var(--md-sys-shape-corner-extra-large);
+    box-shadow: var(--md-sys-elevation-level3);
   }
+  
   .components-sidebar {
-    width: 80px;
+    width: 88px;
+    background-color: var(--md-sys-color-surface-container);
+    border-right: 1px solid var(--md-sys-color-outline-variant);
   }
+  
   .editor-sidebar {
-    width: 120px;
+    width: 140px;
+    background-color: var(--md-sys-color-surface-container);
+    border-left: 1px solid var(--md-sys-color-outline-variant);
   }
+  
   .property-editor {
-    left: 80px; /* Adjusted left sidebar width */
-    right: 120px; /* Adjusted right sidebar width */
-    padding: 10px;
+    left: 88px;
+    right: 140px;
+    padding: var(--md-sys-spacing-3);
+    background-color: var(--md-sys-color-surface);
   }
   
   .component-name {
@@ -21,19 +34,29 @@
   
   .component-item {
     justify-content: center;
+    padding: var(--md-sys-spacing-3);
+    border-radius: var(--md-sys-shape-corner-medium);
+    min-height: 48px;
   }
   
   .component-item i {
-    font-size: 24px;
+    font-size: 1.5rem;
     margin-right: 0;
+    color: var(--md-sys-color-on-surface-variant);
+  }
+  
+  .component-item:hover {
+    background-color: var(--md-sys-color-surface-container-highest);
   }
 }
 
+/* Mobile and Small Screens */
 @media (max-width: 767px) {
   body, html {
-    font-size: 14px;
+    font-size: 16px; /* Prevent iOS zoom */
     height: 100%;
     width: 100%;
+    -webkit-text-size-adjust: 100%;
   }
   
   html {
@@ -43,21 +66,25 @@
   body {
     min-height: 100vh;
     min-height: -webkit-fill-available;
+    overflow-x: hidden;
   }
   
+  /* Mobile Editor Layout */
   .editor-container {
     flex-direction: column;
     height: 100vh;
     height: -webkit-fill-available;
     overflow: hidden;
+    background-color: var(--md-sys-color-background);
   }
   
+  /* Top Components Bar */
   .components-sidebar {
     width: 100%;
-    height: 56px;
+    height: 64px;
     flex-direction: row;
     border-right: none;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid var(--md-sys-color-outline-variant);
     padding: 0;
     position: fixed;
     top: 0;
@@ -68,106 +95,187 @@
     overflow-y: hidden;
     justify-content: flex-start;
     -webkit-overflow-scrolling: touch;
+    background-color: var(--md-sys-color-surface-container);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: var(--md-sys-elevation-level2);
   }
   
   .components-list {
     flex-direction: row;
-    padding: 0 4px;
+    padding: var(--md-sys-spacing-2);
     height: 100%;
     align-items: center;
     width: auto;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    gap: 0;
+    gap: var(--md-sys-spacing-1);
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .components-list::-webkit-scrollbar {
+    display: none;
   }
   
   .component-item {
     flex-direction: column;
-    padding: 4px 8px;
-    gap: 2px;
-    height: 100%;
+    padding: var(--md-sys-spacing-2);
+    gap: var(--md-sys-spacing-1);
+    height: 48px;
     justify-content: center;
-    min-width: 56px;
+    min-width: 64px;
+    border-radius: var(--md-sys-shape-corner-medium);
+    background-color: transparent;
+    transition: all var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  
+  .component-item:hover {
+    background-color: var(--md-sys-color-surface-container-highest);
+  }
+  
+  .component-item:active {
+    background-color: var(--md-sys-color-surface-container-high);
+    transform: scale(0.95);
   }
   
   .component-item i {
-    font-size: 24px;
+    font-size: 1.25rem;
     margin-right: 0;
-    margin-bottom: 2px;
+    margin-bottom: var(--md-sys-spacing-1);
+    color: var(--md-sys-color-on-surface-variant);
   }
   
   .component-name {
     display: block;
-    font-size: 0.7rem;
+    font-size: 0.625rem;
     text-align: center;
     white-space: nowrap;
+    color: var(--md-sys-color-on-surface-variant);
+    font-weight: 500;
+    line-height: 1;
   }
   
+  /* Main Editor Workspace */
   .editor-workspace {
-    padding-top: 56px;
-    padding-bottom: 60px;
+    padding-top: 64px;
+    padding-bottom: 72px;
+    flex: 1;
+    overflow: hidden;
+    background-color: var(--md-sys-color-background);
   }
   
+  /* Bottom Editor Sidebar */
   .editor-sidebar {
     width: 100%;
-    height: 56px;
+    height: 72px;
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
     top: auto;
     border-left: none;
-    border-top: 1px solid #ddd;
+    border-top: 1px solid var(--md-sys-color-outline-variant);
     display: flex;
     flex-direction: row;
     align-items: center;
     z-index: 1002;
-    font-size: 0.9rem;
+    font-size: 0.875rem;
     padding-bottom: env(safe-area-inset-bottom, 0);
+    background-color: var(--md-sys-color-surface-container);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: var(--md-sys-elevation-level2);
   }
   
+  /* Property Editor Full Screen */
   .property-editor {
     position: fixed;
-    top: 56px;
+    top: 64px;
     left: 0;
     right: 0;
-    bottom: 56px;
+    bottom: 72px;
     width: 100%;
     height: auto;
-    padding: 16px;
+    padding: var(--md-sys-spacing-4);
     z-index: 1001;
     -webkit-overflow-scrolling: touch;
+    background-color: var(--md-sys-color-surface);
+    overflow-y: auto;
   }
   
+  /* Editor Tabs */
   .editor-tabs {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     justify-content: flex-start;
     width: 100%;
+    padding: 0 var(--md-sys-spacing-2);
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .editor-tabs::-webkit-scrollbar {
+    display: none;
   }
   
   .editor-tab {
     flex: 1;
-    min-width: 100px;
+    min-width: 80px;
     text-align: center;
     display: flex;
     align-items: center;
     justify-content: center;
     white-space: nowrap;
-    padding: 12px 16px;
+    padding: var(--md-sys-spacing-3) var(--md-sys-spacing-4);
+    border-radius: var(--md-sys-shape-corner-medium);
+    background-color: transparent;
+    color: var(--md-sys-color-on-surface-variant);
+    font-weight: 500;
+    font-size: 0.75rem;
+    transition: all var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+    cursor: pointer;
+    touch-action: manipulation;
+    min-height: 48px;
   }
   
+  .editor-tab.active {
+    background-color: var(--md-sys-color-secondary-container);
+    color: var(--md-sys-color-on-secondary-container);
+  }
+  
+  .editor-tab:hover:not(.active) {
+    background-color: var(--md-sys-color-surface-container-highest);
+    color: var(--md-sys-color-on-surface);
+  }
+  
+  /* Canvas Container */
   .canvas-container {
     -webkit-overflow-scrolling: touch;
+    padding: var(--md-sys-spacing-4);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100%;
   }
   
   .phone-preview {
-    width: 280px;
-    height: 500px;
+    width: 300px;
+    height: 550px;
+    border-radius: var(--md-sys-shape-corner-extra-large);
+    box-shadow: var(--md-sys-elevation-level3);
+    background-color: var(--md-sys-color-surface);
+    border: 1px solid var(--md-sys-color-outline-variant);
+    overflow: hidden;
   }
   
   .phone-content {
     -webkit-overflow-scrolling: touch;
+    height: 100%;
+    overflow-y: auto;
+    background-color: var(--md-sys-color-background);
   }
   
   .sidebar-panel {
@@ -178,39 +286,86 @@
     -webkit-overflow-scrolling: touch;
   }
   
-  /* Improve touch targets */
+  /* Improved Touch Targets */
   .property-input input,
   .property-input select {
-    height: 36px;
-    padding: 8px 12px;
-    font-size: 14px;
+    height: 48px;
+    padding: var(--md-sys-spacing-3) var(--md-sys-spacing-4);
+    font-size: 1rem;
+    border-radius: var(--md-sys-shape-corner-small);
+    border: 1px solid var(--md-sys-color-outline);
+    background-color: var(--md-sys-color-surface);
+    color: var(--md-sys-color-on-surface);
+    transition: all var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+  }
+  
+  .property-input input:focus,
+  .property-input select:focus {
+    outline: none;
+    border-color: var(--md-sys-color-primary);
+    box-shadow: 0 0 0 1px var(--md-sys-color-primary);
   }
   
   .property-group-header {
-    padding: 12px 16px;
+    padding: var(--md-sys-spacing-4);
+    background-color: var(--md-sys-color-surface-container-highest);
+    border-radius: var(--md-sys-shape-corner-medium);
+    margin-bottom: var(--md-sys-spacing-2);
+    font-weight: 500;
+    color: var(--md-sys-color-on-surface);
   }
   
   .property-rows {
-    padding: 12px 16px;
+    padding: var(--md-sys-spacing-4);
   }
   
   .resize-handle {
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
+    background-color: var(--md-sys-color-primary);
+    border-radius: var(--md-sys-shape-corner-full);
+    border: 2px solid var(--md-sys-color-surface);
   }
   
-  /* Optimize header elements */
+  /* Editor Header */
   .editor-header {
-    padding: 8px 12px;
-    height: 56px;
+    padding: var(--md-sys-spacing-3);
+    height: 64px;
+    background-color: var(--md-sys-color-surface-container);
+    border-bottom: 1px solid var(--md-sys-color-outline-variant);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
   
   .editor-action-btn {
-    padding: 8px 12px;
+    padding: var(--md-sys-spacing-3);
+    border-radius: var(--md-sys-shape-corner-full);
+    background-color: transparent;
+    color: var(--md-sys-color-on-surface-variant);
+    border: none;
+    min-width: 48px;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: all var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+  }
+  
+  .editor-action-btn:hover {
+    background-color: var(--md-sys-color-surface-container-highest);
+    color: var(--md-sys-color-on-surface);
+  }
+  
+  .editor-action-btn:active {
+    background-color: var(--md-sys-color-surface-container-high);
+    transform: scale(0.95);
   }
   
   .editor-action-btn i {
-    font-size: 24px;
+    font-size: 1.25rem;
   }
 }
 
@@ -222,6 +377,7 @@
   
   .editor-sidebar {
     padding-bottom: env(safe-area-inset-bottom, 0);
+    height: calc(72px + env(safe-area-inset-bottom, 0));
   }
   
   /* Better scrolling on iOS */
@@ -244,15 +400,17 @@
   /* Fix for safe areas */
   @media (max-width: 767px) {
     .editor-workspace {
-      padding-bottom: calc(56px + env(safe-area-inset-bottom, 0));
+      padding-bottom: calc(72px + env(safe-area-inset-bottom, 0));
     }
     
     .components-sidebar {
       padding-top: env(safe-area-inset-top, 0);
+      height: calc(64px + env(safe-area-inset-top, 0));
     }
     
-    .editor-sidebar {
-      height: calc(56px + env(safe-area-inset-bottom, 0));
+    .property-editor {
+      top: calc(64px + env(safe-area-inset-top, 0));
+      bottom: calc(72px + env(safe-area-inset-bottom, 0));
     }
     
     /* Touch optimizations for form elements */
@@ -267,7 +425,176 @@
     .property-group-header,
     .sidebar-item,
     .screen-action-btn {
-      min-height: 44px; /* Apple's recommended minimum tap target size */
+      min-height: 48px; /* Apple's recommended minimum tap target size */
+      min-width: 48px;
     }
   }
+}
+
+/* Small Mobile Devices */
+@media (max-width: 480px) {
+  .components-sidebar {
+    height: 56px;
+  }
+  
+  .editor-sidebar {
+    height: 64px;
+  }
+  
+  .editor-workspace {
+    padding-top: 56px;
+    padding-bottom: 64px;
+  }
+  
+  .property-editor {
+    top: 56px;
+    bottom: 64px;
+    padding: var(--md-sys-spacing-3);
+  }
+  
+  .phone-preview {
+    width: 280px;
+    height: 500px;
+  }
+  
+  .component-item {
+    min-width: 56px;
+    height: 44px;
+  }
+  
+  .component-item i {
+    font-size: 1.125rem;
+  }
+  
+  .component-name {
+    font-size: 0.5rem;
+  }
+  
+  .editor-tab {
+    min-width: 72px;
+    padding: var(--md-sys-spacing-2) var(--md-sys-spacing-3);
+    font-size: 0.6875rem;
+  }
+}
+
+/* Landscape Mobile */
+@media (max-width: 767px) and (orientation: landscape) {
+  .phone-preview {
+    width: 250px;
+    height: 400px;
+  }
+  
+  .canvas-container {
+    padding: var(--md-sys-spacing-2);
+  }
+  
+  .property-editor {
+    padding: var(--md-sys-spacing-3);
+  }
+}
+
+/* High Contrast Support */
+@media (prefers-contrast: high) {
+  .components-sidebar,
+  .editor-sidebar {
+    border-width: 2px;
+  }
+  
+  .component-item,
+  .editor-tab,
+  .editor-action-btn {
+    border: 1px solid transparent;
+  }
+  
+  .component-item:hover,
+  .editor-tab:hover,
+  .editor-action-btn:hover {
+    border-color: var(--md-sys-color-outline);
+  }
+  
+  .phone-preview {
+    border-width: 2px;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .component-item,
+  .editor-tab,
+  .editor-action-btn,
+  .property-input input,
+  .property-input select {
+    transition: none;
+  }
+  
+  .component-item:active,
+  .editor-action-btn:active {
+    transform: none;
+  }
+}
+
+/* Dark Theme Enhancements */
+[data-theme="dark"] .components-sidebar,
+[data-theme="dark"] .editor-sidebar,
+[data-theme="dark"] .editor-header,
+body.dark-theme .components-sidebar,
+body.dark-theme .editor-sidebar,
+body.dark-theme .editor-header {
+  background-color: var(--md-sys-color-surface-container);
+  border-color: var(--md-sys-color-outline-variant);
+}
+
+[data-theme="dark"] .phone-preview,
+body.dark-theme .phone-preview {
+  background-color: var(--md-sys-color-surface);
+  border-color: var(--md-sys-color-outline-variant);
+}
+
+/* Loading States */
+.editor-container.loading {
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.editor-container.loading::after {
+  content: '';
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--md-sys-color-outline-variant);
+  border-top-color: var(--md-sys-color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  z-index: 9999;
+}
+
+@keyframes spin {
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+/* Focus Management */
+.focus-trap {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Scroll Snap for Better UX */
+.components-list,
+.editor-tabs {
+  scroll-snap-type: x mandatory;
+}
+
+.component-item,
+.editor-tab {
+  scroll-snap-align: start;
 } 
