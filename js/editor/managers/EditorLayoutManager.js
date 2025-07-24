@@ -22,12 +22,16 @@ class EditorLayoutManager {
         // Build the main structure
         const layoutHtml = `
           <div class="editor-container">
-            ${this._renderComponentsSidebar()}
-            <div class="editor-workspace">
-              ${this._renderEditorHeader()}
-              ${this._renderEditorWorkspaceContent()}
+            ${this._renderMobileHeader()}
+            <div class="editor-body">
+              ${this._renderComponentsSidebar()}
+              <div class="editor-workspace">
+                ${this._renderEditorHeader()}
+                ${this._renderEditorWorkspaceContent()}
+              </div>
+              ${this._renderEditorSidebar()}
             </div>
-            ${this._renderEditorSidebar()}
+            ${this._renderMobileFooter()}
           </div>
         `;
         
@@ -51,6 +55,39 @@ class EditorLayoutManager {
         // this.editorView.devicePreviewManager?.updateDevicePreviewSize(); // Now called in DevicePreviewManager.init()
         // this.editorView.tabManager?.switchTab(this.editorView.activeTab || 'design'); // Now called in EditorView.init()
         // this.editorView.undoRedoManager?.updateButtons(); // Now called in UndoRedoManager.init()
+    }
+
+    _renderMobileHeader() {
+        return `
+            <div class="mobile-header">
+                <button class="mobile-nav-btn" data-action="toggle-left-sidebar">
+                    <i class="material-icons">menu</i>
+                </button>
+                <div class="mobile-header-title">Editor</div>
+                <button class="mobile-nav-btn" data-action="toggle-right-sidebar">
+                    <i class="material-icons">more_vert</i>
+                </button>
+            </div>
+        `;
+    }
+
+    _renderMobileFooter() {
+        return `
+            <div class="mobile-footer">
+                <button class="mobile-footer-btn active" data-action="show-design">
+                    <i class="material-icons">design_services</i>
+                    <span>Design</span>
+                </button>
+                <button class="mobile-footer-btn" data-action="show-blocks">
+                    <i class="material-icons">view_in_ar</i>
+                    <span>Blocks</span>
+                </button>
+                <button class="mobile-footer-btn" data-action="show-code">
+                    <i class="material-icons">code</i>
+                    <span>Code</span>
+                </button>
+            </div>
+        `;
     }
 
     _renderComponentsSidebar() {
@@ -203,6 +240,36 @@ class EditorLayoutManager {
             });
         }
         
+        // --- Mobile Nav Listeners ---
+        const mobileNavBtns = document.querySelectorAll('.mobile-nav-btn');
+        mobileNavBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const action = btn.dataset.action;
+                if (action === 'toggle-left-sidebar') {
+                    document.querySelector('.components-sidebar').classList.toggle('open');
+                } else if (action === 'toggle-right-sidebar') {
+                    document.querySelector('.editor-sidebar').classList.toggle('open');
+                }
+            });
+        });
+
+        const mobileFooterBtns = document.querySelectorAll('.mobile-footer-btn');
+        mobileFooterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const action = btn.dataset.action;
+                mobileFooterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                if (action === 'show-design') {
+                    this.editorView.tabManager.switchTab('design');
+                } else if (action === 'show-blocks') {
+                    this.editorView.tabManager.switchTab('blocks');
+                } else if (action === 'show-code') {
+                    this.editorView.tabManager.switchTab('code');
+                }
+            });
+        });
+
         // Note: Undo/Redo button listeners are in UndoRedoManager
         // Note: Device selector listener is in DevicePreviewManager
     }
