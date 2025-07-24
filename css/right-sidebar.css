@@ -2,7 +2,7 @@
 .editor-sidebar {
   width: 250px; /* Increased width */
   background: var(--surface-color);
-  border-left: 1px solid #ddd;
+  border-left: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -13,7 +13,7 @@
 .sidebar-tabs {
   display: flex;
   background: var(--surface-color);
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .sidebar-tab {

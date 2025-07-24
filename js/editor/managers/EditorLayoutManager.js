@@ -140,6 +140,9 @@ class EditorLayoutManager {
             <div class="editor-actions">
               <button id="undo-btn" class="editor-action-btn m3-icon-button" title="Undo" disabled><i class="material-icons">undo</i></button>
               <button id="redo-btn" class="editor-action-btn m3-icon-button" title="Redo" disabled><i class="material-icons">redo</i></button>
+              <button id="theme-toggle" class="editor-action-btn m3-icon-button" title="Toggle theme" aria-label="Toggle theme">
+                <i class="material-icons">brightness_4</i>
+              </button>
               <button id="save-app-btn" class="editor-action-btn m3-button-text"><i class="material-icons">save</i>Save</button>
               <button id="preview-app-btn" class="editor-action-btn m3-button-outlined"><i class="material-icons">visibility</i>Preview</button>
               <button id="build-app-btn" class="editor-action-btn m3-button-filled"><i class="material-icons">build</i>Build</button>

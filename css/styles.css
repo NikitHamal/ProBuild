@@ -182,8 +182,8 @@ textarea:focus {
 
 /* Material 3 Button Styles */
 .m3-button-filled {
-  background-color: var(--m3-sys-light-primary);
-  color: var(--m3-sys-light-on-primary);
+  background-color: var(--primary-color);
+  color: white;
   border-radius: 20px;
   padding: 10px 24px;
   font-weight: 500;
@@ -195,12 +195,13 @@ textarea:focus {
 
 .m3-button-filled:hover {
   box-shadow: var(--shadow-md);
+  opacity: 0.9;
 }
 
 .m3-button-outlined {
   background-color: transparent;
-  color: var(--m3-sys-light-primary);
-  border: 1px solid var(--m3-sys-light-outline);
+  color: var(--primary-color);
+  border: 1px solid var(--border-color);
   border-radius: 20px;
   padding: 10px 24px;
   font-weight: 500;
@@ -210,12 +211,12 @@ textarea:focus {
 }
 
 .m3-button-outlined:hover {
-  background-color: rgba(var(--m3-sys-light-primary-rgb), 0.08);
+  background-color: var(--primary-light);
 }
 
 .m3-button-text {
   background-color: transparent;
-  color: var(--m3-sys-light-primary);
+  color: var(--primary-color);
   border: none;
   border-radius: 20px;
   padding: 10px 12px;
@@ -226,12 +227,12 @@ textarea:focus {
 }
 
 .m3-button-text:hover {
-  background-color: rgba(var(--m3-sys-light-primary-rgb), 0.08);
+  background-color: var(--primary-light);
 }
 
 .m3-icon-button {
   background-color: transparent;
-  color: var(--m3-sys-light-on-surface-variant);
+  color: var(--text-secondary);
   border: none;
   border-radius: 50%;
   padding: 8px;
@@ -244,39 +245,39 @@ textarea:focus {
 }
 
 .m3-icon-button:hover {
-  background-color: rgba(var(--m3-sys-light-on-surface-variant-rgb), 0.08);
+  background-color: var(--primary-light);
 }
 
 /* Material 3 Input Styles */
 .m3-input {
-  background-color: var(--m3-sys-light-surface-variant);
-  color: var(--m3-sys-light-on-surface-variant);
-  border: none;
-  border-radius: 4px 4px 0 0;
+  background-color: var(--surface-color);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
   padding: 16px;
-  border-bottom: 1px solid var(--m3-sys-light-on-surface-variant);
-  transition: border-bottom-color 0.2s ease;
+  transition: border-color 0.2s ease;
 }
 
 .m3-input:focus {
-  border-bottom-color: var(--m3-sys-light-primary);
+  border-color: var(--primary-color);
+  outline: none;
 }
 
 /* Material 3 Tabs */
 .m3-tabs {
   display: flex;
-  border-bottom: 1px solid var(--m3-sys-light-outline);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .m3-tabs .editor-tab {
   padding: 12px 16px;
   cursor: pointer;
   position: relative;
-  color: var(--m3-sys-light-on-surface-variant);
+  color: var(--text-secondary);
 }
 
 .m3-tabs .editor-tab.active {
-  color: var(--m3-sys-light-primary);
+  color: var(--primary-color);
 }
 
 .m3-tabs .editor-tab.active::after {
@@ -286,7 +287,7 @@ textarea:focus {
   left: 0;
   right: 0;
   height: 2px;
-  background-color: var(--m3-sys-light-primary);
+  background-color: var(--primary-color);
 }
 
 /* Responsive breakpoints */

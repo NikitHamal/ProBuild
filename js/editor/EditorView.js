@@ -61,6 +61,10 @@ class EditorView {
 
   init() {
     console.log("EditorView initializing...");
+    
+    // Initialize theme support first
+    this.initializeTheme();
+    
     // 1. Get App ID and Load App Data
     const urlParams = new URLSearchParams(window.location.search);
     const appId = urlParams.get('id');
@@ -94,6 +98,14 @@ class EditorView {
     console.log("EditorView initialization complete.");
   }
 
+  initializeTheme() {
+    // Check for saved theme preference and apply it
+    const savedTheme = localStorage.getItem('darkTheme');
+    if (savedTheme === 'true') {
+      document.body.classList.add('dark-theme');
+    }
+  }
+
   redirectToHome() {
      // Abstracted redirection
      window.location.href = 'index.html';
@@ -110,7 +122,37 @@ class EditorView {
           this.handleKeyUp(e);
       });
       
+      // Setup theme toggle listener
+      this.setupThemeToggle();
+      
       // Add other global listeners if needed
+  }
+
+  setupThemeToggle() {
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+      themeToggle.addEventListener('click', () => {
+        document.body.classList.toggle('dark-theme');
+        this.updateThemeIcon();
+        // Save theme preference
+        const isDarkTheme = document.body.classList.contains('dark-theme');
+        localStorage.setItem('darkTheme', isDarkTheme);
+      });
+      
+      // Update initial icon state
+      this.updateThemeIcon();
+    }
+  }
+
+  updateThemeIcon() {
+    const themeIcon = document.querySelector('#theme-toggle i');
+    if (themeIcon) {
+      if (document.body.classList.contains('dark-theme')) {
+        themeIcon.textContent = 'brightness_7';
+      } else {
+        themeIcon.textContent = 'brightness_4';
+      }
+    }
   }
 
   handleKeyDown(e) {
