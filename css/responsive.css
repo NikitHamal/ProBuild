@@ -1,7 +1,16 @@
+@media (max-width: 1024px) {
+  .components-sidebar {
+    width: 200px;
+  }
+  .editor-sidebar {
+    width: 280px;
+  }
+}
+
 @media (max-width: 900px) {
   .phone-preview {
-    width: 240px;
-    height: 420px;
+    width: 200px;
+    height: 350px;
   }
   .components-sidebar {
     width: 80px;
@@ -13,6 +22,8 @@
     left: 80px; /* Adjusted left sidebar width */
     right: 120px; /* Adjusted right sidebar width */
     padding: 10px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
   
   .component-name {
@@ -26,191 +37,6 @@
   .component-item i {
     font-size: 24px;
     margin-right: 0;
-  }
-}
-
-@media (max-width: 767px) {
-  body, html {
-    font-size: 14px;
-    height: 100%;
-    width: 100%;
-  }
-  
-  html {
-    height: -webkit-fill-available;
-  }
-  
-  body {
-    min-height: 100vh;
-    min-height: -webkit-fill-available;
-  }
-  
-  .editor-container {
-    flex-direction: column;
-    height: 100vh;
-    height: -webkit-fill-available;
-    overflow: hidden;
-  }
-  
-  .components-sidebar {
-    width: 100%;
-    height: 56px;
-    flex-direction: row;
-    border-right: none;
-    border-bottom: 1px solid #ddd;
-    padding: 0;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1002;
-    overflow-x: auto;
-    overflow-y: hidden;
-    justify-content: flex-start;
-    -webkit-overflow-scrolling: touch;
-  }
-  
-  .components-list {
-    flex-direction: row;
-    padding: 0 4px;
-    height: 100%;
-    align-items: center;
-    width: auto;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    gap: 0;
-  }
-  
-  .component-item {
-    flex-direction: column;
-    padding: 4px 8px;
-    gap: 2px;
-    height: 100%;
-    justify-content: center;
-    min-width: 56px;
-  }
-  
-  .component-item i {
-    font-size: 24px;
-    margin-right: 0;
-    margin-bottom: 2px;
-  }
-  
-  .component-name {
-    display: block;
-    font-size: 0.7rem;
-    text-align: center;
-    white-space: nowrap;
-  }
-  
-  .editor-workspace {
-    padding-top: 56px;
-    padding-bottom: 60px;
-  }
-  
-  .editor-sidebar {
-    width: 100%;
-    height: 56px;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    top: auto;
-    border-left: none;
-    border-top: 1px solid #ddd;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    z-index: 1002;
-    font-size: 0.9rem;
-    padding-bottom: env(safe-area-inset-bottom, 0);
-  }
-  
-  .property-editor {
-    position: fixed;
-    top: 56px;
-    left: 0;
-    right: 0;
-    bottom: 56px;
-    width: 100%;
-    height: auto;
-    padding: 16px;
-    z-index: 1001;
-    -webkit-overflow-scrolling: touch;
-  }
-  
-  .editor-tabs {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    justify-content: flex-start;
-    width: 100%;
-  }
-  
-  .editor-tab {
-    flex: 1;
-    min-width: 100px;
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    white-space: nowrap;
-    padding: 12px 16px;
-  }
-  
-  .canvas-container {
-    -webkit-overflow-scrolling: touch;
-  }
-  
-  .phone-preview {
-    width: 280px;
-    height: 500px;
-  }
-  
-  .phone-content {
-    -webkit-overflow-scrolling: touch;
-  }
-  
-  .sidebar-panel {
-    -webkit-overflow-scrolling: touch;
-  }
-  
-  .editor-panel {
-    -webkit-overflow-scrolling: touch;
-  }
-  
-  /* Improve touch targets */
-  .property-input input,
-  .property-input select {
-    height: 36px;
-    padding: 8px 12px;
-    font-size: 14px;
-  }
-  
-  .property-group-header {
-    padding: 12px 16px;
-  }
-  
-  .property-rows {
-    padding: 12px 16px;
-  }
-  
-  .resize-handle {
-    width: 16px;
-    height: 16px;
-  }
-  
-  /* Optimize header elements */
-  .editor-header {
-    padding: 8px 12px;
-    height: 56px;
-  }
-  
-  .editor-action-btn {
-    padding: 8px 12px;
-  }
-  
-  .editor-action-btn i {
-    font-size: 24px;
   }
 }
 
@@ -244,15 +70,16 @@
   /* Fix for safe areas */
   @media (max-width: 767px) {
     .editor-workspace {
-      padding-bottom: calc(56px + env(safe-area-inset-bottom, 0));
+      padding-bottom: calc(64px + env(safe-area-inset-bottom, 0));
     }
     
     .components-sidebar {
       padding-top: env(safe-area-inset-top, 0);
+      height: calc(64px + env(safe-area-inset-top, 0));
     }
     
     .editor-sidebar {
-      height: calc(56px + env(safe-area-inset-bottom, 0));
+      height: calc(64px + env(safe-area-inset-bottom, 0));
     }
     
     /* Touch optimizations for form elements */
@@ -267,7 +94,7 @@
     .property-group-header,
     .sidebar-item,
     .screen-action-btn {
-      min-height: 44px; /* Apple's recommended minimum tap target size */
+      min-height: 48px; /* Apple's recommended minimum tap target size */
     }
   }
 } 

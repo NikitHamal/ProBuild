@@ -14,6 +14,12 @@ class EditorSidebarManager {
             return;
         }
         this.renderProjectPanelContent(); // Initial render
+        
+        // Initialize the property panel
+        if (this.editorView.propertyPanel) {
+            this.editorView.propertyPanel.initializePanel();
+        }
+        
         this.setupEventListeners();
         this.switchSidebarTab(this.activeSidebarTabId); // Set initial active state
     }

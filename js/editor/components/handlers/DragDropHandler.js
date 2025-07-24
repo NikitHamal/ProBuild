@@ -30,11 +30,22 @@ class DragDropHandler {
                 e.dataTransfer.setDragImage(dragIcon, 0, 0);
                 setTimeout(() => document.body.removeChild(dragIcon), 0);
             });
+
+            item.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const componentType = e.currentTarget.dataset.type;
+                const touch = e.touches[0];
+                this.handleTouchStart(touch, componentType);
+            });
         });
 
         // Add event listeners for the preview container
         previewContainer.addEventListener('dragover', this.handleDragOver.bind(this));
         previewContainer.addEventListener('drop', this.handleDrop.bind(this));
+
+        // Add touch listeners to the document
+        document.addEventListener('touchmove', this.handleTouchMove.bind(this), { passive: false });
+        document.addEventListener('touchend', this.handleTouchEnd.bind(this));
     }
 
 
@@ -82,6 +93,49 @@ class DragDropHandler {
             previewContainer.addEventListener('dragover', this.handleDragOver.bind(this));
             previewContainer.addEventListener('drop', this.handleDrop.bind(this));
         }
+    }
+
+    handleTouchStart(touch, componentType) {
+        this.touchDragging = true;
+        this.draggedComponentType = componentType;
+
+        // Create a drag preview element
+        this.dragPreview = document.createElement('div');
+        this.dragPreview.className = 'drag-preview';
+        this.dragPreview.textContent = componentType;
+        document.body.appendChild(this.dragPreview);
+
+        this.updateDragPreviewPosition(touch);
+    }
+
+    handleTouchMove(e) {
+        if (!this.touchDragging) return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        this.updateDragPreviewPosition(touch);
+    }
+
+    handleTouchEnd(e) {
+        if (!this.touchDragging) return;
+        this.touchDragging = false;
+        document.body.removeChild(this.dragPreview);
+
+        const touch = e.changedTouches[0];
+        const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY);
+
+        if (dropTarget && dropTarget.closest('#preview-container')) {
+            const previewContainer = dropTarget.closest('#preview-container');
+            const rect = previewContainer.getBoundingClientRect();
+            const x = touch.clientX - rect.left + previewContainer.scrollLeft;
+            const y = touch.clientY - rect.top + previewContainer.scrollTop;
+
+            this.componentManager.addComponentToScreen(this.draggedComponentType, x, y);
+        }
+    }
+
+    updateDragPreviewPosition(touch) {
+        this.dragPreview.style.left = `${touch.clientX - this.dragPreview.offsetWidth / 2}px`;
+        this.dragPreview.style.top = `${touch.clientY - this.dragPreview.offsetHeight / 2}px`;
     }
 }
 

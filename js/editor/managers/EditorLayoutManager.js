@@ -22,12 +22,15 @@ class EditorLayoutManager {
         // Build the main structure
         const layoutHtml = `
           <div class="editor-container">
-            ${this._renderComponentsSidebar()}
-            <div class="editor-workspace">
-              ${this._renderEditorHeader()}
-              ${this._renderEditorWorkspaceContent()}
+            ${this._renderMobileHeader()}
+            <div class="editor-body">
+              ${this._renderComponentsSidebar()}
+              <div class="editor-workspace">
+                ${this._renderEditorHeader()}
+                ${this._renderEditorWorkspaceContent()}
+              </div>
+              ${this._renderEditorSidebar()}
             </div>
-            ${this._renderEditorSidebar()}
           </div>
         `;
         
@@ -53,13 +56,27 @@ class EditorLayoutManager {
         // this.editorView.undoRedoManager?.updateButtons(); // Now called in UndoRedoManager.init()
     }
 
+    _renderMobileHeader() {
+        return `
+            <div class="mobile-header">
+                <button class="mobile-nav-btn" data-action="toggle-left-sidebar">
+                    <i class="material-icons">menu</i>
+                </button>
+                <div class="mobile-header-title">Editor</div>
+                <button class="mobile-nav-btn" data-action="toggle-right-sidebar">
+                    <i class="material-icons">more_vert</i>
+                </button>
+            </div>
+        `;
+    }
+
     _renderComponentsSidebar() {
         console.log("Rendering components sidebar");
         // Added search input
         return `
           <div class="components-sidebar">
             <div class="sidebar-section" style="padding: 8px;">
-              <input type="search" id="component-search" placeholder="Search components..." class="property-input" style="width: 100%; font-size: 0.9rem; padding: 4px 6px;">
+              <input type="search" id="component-search" placeholder="Search components..." class="m3-input" style="width: 100%; font-size: 0.9rem; padding: 4px 6px;">
             </div>
             <div class="components-list">
               <div class="sidebar-title" style="padding: 8px 12px;">Layouts</div>
@@ -121,11 +138,14 @@ class EditorLayoutManager {
               <span id="current-screen-title">${screenName}</span>
             </div>
             <div class="editor-actions">
-              <button id="undo-btn" class="editor-action-btn" title="Undo" disabled><i class="material-icons">undo</i></button>
-              <button id="redo-btn" class="editor-action-btn" title="Redo" disabled><i class="material-icons">redo</i></button>
-              <button id="save-app-btn" class="editor-action-btn primary"><i class="material-icons">save</i>Save</button>
-              <button id="preview-app-btn" class="editor-action-btn" style="background-color: #2196F3; color: white;"><i class="material-icons">visibility</i>Preview</button>
-              <button id="build-app-btn" class="editor-action-btn" style="background-color: #4CAF50; color: white;"><i class="material-icons">build</i>Build</button>
+              <button id="undo-btn" class="editor-action-btn m3-icon-button" title="Undo" disabled><i class="material-icons">undo</i></button>
+              <button id="redo-btn" class="editor-action-btn m3-icon-button" title="Redo" disabled><i class="material-icons">redo</i></button>
+              <button id="theme-toggle" class="editor-action-btn m3-icon-button" title="Toggle theme" aria-label="Toggle theme">
+                <i class="material-icons">brightness_4</i>
+              </button>
+              <button id="save-app-btn" class="editor-action-btn m3-button-text"><i class="material-icons">save</i>Save</button>
+              <button id="preview-app-btn" class="editor-action-btn m3-button-outlined"><i class="material-icons">visibility</i>Preview</button>
+              <button id="build-app-btn" class="editor-action-btn m3-button-filled"><i class="material-icons">build</i>Build</button>
             </div>
           </div>
         `;
@@ -137,7 +157,7 @@ class EditorLayoutManager {
         return `
           <div class="editor-content">
             <div class="editor-main">
-              <div class="editor-tabs">
+              <div class="editor-tabs m3-tabs">
                 <div class="editor-tab active" data-tab="design">Design</div>
                 <div class="editor-tab" data-tab="blocks">Blocks</div>
                 <div class="editor-tab" data-tab="code">Code</div>
@@ -155,7 +175,7 @@ class EditorLayoutManager {
         // SidebarManager will handle populating the dynamic parts and events
          return `
             <div class="editor-sidebar">
-              <div class="sidebar-tabs">
+              <div class="sidebar-tabs m3-tabs">
                 <div class="sidebar-tab active" data-sidebar-tab="project">PROJECT</div>
                 <div class="sidebar-tab" data-sidebar-tab="properties">PROPERTIES</div>
               </div>
@@ -203,6 +223,19 @@ class EditorLayoutManager {
             });
         }
         
+        // --- Mobile Nav Listeners ---
+        const mobileNavBtns = document.querySelectorAll('.mobile-nav-btn');
+        mobileNavBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const action = btn.dataset.action;
+                if (action === 'toggle-left-sidebar') {
+                    document.querySelector('.components-sidebar').classList.toggle('open');
+                } else if (action === 'toggle-right-sidebar') {
+                    document.querySelector('.editor-sidebar').classList.toggle('open');
+                }
+            });
+        });
+
         // Note: Undo/Redo button listeners are in UndoRedoManager
         // Note: Device selector listener is in DevicePreviewManager
     }

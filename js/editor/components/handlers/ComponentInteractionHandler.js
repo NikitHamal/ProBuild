@@ -53,12 +53,22 @@ class ComponentInteractionHandler {
      */
     handleComponentMouseDown(e, component) {
         e.preventDefault(); // Prevent default browser image drag
-        if (e.button !== 0) return; // Only left click
+        if (e.button !== 0 && e.type !== 'touchstart') return;
+
+        let clientX, clientY;
+        if (e.type === 'touchstart') {
+            const touch = e.touches[0];
+            clientX = touch.clientX;
+            clientY = touch.clientY;
+        } else {
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
 
         this.selectComponent(component.id, false); // Select but don't force panel show yet
         this.isDraggingComponent = true;
-        this.dragStartX = e.clientX;
-        this.dragStartY = e.clientY;
+        this.dragStartX = clientX;
+        this.dragStartY = clientY;
         this.draggedComponentStartX = component.properties.x || 0;
         this.draggedComponentStartY = component.properties.y || 0;
 
@@ -70,6 +80,8 @@ class ComponentInteractionHandler {
         this.boundHandleMouseUp = this.handleComponentMouseUp.bind(this);
         document.addEventListener('mousemove', this.boundHandleMouseMove);
         document.addEventListener('mouseup', this.boundHandleMouseUp);
+        document.addEventListener('touchmove', this.boundHandleMouseMove, { passive: false });
+        document.addEventListener('touchend', this.boundHandleMouseUp);
     }
 
     /**
@@ -78,13 +90,24 @@ class ComponentInteractionHandler {
      */
     handleComponentMouseMove(e) {
         if (!this.isDraggingComponent || !this.editorView.selectedComponent) return;
+        if (e.type === 'touchmove') e.preventDefault();
+
+        let clientX, clientY;
+        if (e.type === 'touchmove') {
+            const touch = e.touches[0];
+            clientX = touch.clientX;
+            clientY = touch.clientY;
+        } else {
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
 
         const previewContainer = document.getElementById('preview-container');
         if (!previewContainer) return;
 
         // Calculate potential new raw position based on mouse delta
-        const deltaX = e.clientX - this.dragStartX;
-        const deltaY = e.clientY - this.dragStartY;
+        const deltaX = clientX - this.dragStartX;
+        const deltaY = clientY - this.dragStartY;
         let newX = this.draggedComponentStartX + deltaX;
         let newY = this.draggedComponentStartY + deltaY;
 
@@ -142,6 +165,8 @@ class ComponentInteractionHandler {
         this.isDraggingComponent = false;
         document.removeEventListener('mousemove', this.boundHandleMouseMove);
         document.removeEventListener('mouseup', this.boundHandleMouseUp);
+        document.removeEventListener('touchmove', this.boundHandleMouseMove);
+        document.removeEventListener('touchend', this.boundHandleMouseUp);
         this.boundHandleMouseMove = null;
         this.boundHandleMouseUp = null;
 
@@ -382,6 +407,9 @@ class ComponentInteractionHandler {
         // Switch sidebar tab to properties
         if (showPanel && this.editorView.sidebarManager) {
             this.editorView.sidebarManager.switchSidebarTab('properties');
+            if (window.innerWidth <= 767) {
+                document.querySelector('.editor-sidebar').classList.add('open');
+            }
         } else if (showPanel) {
              console.error("ComponentInteraction: SidebarManager or switchSidebarTab method missing.");
         }

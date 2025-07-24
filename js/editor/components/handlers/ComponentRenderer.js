@@ -132,6 +132,12 @@ class ComponentRenderer {
             this.componentManager.interactionHandler.handleComponentMouseDown(e, component);
         });
 
+        element.addEventListener('touchstart', (e) => {
+            if (e.target.classList.contains('resize-handle')) return;
+            e.stopPropagation();
+            this.componentManager.interactionHandler.handleComponentMouseDown(e, component);
+        });
+
         // Click for selection
         element.addEventListener('click', (e) => {
             if (e.target.classList.contains('resize-handle')) return;

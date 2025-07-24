@@ -52,7 +52,7 @@ class HomeView {
     container.innerHTML = `
       <div class="app-list-header">
         <h2 class="app-list-title">My Apps</h2>
-        <button class="new-app-btn">
+        <button class="new-app-btn m3-button-filled">
           <i class="material-icons">add</i>
           Create New App
         </button>
@@ -66,11 +66,19 @@ class HomeView {
       const emptyState = document.createElement('div');
       emptyState.className = 'empty-state';
       emptyState.innerHTML = `
-        <i class="material-icons">phone_android</i>
-        <h2 class="empty-state-title">No apps yet</h2>
-        <p class="empty-state-text">Create your first app to get started</p>
+        <div class="empty-state-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather feather-package"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+        </div>
+        <h2 class="empty-state-title">You have no projects yet</h2>
+        <p class="empty-state-text">Start by creating a new project to see it here.</p>
+        <button class="new-app-btn m3-button-filled">
+          <i class="material-icons">add</i>
+          Create New App
+        </button>
       `;
-      appGrid.appendChild(emptyState);
+      // Instead of appending to grid, we replace the container's content
+      container.innerHTML = '';
+      container.appendChild(emptyState);
     } else {
       apps.forEach(app => {
         const appCard = new AppCard(app);
@@ -99,7 +107,7 @@ class HomeView {
     return `
       <div class="dialog fullscreen new-project">
         <div class="dialog-header">
-          <button class="back-btn">
+          <button class="back-btn m3-icon-button">
             <i class="material-icons">arrow_back</i>
           </button>
           <div class="dialog-title">New Project</div>
@@ -114,17 +122,17 @@ class HomeView {
           </div>
           
           <div class="form-group">
-            <input type="text" id="app-name" placeholder="App Name" required>
+            <input type="text" id="app-name" placeholder="App Name" required class="m3-input">
             <div class="input-error-message"></div>
           </div>
           
           <div class="form-group">
-            <input type="text" id="package-name" placeholder="Package Name" required>
+            <input type="text" id="package-name" placeholder="Package Name" required class="m3-input">
             <div class="input-error-message"></div>
           </div>
           
           <div class="form-group">
-            <input type="text" id="project-name" placeholder="Project Name">
+            <input type="text" id="project-name" placeholder="Project Name" class="m3-input">
           </div>
           
           <div class="color-selector">
@@ -152,44 +160,41 @@ class HomeView {
             </div>
             <div class="form-group">
               <label for="color-type">Apply To</label>
-              <select id="color-type">
+              <select id="color-type" class="m3-select">
                 <option value="colorAccent">Accent Color</option>
                 <option value="colorPrimary">Primary Color</option>
                 <option value="colorPrimaryDark">Primary Dark</option>
                 <option value="colorControlHighlight">Control Highlight</option>
               </select>
             </div>
-            <button class="dialog-btn" id="apply-custom-color">Apply</button>
+            <button class="dialog-btn m3-button-text" id="apply-custom-color">Apply</button>
           </div>
           
           <div class="version-fields">
             <div class="form-group">
-              <input type="number" id="version-code" placeholder="Version code" min="1" value="1">
+              <label for="version-code">Version Code</label>
+              <input type="number" id="version-code" placeholder="Version code" min="1" value="1" class="m3-input">
             </div>
             <div class="form-group">
-              <input type="text" id="version-name" placeholder="Version name" value="1.0">
+              <label for="version-name">Version Name</label>
+              <input type="text" id="version-name" placeholder="Version name" value="1.0" class="m3-input">
             </div>
           </div>
           
-          <div class="api-selector">
-            <label>Minimum SDK</label>
-            <div class="api-options">
-              <div class="api-option" data-api="16">API 16 (Jelly Bean)</div>
-              <div class="api-option" data-api="19">API 19 (KitKat)</div>
-              <div class="api-option selected" data-api="21">API 21 (Lollipop)</div>
-              <div class="api-option" data-api="23">API 23 (Marshmallow)</div>
-              <div class="api-option" data-api="26">API 26 (Oreo)</div>
-              <div class="api-option" data-api="29">API 29 (Android 10)</div>
-              <div class="api-option" data-api="30">API 30 (Android 11)</div>
-              <div class="api-option" data-api="31">API 31 (Android 12)</div>
-              <div class="api-option" data-api="33">API 33 (Android 13)</div>
-            </div>
+          <div class="form-group">
+            <label for="min-sdk">Minimum SDK</label>
+            <input type="number" id="min-sdk" placeholder="Minimum SDK" value="21" class="m3-input">
+          </div>
+
+          <div class="form-group">
+            <label for="target-sdk">Target SDK</label>
+            <input type="number" id="target-sdk" placeholder="Target SDK" value="33" class="m3-input">
           </div>
         </div>
         
         <div class="dialog-actions">
-          <button class="dialog-btn cancel">Cancel</button>
-          <button class="dialog-btn primary" type="submit">New Project</button>
+          <button class="dialog-btn cancel m3-button-text">Cancel</button>
+          <button class="dialog-btn primary m3-button-filled" type="submit">New Project</button>
         </div>
       </div>
     `;
@@ -205,8 +210,9 @@ class HomeView {
     const projectNameInput = dialog.querySelector('#project-name');
     const versionCodeInput = dialog.querySelector('#version-code');
     const versionNameInput = dialog.querySelector('#version-name');
+    const minSdkInput = dialog.querySelector('#min-sdk');
+    const targetSdkInput = dialog.querySelector('#target-sdk');
     const colorOptions = dialog.querySelectorAll('.color-option');
-    const apiOptions = dialog.querySelectorAll('.api-option');
     const iconPreview = dialog.querySelector('#icon-preview');
     const customColorBtn = dialog.querySelector('#custom-color-btn');
     const customColorPicker = dialog.querySelector('#custom-color-picker');
@@ -222,7 +228,6 @@ class HomeView {
       colorPrimaryDark: '#303F9F',
       colorControlHighlight: '#E0E0E0'
     };
-    let selectedApi = '21';
     let selectedIcon = 'android';
     let customIconUrl = null;
 
@@ -295,15 +300,6 @@ class HomeView {
       // Hide picker
       customColorPicker.classList.remove('active');
     });
-    
-    // API selection logic
-    apiOptions.forEach(option => {
-      option.addEventListener('click', () => {
-        apiOptions.forEach(opt => opt.classList.remove('selected'));
-        option.classList.add('selected');
-        selectedApi = option.dataset.api;
-      });
-    });
 
     // Icon selection logic
     iconPreview.addEventListener('click', () => {
@@ -333,6 +329,8 @@ class HomeView {
       const projectName = projectNameInput.value.trim() || appName;
       const versionCode = versionCodeInput.value.trim() || "1";
       const versionName = versionNameInput.value.trim() || "1.0";
+      const minSdk = minSdkInput.value.trim() || "21";
+      const targetSdk = targetSdkInput.value.trim() || "33";
       
       // Basic Validation
       let isValid = true;
@@ -353,7 +351,8 @@ class HomeView {
           versionName,
           themeColor: selectedColor,
           customColors,
-          minSdk: selectedApi,
+          minSdk: minSdk,
+          targetSdk: targetSdk,
           icon: selectedIcon,
           customIconUrl
         });
