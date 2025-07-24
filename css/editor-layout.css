@@ -260,3 +260,13 @@
     padding: 0;
   }
 }
+
+.drag-preview {
+  position: fixed;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 4px;
+  z-index: 9999;
+  pointer-events: none;
+}
