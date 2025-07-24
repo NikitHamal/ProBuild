@@ -9,8 +9,8 @@
 
 @media (max-width: 900px) {
   .phone-preview {
-    width: 240px;
-    height: 420px;
+    width: 200px;
+    height: 350px;
   }
   .components-sidebar {
     width: 80px;
@@ -22,6 +22,8 @@
     left: 80px; /* Adjusted left sidebar width */
     right: 120px; /* Adjusted right sidebar width */
     padding: 10px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
   
   .component-name {

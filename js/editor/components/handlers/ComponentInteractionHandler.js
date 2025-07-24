@@ -407,6 +407,9 @@ class ComponentInteractionHandler {
         // Switch sidebar tab to properties
         if (showPanel && this.editorView.sidebarManager) {
             this.editorView.sidebarManager.switchSidebarTab('properties');
+            if (window.innerWidth <= 767) {
+                document.querySelector('.editor-sidebar').classList.add('open');
+            }
         } else if (showPanel) {
              console.error("ComponentInteraction: SidebarManager or switchSidebarTab method missing.");
         }
