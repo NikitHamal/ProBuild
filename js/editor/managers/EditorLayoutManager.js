@@ -31,7 +31,6 @@ class EditorLayoutManager {
               </div>
               ${this._renderEditorSidebar()}
             </div>
-            ${this._renderMobileFooter()}
           </div>
         `;
         
@@ -66,25 +65,6 @@ class EditorLayoutManager {
                 <div class="mobile-header-title">Editor</div>
                 <button class="mobile-nav-btn" data-action="toggle-right-sidebar">
                     <i class="material-icons">more_vert</i>
-                </button>
-            </div>
-        `;
-    }
-
-    _renderMobileFooter() {
-        return `
-            <div class="mobile-footer">
-                <button class="mobile-footer-btn active" data-action="show-design">
-                    <i class="material-icons">design_services</i>
-                    <span>Design</span>
-                </button>
-                <button class="mobile-footer-btn" data-action="show-blocks">
-                    <i class="material-icons">view_in_ar</i>
-                    <span>Blocks</span>
-                </button>
-                <button class="mobile-footer-btn" data-action="show-code">
-                    <i class="material-icons">code</i>
-                    <span>Code</span>
                 </button>
             </div>
         `;
@@ -249,23 +229,6 @@ class EditorLayoutManager {
                     document.querySelector('.components-sidebar').classList.toggle('open');
                 } else if (action === 'toggle-right-sidebar') {
                     document.querySelector('.editor-sidebar').classList.toggle('open');
-                }
-            });
-        });
-
-        const mobileFooterBtns = document.querySelectorAll('.mobile-footer-btn');
-        mobileFooterBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const action = btn.dataset.action;
-                mobileFooterBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-
-                if (action === 'show-design') {
-                    this.editorView.tabManager.switchTab('design');
-                } else if (action === 'show-blocks') {
-                    this.editorView.tabManager.switchTab('blocks');
-                } else if (action === 'show-code') {
-                    this.editorView.tabManager.switchTab('code');
                 }
             });
         });
