@@ -172,15 +172,23 @@ class HomeView {
           
           <div class="version-fields">
             <div class="form-group">
+              <label for="version-code">Version Code</label>
               <input type="number" id="version-code" placeholder="Version code" min="1" value="1" class="m3-input">
             </div>
             <div class="form-group">
+              <label for="version-name">Version Name</label>
               <input type="text" id="version-name" placeholder="Version name" value="1.0" class="m3-input">
             </div>
           </div>
           
           <div class="form-group">
+            <label for="min-sdk">Minimum SDK</label>
             <input type="number" id="min-sdk" placeholder="Minimum SDK" value="21" class="m3-input">
+          </div>
+
+          <div class="form-group">
+            <label for="target-sdk">Target SDK</label>
+            <input type="number" id="target-sdk" placeholder="Target SDK" value="33" class="m3-input">
           </div>
         </div>
         
@@ -203,6 +211,7 @@ class HomeView {
     const versionCodeInput = dialog.querySelector('#version-code');
     const versionNameInput = dialog.querySelector('#version-name');
     const minSdkInput = dialog.querySelector('#min-sdk');
+    const targetSdkInput = dialog.querySelector('#target-sdk');
     const colorOptions = dialog.querySelectorAll('.color-option');
     const iconPreview = dialog.querySelector('#icon-preview');
     const customColorBtn = dialog.querySelector('#custom-color-btn');
@@ -321,6 +330,7 @@ class HomeView {
       const versionCode = versionCodeInput.value.trim() || "1";
       const versionName = versionNameInput.value.trim() || "1.0";
       const minSdk = minSdkInput.value.trim() || "21";
+      const targetSdk = targetSdkInput.value.trim() || "33";
       
       // Basic Validation
       let isValid = true;
@@ -342,6 +352,7 @@ class HomeView {
           themeColor: selectedColor,
           customColors,
           minSdk: minSdk,
+          targetSdk: targetSdk,
           icon: selectedIcon,
           customIconUrl
         });
