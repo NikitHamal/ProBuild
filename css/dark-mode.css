@@ -1,0 +1,31 @@
+/* Dark Theme */
+.dark-theme {
+  --m3-sys-light-primary: var(--m3-sys-dark-primary);
+  --m3-sys-light-on-primary: var(--m3-sys-dark-on-primary);
+  --m3-sys-light-primary-container: var(--m3-sys-dark-primary-container);
+  --m3-sys-light-on-primary-container: var(--m3-sys-dark-on-primary-container);
+  --m3-sys-light-secondary: var(--m3-sys-dark-secondary);
+  --m3-sys-light-on-secondary: var(--m3-sys-dark-on-secondary);
+  --m3-sys-light-secondary-container: var(--m3-sys-dark-secondary-container);
+  --m3-sys-light-on-secondary-container: var(--m3-sys-dark-on-secondary-container);
+  --m3-sys-light-tertiary: var(--m3-sys-dark-tertiary);
+  --m3-sys-light-on-tertiary: var(--m3-sys-dark-on-tertiary);
+  --m3-sys-light-tertiary-container: var(--m3-sys-dark-tertiary-container);
+  --m3-sys-light-on-tertiary-container: var(--m3-sys-dark-on-tertiary-container);
+  --m3-sys-light-error: var(--m3-sys-dark-error);
+  --m3-sys-light-on-error: var(--m3-sys-dark-on-error);
+  --m3-sys-light-error-container: var(--m3-sys-dark-error-container);
+  --m3-sys-light-on-error-container: var(--m3-sys-dark-on-error-container);
+  --m3-sys-light-background: var(--m3-sys-dark-background);
+  --m3-sys-light-on-background: var(--m3-sys-dark-on-background);
+  --m3-sys-light-surface: var(--m3-sys-dark-surface);
+  --m3-sys-light-on-surface: var(--m3-sys-dark-on-surface);
+  --m3-sys-light-surface-variant: var(--m3-sys-dark-surface-variant);
+  --m3-sys-light-on-surface-variant: var(--m3-sys-dark-on-surface-variant);
+  --m3-sys-light-outline: var(--m3-sys-dark-outline);
+  --m3-sys-light-shadow: var(--m3-sys-dark-shadow);
+  --m3-sys-light-inverse-surface: var(--m3-sys-dark-inverse-surface);
+  --m3-sys-light-inverse-on-surface: var(--m3-sys-dark-inverse-on-surface);
+  --m3-sys-light-inverse-primary: var(--m3-sys-dark-inverse-primary);
+  --m3-sys-light-surface-tint: var(--m3-sys-dark-surface-tint);
+}

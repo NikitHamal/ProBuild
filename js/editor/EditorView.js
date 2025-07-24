@@ -246,7 +246,7 @@ class EditorView {
       console.log("Setting selected component:", component?.id || null);
       if (this.selectedComponent !== component) {
         this.selectedComponent = component;
-        this.propertyPanel.displayComponentProperties(component); 
+        this.propertyPanel.showPropertyPanel();
          // Update UI to reflect selection (ComponentManager might handle visual selection)
          this.componentManager?.highlightSelection(component ? component.id : null);
          this.updatePropertyPanelVisibility(); // Update panel based on selection
